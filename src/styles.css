@@ -1,0 +1,353 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-yellow: var(--yellow);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-live: var(--live);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  --shadow-glow-green: 0 0 40px -8px color-mix(in oklab, var(--primary) 60%, transparent);
+  --shadow-glow-gold: 0 0 50px -10px color-mix(in oklab, var(--gold) 70%, transparent);
+  --shadow-card: 0 8px 24px -12px rgb(0 0 0 / 0.6);
+
+  --gradient-pitch: radial-gradient(ellipse at top, color-mix(in oklab, var(--primary) 18%, transparent), transparent 60%);
+  --gradient-gold: linear-gradient(135deg, oklch(0.85 0.18 90), oklch(0.78 0.16 75));
+  --gradient-green: linear-gradient(135deg, oklch(0.68 0.18 150), oklch(0.55 0.16 155));
+  --gradient-hero: linear-gradient(180deg, oklch(0.16 0.04 160) 0%, oklch(0.10 0.02 160) 100%);
+
+  --animate-pulse-live: pulse-live 1.6s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-rise: rise 0.5s ease-out;
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.15); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+:root {
+  --radius: 0.875rem;
+
+  /* Dark by default - World Cup vibe */
+  --background: oklch(0.14 0.03 160);
+  --foreground: oklch(0.98 0.01 100);
+
+  --surface: oklch(0.19 0.035 160);
+  --surface-2: oklch(0.23 0.04 160);
+
+  --card: oklch(0.19 0.035 160);
+  --card-foreground: oklch(0.98 0.01 100);
+  --popover: oklch(0.19 0.035 160);
+  --popover-foreground: oklch(0.98 0.01 100);
+
+  --primary: oklch(0.68 0.18 150);            /* vibrant green */
+  --primary-foreground: oklch(0.14 0.03 160);
+  --secondary: oklch(0.26 0.04 160);
+  --secondary-foreground: oklch(0.98 0.01 100);
+  --muted: oklch(0.24 0.03 160);
+  --muted-foreground: oklch(0.82 0.02 150);
+  --accent: oklch(0.85 0.18 90);              /* gold accent */
+  --accent-foreground: oklch(0.14 0.03 160);
+
+  --gold: oklch(0.84 0.17 88);
+  --gold-foreground: oklch(0.14 0.03 160);
+  --yellow: oklch(0.90 0.18 100);
+
+  --success: oklch(0.72 0.18 150);
+  --success-foreground: oklch(0.14 0.03 160);
+  --live: oklch(0.65 0.24 28);
+
+  --destructive: oklch(0.62 0.22 27);
+  --destructive-foreground: oklch(0.98 0.01 100);
+  --border: oklch(0.30 0.035 160 / 60%);
+  --input: oklch(0.26 0.04 160);
+  --ring: oklch(0.68 0.18 150);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+  body {
+    /* Só verde no topo — sem dourado global (evita mancha na lateral em mobile) */
+    background-image: radial-gradient(
+      ellipse 80% 50% at 50% -10%,
+      color-mix(in oklab, var(--primary) 22%, transparent),
+      transparent 60%
+    );
+    min-height: 100dvh;
+  }
+  @media (max-width: 639px) {
+    html {
+      overflow-x: clip;
+      width: 100%;
+    }
+    body {
+      overflow-x: clip;
+      width: 100%;
+      max-width: 100vw;
+      background-image: none !important;
+      background-color: var(--background) !important;
+    }
+    :root {
+      --shadow-glow-gold: none;
+      --shadow-glow-green: none;
+    }
+    .text-gradient-gold {
+      background: none;
+      -webkit-background-clip: unset;
+      background-clip: unset;
+      color: var(--gold);
+    }
+  }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
+}
+
+@utility shell {
+  max-width: 28rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+@utility glass {
+  background: color-mix(in oklab, var(--surface) 85%, transparent);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+}
+
+@utility text-gradient-gold {
+  background: var(--gradient-gold);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--foreground);
+  background: color-mix(in oklab, var(--surface-2) 90%, transparent);
+  border: 1px solid var(--border);
+}
+
+/* Demo — sem brilho dourado vazando no mobile */
+.wc-2026-banner {
+  background: var(--surface-2);
+  border: 1px solid color-mix(in oklab, var(--primary) 28%, transparent);
+}
+.wc-2026-trophy {
+  background: var(--gradient-gold);
+}
+.wc-stage-selected {
+  background: var(--gradient-green);
+  color: var(--primary-foreground);
+}
+@media (min-width: 640px) {
+  .wc-2026-banner {
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--primary) 22%, var(--surface)),
+      color-mix(in oklab, var(--gold) 12%, var(--surface-2))
+    );
+    border: 1px solid color-mix(in oklab, var(--primary) 35%, transparent);
+    box-shadow: 0 20px 50px -24px color-mix(in oklab, var(--primary) 45%, transparent);
+  }
+  .wc-2026-trophy {
+    box-shadow: var(--shadow-glow-gold);
+  }
+  .wc-stage-selected {
+    box-shadow: var(--shadow-glow-green);
+  }
+  .wc-final-trophy {
+    box-shadow: var(--shadow-glow-gold);
+  }
+}
+.wc-final-trophy {
+  background: var(--gradient-gold);
+}
+
+/* Botões — glow só em telas maiores */
+.btn-glow-green,
+.btn-glow-gold {
+  box-shadow: none;
+}
+@media (min-width: 640px) {
+  .btn-glow-green { box-shadow: var(--shadow-glow-green); }
+  .btn-glow-gold { box-shadow: var(--shadow-glow-gold); }
+}
+
+/* Cards dourados da demo — sólidos no mobile */
+.demo-card-gold {
+  background: var(--surface-2);
+  border: 1px solid color-mix(in oklab, var(--gold) 28%, transparent);
+}
+.demo-prize-banner {
+  background: var(--surface-2);
+  border: 1px solid color-mix(in oklab, var(--gold) 28%, transparent);
+}
+@media (min-width: 640px) {
+  .demo-card-gold {
+    background: linear-gradient(135deg, oklch(0.30 0.06 90), oklch(0.22 0.04 160));
+    border: 1px solid color-mix(in oklab, var(--gold) 60%, transparent);
+  }
+  .demo-prize-banner {
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--gold) 18%, var(--surface)),
+      var(--surface)
+    );
+    border: 1px solid color-mix(in oklab, var(--gold) 30%, transparent);
+  }
+}
+
+/* Barra fixa da demonstração */
+.demo-flow-nav {
+  overflow: hidden;
+  isolation: isolate;
+  contain: paint;
+}
+.demo-shell {
+  min-height: 100dvh;
+  background: var(--background);
+  overflow-x: clip;
+}
+@media (max-width: 639px) {
+  .demo-flow-nav {
+    background: var(--background) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: inset 0 0 0 1px var(--background);
+  }
+  .demo-flow-nav::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--background);
+    z-index: -1;
+  }
+  .demo-pitch-bg {
+    display: none;
+  }
+  .logo-img {
+    filter: none !important;
+  }
+}
+/* Lista rolável de placares / participantes */
+.participant-list-scroll {
+  max-height: min(20rem, 42vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  padding: 0.375rem 0.375rem 0.375rem 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, var(--border) 90%, transparent);
+  background: color-mix(in oklab, var(--surface) 55%, transparent);
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--primary) 55%, var(--surface-2))
+    color-mix(in oklab, var(--surface-2) 75%, transparent);
+}
+
+.participant-list-scroll::-webkit-scrollbar {
+  width: 7px;
+}
+
+.participant-list-scroll::-webkit-scrollbar-track {
+  margin-block: 6px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--surface-2) 70%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--border) 60%, transparent);
+}
+
+.participant-list-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--primary) 75%, var(--surface-2)),
+    color-mix(in oklab, var(--gold) 45%, var(--primary))
+  );
+  border: 1px solid color-mix(in oklab, var(--primary) 35%, transparent);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--primary) 25%, transparent);
+}
+
+.participant-list-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--primary) 90%, white),
+    color-mix(in oklab, var(--gold) 65%, var(--primary))
+  );
+}
+
+.participant-list-scroll-wrap {
+  position: relative;
+}
+
+.participant-list-scroll-wrap::after {
+  content: "";
+  position: absolute;
+  bottom: 1px;
+  left: 1px;
+  right: 1px;
+  height: 1.75rem;
+  pointer-events: none;
+  border-radius: 0 0 0.95rem 0.95rem;
+  background: linear-gradient(
+    to top,
+    color-mix(in oklab, var(--surface) 92%, var(--background)),
+    transparent
+  );
+}
