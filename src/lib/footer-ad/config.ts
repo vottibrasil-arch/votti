@@ -7,14 +7,17 @@ function pickEnv(...values: Array<string | undefined>) {
 
 /**
  * Configuração padrão do slot de anúncio no rodapé.
- * Prioridade: prop explícita > slot do servidor (Supabase) > VITE_ADSENSE_FOOTER_SLOT > Monetag > AdSense (cliente).
+ * Prioridade:
+ * prop explícita > slot do servidor (Supabase) > VITE_ADSENSE_FOOTER_SLOT / VITE_ADSENSE_SLOT > Monetag > AdSense (cliente).
  */
 export function getFooterAdConfig(override?: FooterAdConfig, slotFromServer?: string | null): FooterAdConfig {
   if (override) return override;
 
   const adsenseSlot = pickEnv(
     typeof import.meta !== "undefined" ? import.meta.env?.VITE_ADSENSE_FOOTER_SLOT : undefined,
+    typeof import.meta !== "undefined" ? import.meta.env?.VITE_ADSENSE_SLOT : undefined,
     process.env.VITE_ADSENSE_FOOTER_SLOT,
+    process.env.VITE_ADSENSE_SLOT,
   ) || slotFromServer?.trim() || undefined;
 
   const monetagZoneId = pickEnv(
