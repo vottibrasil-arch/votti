@@ -18,6 +18,9 @@ const createApoioInput = z.object({
   mensagem: z.string().trim().max(18).optional(),
   valor: z.number().min(1).max(9999),
 });
+const getApoioStatusInput = z.object({
+  apoioId: z.string().uuid(),
+});
 
 type ApoiadorRow = {
   id: string;
@@ -150,17 +153,23 @@ export const createApoio = createServerFn({ method: "POST" })
       "";
     const webhookUrl = appUrl.trim() ? `${appUrl.replace(/\/$/, "")}/api/mercadopago/webhook` : undefined;
 
-    const pixOrder = await createMercadoPagoPixOrder({
-      externalReference: inserted.id,
-      description: `Apoio Palpite Gol · ${data.nome}`,
-      amount: data.valor,
-      payer: {
-        email: "pagamento@palpitegol.com",
-        firstName: data.nome.slice(0, 60),
-        lastName: "Apoiador",
-      },
-      webhookUrl,
-    });
+    let pixOrder: Awaited<ReturnType<typeof createMercadoPagoPixOrder>>;
+    try {
+      pixOrder = await createMercadoPagoPixOrder({
+        externalReference: inserted.id,
+        description: `Apoio Palpite Gol · ${data.nome}`,
+        amount: data.valor,
+        payer: {
+          email: "pagamento@palpitegol.com",
+          firstName: data.nome.slice(0, 60),
+          lastName: "Apoiador",
+        },
+        webhookUrl,
+      });
+    } catch (paymentError) {
+      await supabase.from("apoiadores").update({ status: "inativo" }).eq("id", inserted.id);
+      throw paymentError;
+    }
 
     return {
       ok: true,
@@ -172,6 +181,27 @@ export const createApoio = createServerFn({ method: "POST" })
       ticketUrl: pixOrder.ticketUrl,
       publicKey: getMercadoPagoPublicKey() || null,
     };
+  });
+
+export const getApoioStatus = createServerFn({ method: "POST" })
+  .validator((data: unknown) => getApoioStatusInput.parse(data))
+  .handler(async ({ data }): Promise<{ apoioId: string; status: "pendente" | "ativo" | "inativo" }> => {
+    const supabase = getSupabaseAdmin();
+    const { data: row, error } = await supabase
+      .from("apoiadores")
+      .select("id, status")
+      .eq("id", data.apoioId)
+      .maybeSingle();
+
+    if (error || !row) {
+      throw new Error("Apoio não encontrado.");
+    }
+
+    const status =
+      row.status === "ativo" || row.status === "inativo" || row.status === "pendente"
+        ? row.status
+        : "pendente";
+    return { apoioId: row.id, status };
   });
 
 export { readPropagandaRodapeVisivel };

@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Shell, TopBar, PrimaryButton } from "@/components/ui-kit";
 import { FormField } from "@/components/bolao/form-primitives";
-import { createApoio } from "@/lib/api/apoiadores.server";
-import { Heart, Camera, Check, Copy } from "lucide-react";
+import { createApoio, getApoioStatus } from "@/lib/api/apoiadores.server";
+import { Heart, Camera, Check, Copy, Clock3, AlertCircle } from "lucide-react";
 
 const FIXED_SUPPORT_VALUE = 2;
 const MAX_MESSAGE_LENGTH = 18;
+const STATUS_POLL_INTERVAL_MS = 5000;
+const STATUS_POLL_MAX_ATTEMPTS = 24;
 
 export const Route = createFileRoute("/apoiar")({
   head: () => ({ meta: [{ title: "Apoiar — Palpite Gol" }] }),
@@ -16,10 +18,14 @@ export const Route = createFileRoute("/apoiar")({
 
 function Apoiar() {
   const createApoioFn = useServerFn(createApoio);
+  const getApoioStatusFn = useServerFn(getApoioStatus);
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
+  const [apoioId, setApoioId] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<"pendente" | "ativo" | "inativo">("pendente");
+  const [pollAttempts, setPollAttempts] = useState(0);
   const [pixCode, setPixCode] = useState<string | null>(null);
   const [pixQrBase64, setPixQrBase64] = useState<string | null>(null);
   const [pixTicketUrl, setPixTicketUrl] = useState<string | null>(null);
@@ -45,6 +51,12 @@ function Apoiar() {
           valor: FIXED_SUPPORT_VALUE,
         },
       });
+      if (!result.qrCode && !result.ticketUrl) {
+        throw new Error("Não foi possível gerar o Pix. Tente novamente.");
+      }
+      setApoioId(result.apoioId);
+      setPaymentStatus("pendente");
+      setPollAttempts(0);
       setPixCode(result.qrCode);
       setPixQrBase64(result.qrCodeBase64);
       setPixTicketUrl(result.ticketUrl);
@@ -66,6 +78,52 @@ function Apoiar() {
       setError("Não foi possível copiar o código Pix.");
     }
   };
+
+  useEffect(() => {
+    if (!sent || !apoioId || paymentStatus !== "pendente") return;
+    if (pollAttempts >= STATUS_POLL_MAX_ATTEMPTS) return;
+
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const statusResult = await getApoioStatusFn({ data: { apoioId } });
+          setPaymentStatus(statusResult.status);
+          setPollAttempts((prev) => prev + 1);
+        } catch {
+          setPollAttempts((prev) => prev + 1);
+        }
+      })();
+    }, STATUS_POLL_INTERVAL_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [sent, apoioId, paymentStatus, pollAttempts, getApoioStatusFn]);
+
+  const statusUi = useMemo(() => {
+    if (paymentStatus === "ativo") {
+      return {
+        icon: <Check className="size-4" />,
+        text: "Pagamento confirmado! Seu apoio já está ativo no sistema.",
+        className: "text-primary",
+      };
+    }
+
+    if (paymentStatus === "inativo") {
+      return {
+        icon: <AlertCircle className="size-4" />,
+        text: "Pagamento não confirmado. Gere um novo Pix para concluir.",
+        className: "text-red-400",
+      };
+    }
+
+    const timeoutReached = pollAttempts >= STATUS_POLL_MAX_ATTEMPTS;
+    return {
+      icon: <Clock3 className="size-4" />,
+      text: timeoutReached
+        ? "Aguardando confirmação do Pix. Se já pagou, aguarde alguns segundos e recarregue a tela."
+        : "Aguardando confirmação do Pix...",
+      className: "text-gold",
+    };
+  }, [paymentStatus, pollAttempts]);
 
   return (
     <Shell>
@@ -136,6 +194,10 @@ function Apoiar() {
                   Depois da confirmação, seu apoio será ativado automaticamente.
                 </div>
               </div>
+            </div>
+            <div className={`rounded-xl border border-border/70 bg-background/40 p-2.5 text-xs flex items-center gap-2 ${statusUi.className}`}>
+              {statusUi.icon}
+              <span>{statusUi.text}</span>
             </div>
             {pixQrBase64 ? (
               <div className="rounded-xl border border-border/70 bg-background/40 p-3 flex justify-center">
