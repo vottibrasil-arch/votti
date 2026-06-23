@@ -4,6 +4,8 @@ import { getUserFromAccessToken } from "./auth.server";
 import { readPropagandaRodapeVisivel } from "./apoiadores.server";
 import { getSupabaseAdmin, getSupabaseAsUser } from "./supabase.server";
 import { getServerConfig } from "../config.server";
+import { PARTIDA_OWNER_COLUMNS, PARTIDA_OWNER_COLUMNS_FALLBACK } from "./campeonato-owner-helpers";
+import type { DbCampeonatoRow, DbPartidaRow } from "../bolao/db-types";
 
 const authInput = z.object({
   accessToken: z.string().min(1),
@@ -25,6 +27,13 @@ const propagandaVisibilityInput = authInput.extend({
   visivel: z.boolean(),
 });
 
+const officialCatalogMatchStatusInput = authInput.extend({
+  timeCasa: z.string().trim().min(1).max(80),
+  timeFora: z.string().trim().min(1).max(80),
+  dataPartida: z.string().trim().min(1),
+  status: z.enum(["agendado", "encerrado"]),
+});
+
 type SuperAdminUserRow = {
   id: string;
   email: string | null;
@@ -42,6 +51,19 @@ type SuperAdminOfficialGameRow = {
   status: string;
   data: string | null;
 };
+
+type SuperAdminOfficialCampeonatoRow = Pick<
+  DbCampeonatoRow,
+  | "id"
+  | "nome"
+  | "ativo"
+  | "descricao"
+  | "cidade"
+  | "banner_url"
+  | "escudo_url"
+  | "data_inicio"
+  | "data_fim"
+>;
 
 type SuperAdminSupporterRow = {
   id: string;
@@ -84,6 +106,8 @@ export type SuperAdminPanelData = {
   };
   propagandaRodapeVisivel: boolean;
   jogosOficiais: SuperAdminOfficialGameRow[];
+  campeonatosOficiais: SuperAdminOfficialCampeonatoRow[];
+  jogosOficiaisDetalhados: DbPartidaRow[];
   apoiadores: SuperAdminSupporterRow[];
   participantes: SuperAdminParticipantRow[];
   usuarios: SuperAdminUserRow[];
@@ -122,7 +146,9 @@ async function requireSuperAdmin(accessToken: string) {
 function assertServiceRoleConfigured() {
   const { supabase } = getServerConfig();
   if (!supabase.serviceRoleKey) {
-    throw new Error("Configure SUPABASE_SERVICE_ROLE_KEY para alterar senha, excluir conta ou atualizar usuários pelo Super ADM.");
+    throw new Error(
+      "Configure SUPABASE_SERVICE_ROLE_KEY para alterar senha, excluir conta ou atualizar usuários pelo Super ADM.",
+    );
   }
 }
 
@@ -251,7 +277,10 @@ async function loadBoloesCountByUser(adminClient: ReturnType<typeof getSupabaseA
 
 async function loadSuperAdminIds() {
   const adminClient = getSupabaseAdmin();
-  const { data, error } = await adminClient.from("super_admins").select("user_id").eq("ativo", true);
+  const { data, error } = await adminClient
+    .from("super_admins")
+    .select("user_id")
+    .eq("ativo", true);
   if (error) return new Set<string>();
   return new Set((data ?? []).map((row) => row.user_id as string));
 }
@@ -266,7 +295,9 @@ function withSuperAdminFlags(
   }));
 }
 
-async function listSystemUsers(accessToken: string): Promise<{ users: SuperAdminUserRow[]; total: number }> {
+async function listSystemUsers(
+  accessToken: string,
+): Promise<{ users: SuperAdminUserRow[]; total: number }> {
   const adminClient = getSupabaseAdmin();
   const userClient = getSupabaseAsUser(accessToken);
   const boloesCountMap = await loadBoloesCountByUser(adminClient);
@@ -275,13 +306,15 @@ async function listSystemUsers(accessToken: string): Promise<{ users: SuperAdmin
   const { data: rpcUsers, error: rpcError } = await userClient.rpc("super_admin_list_users");
   if (!rpcError && rpcUsers?.length) {
     const users = withSuperAdminFlags(
-      (rpcUsers as Array<{
-        id: string;
-        email: string | null;
-        nome: string | null;
-        created_at: string | null;
-        is_super_admin?: boolean;
-      }>).map((user) => ({
+      (
+        rpcUsers as Array<{
+          id: string;
+          email: string | null;
+          nome: string | null;
+          created_at: string | null;
+          is_super_admin?: boolean;
+        }>
+      ).map((user) => ({
         id: user.id,
         email: user.email ?? null,
         nome: user.nome ?? null,
@@ -305,11 +338,14 @@ async function listSystemUsers(accessToken: string): Promise<{ users: SuperAdmin
 
     const users = withSuperAdminFlags(
       authUsers
-        .sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime())
+        .sort(
+          (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
+        )
         .map((user) => {
           const profile = profileMap.get(user.id);
           const metaName =
-            (typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name.trim()) ||
+            (typeof user.user_metadata?.full_name === "string" &&
+              user.user_metadata.full_name.trim()) ||
             (typeof user.user_metadata?.name === "string" && user.user_metadata.name.trim()) ||
             null;
 
@@ -359,19 +395,29 @@ export const getSuperAdminPanelData = createServerFn({ method: "POST" })
     await requireSuperAdmin(data.accessToken);
     const supabase = getSupabaseAdmin();
 
-    const [systemUsers, campeonatosCount, jogosCount, boloesCount, participantesCount, apoiadoresCount, apoiadoresStats, participantesStats, propagandaRodapeVisivel, participantes] =
-      await Promise.all([
-        listSystemUsers(data.accessToken),
-        countRows("campeonatos", 0, { column: "tipo", value: "oficial" }),
-        countRows("partidas"),
-        countRows("boloes"),
-        countRows("participantes"),
-        countRows("apoiadores"),
-        getApoiadoresStats(),
-        getParticipantesStats(),
-        readPropagandaRodapeVisivel(),
-        listParticipantes(),
-      ]);
+    const [
+      systemUsers,
+      campeonatosCount,
+      jogosCount,
+      boloesCount,
+      participantesCount,
+      apoiadoresCount,
+      apoiadoresStats,
+      participantesStats,
+      propagandaRodapeVisivel,
+      participantes,
+    ] = await Promise.all([
+      listSystemUsers(data.accessToken),
+      countRows("campeonatos", 0, { column: "tipo", value: "oficial" }),
+      countRows("partidas"),
+      countRows("boloes"),
+      countRows("participantes"),
+      countRows("apoiadores"),
+      getApoiadoresStats(),
+      getParticipantesStats(),
+      readPropagandaRodapeVisivel(),
+      listParticipantes(),
+    ]);
 
     const { data: jogosData } = await supabase
       .from("partidas")
@@ -379,6 +425,33 @@ export const getSuperAdminPanelData = createServerFn({ method: "POST" })
       .eq("campeonatos.tipo", "oficial")
       .order("data_partida", { ascending: true, nullsFirst: false })
       .limit(20);
+
+    const { data: campeonatosOficiaisData } = await supabase
+      .from("campeonatos")
+      .select(
+        "id, nome, ativo, descricao, cidade, banner_url, escudo_url, data_inicio, data_fim, tipo",
+      )
+      .eq("tipo", "oficial")
+      .order("nome", { ascending: true });
+
+    let { data: jogosDetalhados, error: jogosDetalhadosError } = await supabase
+      .from("partidas")
+      .select(`${PARTIDA_OWNER_COLUMNS}, campeonatos!inner(tipo)`)
+      .eq("campeonatos.tipo", "oficial")
+      .order("campeonato_id", { ascending: true })
+      .order("ordem", { ascending: true })
+      .order("id", { ascending: true });
+
+    if (jogosDetalhadosError?.code === "PGRST204") {
+      const fallback = await supabase
+        .from("partidas")
+        .select(`${PARTIDA_OWNER_COLUMNS_FALLBACK}, campeonatos!inner(tipo)`)
+        .eq("campeonatos.tipo", "oficial")
+        .order("campeonato_id", { ascending: true })
+        .order("id", { ascending: true });
+      jogosDetalhados = fallback.data;
+      jogosDetalhadosError = fallback.error;
+    }
 
     const { data: apoiadoresData } = await supabase
       .from("apoiadores")
@@ -395,7 +468,9 @@ export const getSuperAdminPanelData = createServerFn({ method: "POST" })
         data_partida: string | null;
         campeonatos: { nome: string } | { nome: string }[] | null;
       };
-      const campeonato = Array.isArray(jogo.campeonatos) ? jogo.campeonatos[0]?.nome : jogo.campeonatos?.nome;
+      const campeonato = Array.isArray(jogo.campeonatos)
+        ? jogo.campeonatos[0]?.nome
+        : jogo.campeonatos?.nome;
       return {
         id: jogo.id,
         campeonato: campeonato ?? "Campeonato oficial",
@@ -419,6 +494,39 @@ export const getSuperAdminPanelData = createServerFn({ method: "POST" })
       participantesStats,
       propagandaRodapeVisivel,
       jogosOficiais,
+      campeonatosOficiais: (
+        (campeonatosOficiaisData ?? []) as Array<
+          SuperAdminOfficialCampeonatoRow & { tipo?: string }
+        >
+      ).map(
+        ({
+          id,
+          nome,
+          ativo,
+          descricao,
+          cidade,
+          banner_url,
+          escudo_url,
+          data_inicio,
+          data_fim,
+        }) => ({
+          id,
+          nome,
+          ativo,
+          descricao: descricao ?? null,
+          cidade: cidade ?? null,
+          banner_url: banner_url ?? null,
+          escudo_url: escudo_url ?? null,
+          data_inicio: data_inicio ?? null,
+          data_fim: data_fim ?? null,
+        }),
+      ),
+      jogosOficiaisDetalhados:
+        jogosDetalhadosError || !jogosDetalhados
+          ? []
+          : (jogosDetalhados as Array<DbPartidaRow & { campeonatos?: unknown }>).map(
+              ({ campeonatos: _camp, ...jogo }) => jogo as DbPartidaRow,
+            ),
       apoiadores: (apoiadoresData ?? []) as SuperAdminSupporterRow[],
       participantes,
       usuarios: systemUsers.users,
@@ -429,24 +537,77 @@ export const setPropagandaRodapeVisivel = createServerFn({ method: "POST" })
   .validator((data: unknown) => propagandaVisibilityInput.parse(data))
   .handler(async ({ data }): Promise<{ ok: true; visivel: boolean }> => {
     await requireSuperAdmin(data.accessToken);
-    const supabase = getSupabaseAdmin();
+    const supabase = getSupabaseAsUser(data.accessToken);
+    const value = Boolean(data.visivel);
 
-    const { error } = await supabase
-      .from("app_settings")
-      .upsert(
-        {
-          key: "propaganda_rodape_visivel",
-          value: Boolean(data.visivel),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "key" },
-      );
+    const { error: rpcError } = await supabase.rpc("super_admin_upsert_app_setting", {
+      p_key: "propaganda_rodape_visivel",
+      p_value: value,
+    });
+
+    if (!rpcError) {
+      return { ok: true, visivel: value };
+    }
+
+    const rpcMissing =
+      rpcError.code === "PGRST202" ||
+      rpcError.code === "42883" ||
+      rpcError.message.toLowerCase().includes("super_admin_upsert_app_setting");
+
+    if (!rpcMissing) {
+      throw new Error(`Erro ao atualizar visibilidade da propaganda: ${rpcError.message}`);
+    }
+
+    const { error } = await supabase.from("app_settings").upsert(
+      {
+        key: "propaganda_rodape_visivel",
+        value,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" },
+    );
 
     if (error) {
       throw new Error(`Erro ao atualizar visibilidade da propaganda: ${error.message}`);
     }
 
-    return { ok: true, visivel: data.visivel };
+    return { ok: true, visivel: value };
+  });
+
+export const setOfficialCatalogMatchStatus = createServerFn({ method: "POST" })
+  .validator((data: unknown) => officialCatalogMatchStatusInput.parse(data))
+  .handler(async ({ data }): Promise<{ ok: true; status: "agendado" | "encerrado" }> => {
+    await requireSuperAdmin(data.accessToken);
+    const supabase = getSupabaseAdmin();
+
+    const { data: rows, error } = await supabase
+      .from("partidas")
+      .select("id, data_partida, campeonatos!inner(tipo)")
+      .eq("time_casa", data.timeCasa)
+      .eq("time_fora", data.timeFora)
+      .eq("campeonatos.tipo", "oficial");
+
+    if (error || !rows || rows.length === 0) {
+      throw new Error("Partida oficial não encontrada para atualizar status.");
+    }
+
+    const expectedTs = new Date(data.dataPartida).getTime();
+    const target =
+      rows.find((row) => {
+        const rowTs = row.data_partida ? new Date(row.data_partida).getTime() : Number.NaN;
+        return Number.isFinite(expectedTs) && Number.isFinite(rowTs) && expectedTs === rowTs;
+      }) ?? rows[0];
+
+    const { error: updateError } = await supabase
+      .from("partidas")
+      .update({ status: data.status })
+      .eq("id", target.id);
+
+    if (updateError) {
+      throw new Error(`Erro ao atualizar status da partida oficial: ${updateError.message}`);
+    }
+
+    return { ok: true, status: data.status };
   });
 
 export const updateBolaoAdminName = createServerFn({ method: "POST" })
@@ -460,7 +621,10 @@ export const updateBolaoAdminName = createServerFn({ method: "POST" })
 
     const { error: profileError } = await supabase
       .from("profiles")
-      .upsert({ id: data.userId, nome: data.nome, ...(email ? { email } : {}) }, { onConflict: "id" });
+      .upsert(
+        { id: data.userId, nome: data.nome, ...(email ? { email } : {}) },
+        { onConflict: "id" },
+      );
 
     if (profileError) {
       throw new Error(`Erro ao atualizar nome: ${profileError.message}`);

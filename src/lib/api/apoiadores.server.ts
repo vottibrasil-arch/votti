@@ -14,7 +14,7 @@ const SUPPORTER_COLORS = [
 const createApoioInput = z.object({
   nome: z.string().trim().min(2).max(80),
   cidade: z.string().trim().max(80).optional(),
-  mensagem: z.string().trim().max(25).optional(),
+  mensagem: z.string().trim().max(18).optional(),
   valor: z.number().min(1).max(9999),
 });
 
@@ -64,10 +64,38 @@ async function readPropagandaRodapeVisivel() {
   return parsePropagandaRodapeVisivel(data.value);
 }
 
+function parseSettingString(value: unknown): string | null {
+  if (value == null) return null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (typeof value === "number") return String(value);
+  return null;
+}
+
+/** Slot da unidade Display do AdSense no rodapé (app_settings ou api_settings). */
+async function readFooterAdSenseSlot() {
+  const supabase = getSupabaseAdmin();
+
+  for (const table of ["app_settings", "api_settings"] as const) {
+    const { data } = await supabase
+      .from(table)
+      .select("value")
+      .eq("key", "adsense_footer_slot")
+      .maybeSingle();
+
+    const slot = parseSettingString(data?.value);
+    if (slot) return slot;
+  }
+
+  return null;
+}
+
 export const getPublicApoiadoresData = createServerFn({ method: "POST" }).handler(async () => {
   const supabase = getSupabaseAdmin();
 
-  const [{ data: settingsData }, { data: apoiadoresData }] = await Promise.all([
+  const [{ data: settingsData }, { data: apoiadoresData }, adsenseFooterSlot] = await Promise.all([
     supabase.from("app_settings").select("value").eq("key", "propaganda_rodape_visivel").maybeSingle(),
     supabase
       .from("apoiadores")
@@ -75,10 +103,12 @@ export const getPublicApoiadoresData = createServerFn({ method: "POST" }).handle
       .eq("status", "ativo")
       .order("created_at", { ascending: false })
       .limit(50),
+    readFooterAdSenseSlot(),
   ]);
 
   return {
     propagandaRodapeVisivel: parsePropagandaRodapeVisivel(settingsData?.value),
+    adsenseFooterSlot,
     apoiadores: (apoiadoresData ?? []).map(mapApoiadorToSupporter),
   };
 });

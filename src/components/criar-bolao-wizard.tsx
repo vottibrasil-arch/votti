@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PrimaryButton } from "@/components/ui-kit";
 import { SettingsToggle, FormField } from "@/components/bolao/form-primitives";
@@ -7,17 +7,17 @@ import { PlacarRulePicker } from "@/components/bolao/placar-rule-picker";
 import { TeamFlag } from "@/components/bolao/team-flag";
 import { WorldCup2026Banner } from "@/components/bolao/world-cup-2026";
 import { useAuth } from "@/lib/auth/use-auth";
-import { formatUserFacingError } from "@/lib/errors";
-import { listCampeonatosOficiais } from "@/lib/api/campeonatos.server";
-import { listMatches } from "@/lib/api/matches-list.server";
+import {
+  getOfficialCatalogStatusMap,
+  resolveOfficialCatalogMatch,
+} from "@/lib/api/matches-list.server";
 import { createBolao } from "@/lib/api/boloes.server";
-import { dbPartidaToCard, type MatchCard } from "@/lib/bolao/db-match";
+import { formatPartidaDate } from "@/lib/bolao/db-match";
+import { WORLD_CUP_2026_CATALOG, type OfficialCatalogMatch } from "@/lib/bolao/official-catalog";
+import { teamNameToCode } from "@/lib/bolao/team-codes";
 import { STAKE_PRESETS } from "@/lib/bolao/constants";
 import type { BolaoSettings } from "@/lib/bolao/types";
-import type { DbCampeonatoRow } from "@/lib/bolao/db-types";
-import {
-  Check, ChevronLeft, ChevronRight, Eye, EyeOff, Link2, Trophy, Users,
-} from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Eye, EyeOff, Link2, Trophy, Users } from "lucide-react";
 
 const DEFAULT_SETTINGS: BolaoSettings = {
   exclusiveScore: true,
@@ -27,104 +27,246 @@ const DEFAULT_SETTINGS: BolaoSettings = {
 };
 
 type CampOption = {
-  id: number;
+  id: string;
   nome: string;
   tipo: "oficial";
 };
 
+type CatalogMatchCard = {
+  id: string;
+  home: string;
+  away: string;
+  homeCode: string;
+  awayCode: string;
+  date: string;
+  stage: string;
+  raw: OfficialCatalogMatch;
+};
+
+function toLocalDayKey(value: string | Date) {
+  const d = typeof value === "string" ? new Date(value) : value;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function formatDayLabel(dayKey: string) {
+  const date = new Date(`${dayKey}T00:00:00`);
+  return date.toLocaleDateString("pt-BR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
 export function CriarBolaoWizard({
   passo,
-  prefillCampeonatoId,
-  prefillPartidaId,
+  prefillCatalogMatchId,
 }: {
   passo: number;
-  prefillCampeonatoId?: number;
-  prefillPartidaId?: number;
+  prefillCatalogMatchId?: string;
 }) {
   const navigate = useNavigate();
   const { user, loading, getAccessToken } = useAuth();
-  const listMatchesFn = useServerFn(listMatches);
+  const getStatusMapFn = useServerFn(getOfficialCatalogStatusMap);
+  const resolveCatalogMatchFn = useServerFn(resolveOfficialCatalogMatch);
   const createBolaoFn = useServerFn(createBolao);
-  const [oficiais, setOficiais] = useState<DbCampeonatoRow[]>([]);
-  const [campeonatoId, setCampeonatoId] = useState<number | null>(prefillCampeonatoId ?? null);
-  const [matches, setMatches] = useState<MatchCard[]>([]);
-  const [matchId, setMatchId] = useState<number | null>(prefillPartidaId ?? null);
+  const [campeonatoId, setCampeonatoId] = useState<string>("copa-2026");
+  const [matchId, setMatchId] = useState<string | null>(prefillCatalogMatchId ?? null);
   const [stake, setStake] = useState(10);
   const [settings, setSettings] = useState<BolaoSettings>(DEFAULT_SETTINGS);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loadingCamps, setLoadingCamps] = useState(true);
-  const [loadingMatches, setLoadingMatches] = useState(false);
+  const [statusByMatchId, setStatusByMatchId] = useState<Record<string, string>>({});
+  const [selectedDayKey, setSelectedDayKey] = useState<string>("all");
+  const dayChipsRef = useRef<HTMLDivElement | null>(null);
+  const didApplyPrefillRef = useRef(false);
+  const didAutoSelectDayRef = useRef(false);
   const goTo = (next: 1 | 2 | 3 | 4) =>
     navigate({
       to: "/create",
-      search: { aba: "bolao", passo: next, campeonatoId: campeonatoId ?? undefined },
+      search: {
+        aba: "bolao",
+        passo: next,
+        catalogMatchId: matchId ?? undefined,
+      },
     });
 
   useEffect(() => {
-    if (loading || !user) return;
-    if (passo !== 1 && passo !== 2) return;
+    if (didApplyPrefillRef.current) return;
+    didApplyPrefillRef.current = true;
 
-    setLoadingCamps(true);
-    listCampeonatosOficiais()
-      .then((off) => {
-        setOficiais(off);
-        if (prefillCampeonatoId) {
-          setCampeonatoId(prefillCampeonatoId);
-        } else if (!campeonatoId && off[0]) {
-          setCampeonatoId(off[0].id);
-        }
-      })
-      .catch((err: unknown) => setError(formatUserFacingError(err)))
-      .finally(() => setLoadingCamps(false));
-  }, [loading, user, getAccessToken, prefillCampeonatoId, passo, campeonatoId]);
+    if (prefillCatalogMatchId) {
+      setMatchId(prefillCatalogMatchId);
+      return;
+    }
+    if (WORLD_CUP_2026_CATALOG.length > 0) {
+      setMatchId(WORLD_CUP_2026_CATALOG[0].id);
+    }
+  }, [prefillCatalogMatchId]);
 
   useEffect(() => {
-    if (passo !== 2 || !campeonatoId) return;
-    const token = getAccessToken();
-    if (!token) return;
+    let cancelled = false;
+    async function loadStatuses() {
+      try {
+        const token = getAccessToken();
+        const map = await getStatusMapFn({ data: { accessToken: token ?? undefined } });
+        if (!cancelled) setStatusByMatchId(map);
+      } catch {
+        // Se falhar, mantém sem bloqueio de UI.
+      }
+    }
+    void loadStatuses();
+    return () => {
+      cancelled = true;
+    };
+  }, [getStatusMapFn, getAccessToken]);
 
-    setError(null);
-    setLoadingMatches(true);
-    listMatchesFn({ data: { campeonatoId, accessToken: token } })
-      .then((rows) => {
-        const cards = rows.map(dbPartidaToCard);
-        setMatches(cards);
-        setMatchId((cur) => {
-          if (cur && cards.some((c) => c.id === cur)) return cur;
-          if (prefillPartidaId && cards.some((c) => c.id === prefillPartidaId)) return prefillPartidaId;
-          return cards[0]?.id ?? null;
-        });
-      })
-      .catch((err: unknown) => setError(formatUserFacingError(err)))
-      .finally(() => setLoadingMatches(false));
-  }, [passo, campeonatoId, listMatchesFn, getAccessToken, prefillPartidaId]);
+  const campOptions: CampOption[] = [
+    {
+      id: "copa-2026",
+      nome: "Copa do Mundo 2026",
+      tipo: "oficial" as const,
+    },
+  ];
 
-  useEffect(() => {
-    if (prefillCampeonatoId) setCampeonatoId(prefillCampeonatoId);
-    if (prefillPartidaId) setMatchId(prefillPartidaId);
-  }, [prefillCampeonatoId, prefillPartidaId]);
-
-  const campOptions: CampOption[] = oficiais.map((c) => ({
-    id: c.id,
-    nome: c.nome,
-    tipo: "oficial" as const,
-  }));
+  const matches: CatalogMatchCard[] = WORLD_CUP_2026_CATALOG.map((m) => ({
+    id: m.id,
+    home: m.timeCasa,
+    away: m.timeFora,
+    homeCode: teamNameToCode(m.timeCasa),
+    awayCode: teamNameToCode(m.timeFora),
+    date: formatPartidaDate(m.dataPartida),
+    stage: m.grupo,
+    raw: m,
+  })).sort((a, b) => a.raw.ordem - b.raw.ordem);
 
   const selectedCamp = campOptions.find((c) => c.id === campeonatoId);
   const selectedMatch = matches.find((m) => m.id === matchId) ?? null;
+  const availableDays = [...new Set(matches.map((m) => toLocalDayKey(m.raw.dataPartida)))].sort();
+  const isMatchClosed = useMemo(
+    () => (m: CatalogMatchCard) => {
+      const fromAdmin = statusByMatchId[m.id] === "encerrado";
+      const byDate = new Date(m.raw.dataPartida).getTime() < Date.now();
+      return fromAdmin || byDate;
+    },
+    [statusByMatchId],
+  );
+
+  useEffect(() => {
+    if (selectedDayKey === "all") return;
+    if (!availableDays.includes(selectedDayKey)) {
+      setSelectedDayKey(availableDays[0] ?? "all");
+    }
+  }, [availableDays, selectedDayKey]);
+
+  const matchesForDay =
+    selectedDayKey === "all"
+      ? matches
+      : matches.filter((m) => toLocalDayKey(m.raw.dataPartida) === selectedDayKey);
+  const dayMeta = availableDays.map((dayKey) => {
+    const dayMatches = matches.filter((m) => toLocalDayKey(m.raw.dataPartida) === dayKey);
+    const openCount = dayMatches.filter((m) => !isMatchClosed(m)).length;
+    return { dayKey, openCount, total: dayMatches.length };
+  });
+  const selectedMatchClosed = selectedMatch ? isMatchClosed(selectedMatch) : false;
+
+  useEffect(() => {
+    if (availableDays.length === 0) return;
+    if (didAutoSelectDayRef.current) return;
+    didAutoSelectDayRef.current = true;
+
+    if (prefillCatalogMatchId) {
+      const prefilled = matches.find((m) => m.id === prefillCatalogMatchId);
+      if (prefilled) {
+        setSelectedDayKey(toLocalDayKey(prefilled.raw.dataPartida));
+        return;
+      }
+    }
+
+    const todayKey = toLocalDayKey(new Date());
+    const todayMeta = dayMeta.find((d) => d.dayKey === todayKey);
+    if (todayMeta && todayMeta.openCount > 0) {
+      setSelectedDayKey(todayKey);
+      return;
+    }
+
+    const nextOpen = dayMeta.find((d) => d.dayKey >= todayKey && d.openCount > 0);
+    if (nextOpen) {
+      setSelectedDayKey(nextOpen.dayKey);
+      return;
+    }
+
+    const firstOpen = dayMeta.find((d) => d.openCount > 0);
+    if (firstOpen) {
+      setSelectedDayKey(firstOpen.dayKey);
+      return;
+    }
+
+    if (todayMeta) {
+      setSelectedDayKey(todayKey);
+      return;
+    }
+
+    setSelectedDayKey(availableDays[0]);
+  }, [availableDays, dayMeta, matches, prefillCatalogMatchId]);
+
+  useEffect(() => {
+    if (matchesForDay.length === 0) return;
+    if (!matchId || !matchesForDay.some((m) => m.id === matchId)) {
+      setMatchId(matchesForDay[0].id);
+    }
+  }, [matchesForDay, matchId]);
+
+  const scrollDays = (direction: "left" | "right") => {
+    const node = dayChipsRef.current;
+    if (!node) return;
+    node.scrollBy({ left: direction === "left" ? -220 : 220, behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    if (passo !== 2) return;
+    const container = dayChipsRef.current;
+    if (!container) return;
+
+    const selector =
+      selectedDayKey === "all" ? '[data-day-chip="all"]' : `[data-day-chip="${selectedDayKey}"]`;
+    const chip = container.querySelector(selector);
+    if (!(chip instanceof HTMLElement)) return;
+
+    const targetLeft = chip.offsetLeft - (container.clientWidth - chip.clientWidth) / 2;
+    const nextLeft = Math.max(0, targetLeft);
+    const rafId = window.requestAnimationFrame(() => {
+      container.scrollTo({ left: nextLeft, behavior: "smooth" });
+    });
+
+    return () => window.cancelAnimationFrame(rafId);
+  }, [passo, selectedDayKey, dayMeta.length]);
 
   const handleCreate = async () => {
     const token = getAccessToken();
-    if (!token || !matchId) return;
+    if (!token || !selectedMatch) return;
+    if (isMatchClosed(selectedMatch)) {
+      setError("Esta partida está encerrada e não pode ser usada para criar bolão.");
+      return;
+    }
 
     setCreating(true);
     setError(null);
     try {
+      const resolved = await resolveCatalogMatchFn({
+        data: {
+          timeCasa: selectedMatch.raw.timeCasa,
+          timeFora: selectedMatch.raw.timeFora,
+          dataPartida: selectedMatch.raw.dataPartida,
+          accessToken: token,
+        },
+      });
       const result = await createBolaoFn({
         data: {
           accessToken: token,
-          partidaId: matchId,
+          partidaId: resolved.partidaId,
           stake,
           modoExclusivo: settings.exclusiveScore,
           taxaPercent: settings.taxaPercent,
@@ -142,44 +284,50 @@ export function CriarBolaoWizard({
     return <p className="text-center text-sm text-muted-foreground">Carregando...</p>;
   }
 
+  const handleContinueFromMatchStep = () => {
+    if (!selectedMatch) return;
+    if (isMatchClosed(selectedMatch)) {
+      setError("Partida encerrada: escolha um jogo em aberto para continuar.");
+      return;
+    }
+    setError(null);
+    goTo(3);
+  };
+
   return (
     <div className="animate-rise space-y-5">
       {passo === 1 && (
         <>
+          <WorldCup2026Banner />
+
           <div>
             <h1 className="font-display text-xl font-bold">Campeonatos oficiais</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Jogos e campeonatos cadastrados pelo Palpite Gol.
-            </p>
           </div>
-
-          {loadingCamps && <p className="text-sm text-muted-foreground text-center">Carregando...</p>}
 
           {error && passo === 1 && (
             <div className="glass rounded-2xl p-4 text-center text-sm text-red-400">{error}</div>
           )}
 
-          {oficiais.length > 0 && (
-            <div className="space-y-2">
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                <Trophy className="size-3" /> Oficiais
-              </h2>
-              {oficiais.map((camp) => (
-                <CampButton
-                  key={camp.id}
-                  nome={camp.nome}
-                  badge="Oficial"
-                  selected={campeonatoId === camp.id}
-                  onClick={() => setCampeonatoId(camp.id)}
-                />
-              ))}
-            </div>
-          )}
+          <div className="space-y-2">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+              <Trophy className="size-3" /> Oficiais
+            </h2>
+            {campOptions.map((camp) => (
+              <CampButton
+                key={camp.id}
+                nome={camp.nome}
+                badge="Oficial"
+                sub="Estados Unidos · México · Canadá"
+                selected={campeonatoId === camp.id}
+                onClick={() => setCampeonatoId(camp.id)}
+              />
+            ))}
+          </div>
 
-          {!loadingCamps && campOptions.length === 0 && (
+          {campOptions.length === 0 && (
             <div className="glass rounded-2xl p-6 text-center text-sm text-muted-foreground space-y-3">
               <p>Nenhum campeonato oficial disponível no momento.</p>
-              <p className="text-xs">Os campeonatos do sistema aparecem aqui quando forem cadastrados.</p>
+              <p className="text-xs">Verifique a configuração do catálogo oficial.</p>
             </div>
           )}
 
@@ -195,48 +343,124 @@ export function CriarBolaoWizard({
 
       {passo === 2 && (
         <>
-          <WorldCup2026Banner compact />
           <div>
             <h1 className="font-display text-xl font-bold">Escolha o jogo</h1>
-            <p className="text-muted-foreground mt-1 text-sm">{selectedCamp?.nome ?? "Campeonato"}</p>
           </div>
-
-          {loadingMatches && (
-            <p className="text-sm text-muted-foreground text-center py-4">Carregando jogos...</p>
-          )}
 
           {error && (
             <div className="glass rounded-2xl p-4 text-center text-sm text-red-400">{error}</div>
           )}
 
-          {!loadingMatches && !error && matches.length === 0 && (
+          {!error && matches.length === 0 && (
             <div className="glass rounded-2xl p-6 text-center text-sm text-muted-foreground space-y-3">
               <p>Nenhum jogo neste campeonato oficial.</p>
-              <p className="text-xs">Escolha outro campeonato ou rode o seed da Copa no Supabase.</p>
+              <p className="text-xs">Verifique o catálogo ou rode o seed da Copa no Supabase.</p>
             </div>
           )}
 
-          <div className="space-y-2">
-            {matches.map((m) => (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => scrollDays("left")}
+              className="h-8 w-8 shrink-0 rounded-full border border-border bg-background/40 text-foreground"
+              aria-label="Voltar datas"
+            >
+              <ChevronLeft className="mx-auto size-4" />
+            </button>
+            <div
+              ref={dayChipsRef}
+              className="flex flex-1 gap-2 overflow-x-auto pb-1 scrollbar-none"
+            >
               <button
-                key={m.id}
                 type="button"
-                onClick={() => setMatchId(m.id)}
-                className={`w-full rounded-2xl p-3.5 flex items-center justify-between border transition ${
-                  matchId === m.id ? "border-primary/60 bg-primary/10" : "glass border-border"
+                onClick={() => setSelectedDayKey("all")}
+                data-day-chip="all"
+                className={`h-8 shrink-0 rounded-full px-3 text-xs font-semibold transition ${
+                  selectedDayKey === "all"
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border bg-background/40 text-foreground"
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <TeamFlag code={m.homeCode} escudoUrl={m.homeEscudo} teamName={m.home} size="sm" />
-                  <div className="text-left min-w-0">
-                    <div className="font-semibold text-sm truncate">{m.home} × {m.away}</div>
-                    <div className="text-xs text-muted-foreground">{m.date}</div>
-                  </div>
-                  <TeamFlag code={m.awayCode} escudoUrl={m.awayEscudo} teamName={m.away} size="sm" />
-                </div>
-                {matchId === m.id && <Check className="size-5 text-primary shrink-0" />}
+                Todas as datas
               </button>
-            ))}
+              {dayMeta.map(({ dayKey, openCount, total }) => {
+                const hasOpenGames = openCount > 0;
+                return (
+                  <button
+                    key={dayKey}
+                    type="button"
+                    onClick={() => setSelectedDayKey(dayKey)}
+                    data-day-chip={dayKey}
+                    className={`h-8 shrink-0 rounded-full px-3 text-xs font-semibold transition ${
+                      selectedDayKey === dayKey
+                        ? "bg-primary text-primary-foreground"
+                        : hasOpenGames
+                          ? "border border-primary/50 bg-primary/10 text-primary"
+                          : "border border-border bg-background/40 text-foreground"
+                    }`}
+                    title={
+                      hasOpenGames
+                        ? `${openCount} jogo(s) em aberto`
+                        : `Todos os ${total} jogo(s) encerrados`
+                    }
+                  >
+                    {formatDayLabel(dayKey)}
+                    {hasOpenGames ? ` • ${openCount}` : ""}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={() => scrollDays("right")}
+              className="h-8 w-8 shrink-0 rounded-full border border-border bg-background/40 text-foreground"
+              aria-label="Avançar datas"
+            >
+              <ChevronRight className="mx-auto size-4" />
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {matches.length > 0 && matchesForDay.length === 0 && (
+              <div className="glass rounded-2xl p-4 text-center text-sm text-muted-foreground">
+                Nenhum jogo para a data selecionada.
+              </div>
+            )}
+            {matchesForDay.map((m) =>
+              (() => {
+                const isClosed = isMatchClosed(m);
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => {
+                      setError(null);
+                      setMatchId(m.id);
+                    }}
+                    className={`relative w-full rounded-2xl p-3.5 border transition ${
+                      matchId === m.id ? "border-primary/60 bg-primary/10" : "glass border-border"
+                    }`}
+                  >
+                    <div className="mx-auto flex w-full max-w-md items-center justify-center gap-3">
+                      <TeamFlag code={m.homeCode} teamName={m.home} size="sm" />
+                      <div className="min-w-0 text-center">
+                        <div className="font-semibold text-sm truncate">
+                          {m.home} × {m.away}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {m.date}
+                          {isClosed ? " · Encerrado" : ""}
+                        </div>
+                      </div>
+                      <TeamFlag code={m.awayCode} teamName={m.away} size="sm" />
+                    </div>
+                    {matchId === m.id && (
+                      <Check className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-primary shrink-0" />
+                    )}
+                  </button>
+                );
+              })(),
+            )}
           </div>
 
           <div className="flex gap-2">
@@ -244,9 +468,9 @@ export function CriarBolaoWizard({
               <ChevronLeft className="size-5" /> Voltar
             </PrimaryButton>
             <PrimaryButton
-              onClick={() => goTo(3)}
+              onClick={handleContinueFromMatchStep}
               variant="primary"
-              className={`flex-[2] ${!matchId ? "opacity-50 pointer-events-none" : ""}`}
+              className={`flex-[2] ${!matchId || selectedMatchClosed ? "opacity-50 pointer-events-none" : ""}`}
             >
               Continuar <ChevronRight className="size-5" />
             </PrimaryButton>
@@ -257,12 +481,14 @@ export function CriarBolaoWizard({
       {passo === 3 && (
         <>
           {selectedMatch && (
-            <div className="rounded-2xl glass p-4 flex items-center gap-3">
-              <TeamFlag code={selectedMatch.homeCode} escudoUrl={selectedMatch.homeEscudo} teamName={selectedMatch.home} size="sm" />
-              <div className="flex-1 font-semibold text-sm truncate">
+            <div className="rounded-2xl glass p-4">
+              <div className="mx-auto flex w-full max-w-md items-center justify-center gap-3">
+              <TeamFlag code={selectedMatch.homeCode} teamName={selectedMatch.home} size="sm" />
+                <div className="max-w-[240px] text-center font-semibold text-sm truncate">
                 {selectedMatch.home} × {selectedMatch.away}
               </div>
-              <TeamFlag code={selectedMatch.awayCode} escudoUrl={selectedMatch.awayEscudo} teamName={selectedMatch.away} size="sm" />
+              <TeamFlag code={selectedMatch.awayCode} teamName={selectedMatch.away} size="sm" />
+              </div>
             </div>
           )}
 
@@ -291,7 +517,11 @@ export function CriarBolaoWizard({
                 className="chip"
                 style={
                   String(stake) === v
-                    ? { background: "var(--gradient-green)", color: "var(--primary-foreground)", border: "none" }
+                    ? {
+                        background: "var(--gradient-green)",
+                        color: "var(--primary-foreground)",
+                        border: "none",
+                      }
                     : undefined
                 }
               >
@@ -306,38 +536,46 @@ export function CriarBolaoWizard({
           />
 
           <div>
-            <h2 className="font-display font-semibold mb-3 text-sm text-muted-foreground">Mais opções</h2>
+            <h2 className="font-display font-semibold mb-3 text-sm text-muted-foreground">
+              Mais opções
+            </h2>
             <div className="space-y-2">
-          <SettingsToggle
-            icon={<Users className="size-4" />}
-            label="Mostrar participantes"
-            sub="Todos veem quem está participando"
-            value={settings.participantsVisible}
-            onChange={(v) => setSettings((s) => ({ ...s, participantsVisible: v }))}
-          />
-          <SettingsToggle
-            icon={settings.showWinningNow ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
-            label="Ranking ao vivo"
-            sub="Mostrar quem está ganhando em tempo real"
-            value={settings.showWinningNow}
-            onChange={(v) => setSettings((s) => ({ ...s, showWinningNow: v }))}
-          />
-          <FormField label="Taxa da plataforma (%)">
-            <input
-              value={String(settings.taxaPercent)}
-              onChange={(e) => {
-                const raw = e.target.value.replace(/\D/g, "");
-                const next = raw === "" ? 0 : Math.min(100, Number(raw));
-                setSettings((s) => ({ ...s, taxaPercent: next }));
-              }}
-              inputMode="numeric"
-              className="w-full bg-transparent outline-none font-display text-2xl font-bold tabular-nums"
-              placeholder="0"
-            />
-          </FormField>
-          <p className="text-xs text-muted-foreground -mt-2 px-1">
-            0 = sem taxa. O prêmio (arrecadado − taxa) vai para quem vencer.
-          </p>
+              <SettingsToggle
+                icon={<Users className="size-4" />}
+                label="Mostrar participantes"
+                sub="Todos veem quem está participando"
+                value={settings.participantsVisible}
+                onChange={(v) => setSettings((s) => ({ ...s, participantsVisible: v }))}
+              />
+              <SettingsToggle
+                icon={
+                  settings.showWinningNow ? (
+                    <Eye className="size-4" />
+                  ) : (
+                    <EyeOff className="size-4" />
+                  )
+                }
+                label="Ranking ao vivo"
+                sub="Mostrar quem está ganhando em tempo real"
+                value={settings.showWinningNow}
+                onChange={(v) => setSettings((s) => ({ ...s, showWinningNow: v }))}
+              />
+              <FormField label="Taxa da plataforma (%)">
+                <input
+                  value={String(settings.taxaPercent)}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, "");
+                    const next = raw === "" ? 0 : Math.min(100, Number(raw));
+                    setSettings((s) => ({ ...s, taxaPercent: next }));
+                  }}
+                  inputMode="numeric"
+                  className="w-full bg-transparent outline-none font-display text-2xl font-bold tabular-nums"
+                  placeholder="0"
+                />
+              </FormField>
+              <p className="text-xs text-muted-foreground -mt-2 px-1">
+                0 = sem taxa. O prêmio (arrecadado − taxa) vai para quem vencer.
+              </p>
             </div>
           </div>
 
@@ -360,10 +598,12 @@ export function CriarBolaoWizard({
         <>
           {selectedMatch && (
             <div className="rounded-2xl glass p-4 space-y-2">
-              <div className="flex items-center gap-3">
-                <TeamFlag code={selectedMatch.homeCode} escudoUrl={selectedMatch.homeEscudo} teamName={selectedMatch.home} size="sm" />
-                <div className="flex-1 font-semibold text-sm">{selectedMatch.home} × {selectedMatch.away}</div>
-                <TeamFlag code={selectedMatch.awayCode} escudoUrl={selectedMatch.awayEscudo} teamName={selectedMatch.away} size="sm" />
+              <div className="mx-auto flex w-full max-w-md items-center justify-center gap-3">
+                <TeamFlag code={selectedMatch.homeCode} teamName={selectedMatch.home} size="sm" />
+                <div className="max-w-[240px] text-center font-semibold text-sm">
+                  {selectedMatch.home} × {selectedMatch.away}
+                </div>
+                <TeamFlag code={selectedMatch.awayCode} teamName={selectedMatch.away} size="sm" />
               </div>
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div className="rounded-xl bg-surface-2/60 p-2.5">
@@ -372,7 +612,9 @@ export function CriarBolaoWizard({
                 </div>
                 <div className="rounded-xl bg-surface-2/60 p-2.5">
                   <div className="text-muted-foreground">Palpites</div>
-                  <div className="font-semibold">{settings.exclusiveScore ? "Exclusivo" : "Repetido"}</div>
+                  <div className="font-semibold">
+                    {settings.exclusiveScore ? "Exclusivo" : "Repetido"}
+                  </div>
                 </div>
                 <div className="rounded-xl bg-surface-2/60 p-2.5">
                   <div className="text-muted-foreground">Taxa</div>
@@ -383,7 +625,8 @@ export function CriarBolaoWizard({
               </div>
               {selectedCamp && (
                 <div className="text-xs text-muted-foreground">
-                  Campeonato: <span className="text-foreground font-medium">{selectedCamp.nome}</span>
+                  Campeonato:{" "}
+                  <span className="text-foreground font-medium">{selectedCamp.nome}</span>
                 </div>
               )}
             </div>
@@ -391,7 +634,9 @@ export function CriarBolaoWizard({
 
           <div>
             <h1 className="font-display text-xl font-bold">Criar bolão</h1>
-            <p className="text-muted-foreground mt-1 text-sm">Depois você compartilha o link com a galera.</p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Depois você compartilha o link com a galera.
+            </p>
           </div>
 
           {error && <p className="text-sm text-red-400 text-center">{error}</p>}
@@ -403,7 +648,7 @@ export function CriarBolaoWizard({
             <PrimaryButton
               onClick={handleCreate}
               variant="gold"
-              className={`flex-[2] ${creating || !matchId ? "opacity-50 pointer-events-none" : ""}`}
+              className={`flex-[2] ${creating || !matchId || selectedMatchClosed ? "opacity-50 pointer-events-none" : ""}`}
             >
               <Link2 className="size-5" /> {creating ? "Criando..." : "Criar bolão"}
             </PrimaryButton>

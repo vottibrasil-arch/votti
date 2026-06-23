@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SignOutButton } from "@/components/auth-sign-out";
+import { TeamFlag } from "@/components/bolao/team-flag";
 import { useAuth } from "@/lib/auth/use-auth";
 import {
   checkSuperAdmin,
   deleteBolaoAdminAccount,
   getSuperAdminPanelData,
+  setOfficialCatalogMatchStatus,
   promoteBolaoAdminToSuperAdmin,
   setPropagandaRodapeVisivel,
   type SuperAdminPanelData,
@@ -15,7 +17,28 @@ import {
   updateBolaoAdminPassword,
 } from "@/lib/api/super-admin.server";
 import { formatMoney } from "@/lib/bolao";
-import { BarChart3, CalendarDays, Eye, EyeOff, HeartHandshake, KeyRound, Pencil, Search, ShieldCheck, ShieldPlus, Trash2, UserCheck, Users } from "lucide-react";
+import {
+  groupCatalogByGrupo,
+  WORLD_CUP_2026_CATALOG,
+  type OfficialCatalogMatch,
+} from "@/lib/bolao/official-catalog";
+import { teamNameToCode } from "@/lib/bolao/team-codes";
+import { getOfficialCatalogStatusMap } from "@/lib/api/matches-list.server";
+import {
+  BarChart3,
+  CalendarDays,
+  Eye,
+  EyeOff,
+  HeartHandshake,
+  KeyRound,
+  Pencil,
+  Search,
+  ShieldCheck,
+  ShieldPlus,
+  Trash2,
+  UserCheck,
+  Users,
+} from "lucide-react";
 
 type SuperAdminTab = "dashboard" | "jogos" | "apoiadores" | "participantes" | "usuarios";
 
@@ -34,6 +57,23 @@ function formatDate(iso: string | null) {
   });
 }
 
+function toLocalDayKey(value: string | Date) {
+  const d = typeof value === "string" ? new Date(value) : value;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function formatDayLabel(dayKey: string) {
+  const date = new Date(`${dayKey}T00:00:00`);
+  return date.toLocaleDateString("pt-BR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
 function displaySystemUserName(user: { nome: string | null; email: string | null }) {
   if (user.nome?.trim()) return user.nome.trim();
   if (user.email) {
@@ -47,14 +87,13 @@ function displaySystemUserEmail(user: { email: string | null }) {
   return user.email?.trim() || "E-mail não disponível";
 }
 
-function displaySystemUserSubtitle(user: {
-  boloes_count: number;
-  created_at: string | null;
-}) {
+function displaySystemUserSubtitle(user: { boloes_count: number; created_at: string | null }) {
   const parts: string[] = [];
   if (user.created_at) parts.push(`cadastro ${formatDate(user.created_at)}`);
   if (user.boloes_count > 0) {
-    parts.push(`${user.boloes_count} bolão${user.boloes_count === 1 ? "" : "ões"} criado${user.boloes_count === 1 ? "" : "s"}`);
+    parts.push(
+      `${user.boloes_count} bolão${user.boloes_count === 1 ? "" : "ões"} criado${user.boloes_count === 1 ? "" : "s"}`,
+    );
   }
   return parts.join(" · ") || "Usuário do sistema";
 }
@@ -74,7 +113,11 @@ function getUserRoleLabel(user: SuperAdminPanelData["usuarios"][number]) {
 
 function UserRoleBadge({ user }: { user: SuperAdminPanelData["usuarios"][number] }) {
   if (user.is_super_admin) {
-    return <span className="chip text-[10px] border-primary/40 bg-primary/15 text-primary">Super ADM</span>;
+    return (
+      <span className="chip text-[10px] border-primary/40 bg-primary/15 text-primary">
+        Super ADM
+      </span>
+    );
   }
   if (user.boloes_count > 0) {
     return <span className="chip text-[10px] border-gold/40 bg-gold/10 text-gold">ADM</span>;
@@ -217,7 +260,9 @@ function SuperAdmin() {
 
   const handleDeleteAccount = (admin: SuperAdminPanelData["usuarios"][number]) => {
     const label = `${displaySystemUserName(admin)} (${displaySystemUserEmail(admin)})`;
-    const ok = window.confirm(`Excluir a conta ${label}? Essa ação é perigosa e não pode ser desfeita.`);
+    const ok = window.confirm(
+      `Excluir a conta ${label}? Essa ação é perigosa e não pode ser desfeita.`,
+    );
     if (!ok) return;
 
     void runAdminAction(`delete-${admin.id}`, async (token) => {
@@ -229,7 +274,9 @@ function SuperAdmin() {
   const handleTogglePropaganda = (visivel: boolean) => {
     void runAdminAction("propaganda-toggle", async (token) => {
       await setPropagandaFn({ data: { accessToken: token, visivel } });
-      return visivel ? "Espaço do apoiador visível no rodapé." : "Espaço do apoiador oculto no rodapé.";
+      return visivel
+        ? "Espaço do apoiador visível no rodapé."
+        : "Espaço do apoiador oculto no rodapé.";
     });
   };
 
@@ -250,7 +297,9 @@ function SuperAdmin() {
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             <ShieldCheck className="size-4" /> Super ADM
           </div>
-          <h1 className="mt-3 font-display text-3xl font-bold md:text-4xl">Painel Administrativo</h1>
+          <h1 className="mt-3 font-display text-3xl font-bold md:text-4xl">
+            Painel Administrativo
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Administração simples do Palpite Gol usando o mesmo login Supabase.
           </p>
@@ -265,19 +314,39 @@ function SuperAdmin() {
       </header>
 
       <nav className="mt-5 grid grid-cols-2 gap-2 md:flex">
-        <AdminTabButton active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon={<BarChart3 className="size-4" />}>
+        <AdminTabButton
+          active={tab === "dashboard"}
+          onClick={() => setTab("dashboard")}
+          icon={<BarChart3 className="size-4" />}
+        >
           Dashboard
         </AdminTabButton>
-        <AdminTabButton active={tab === "jogos"} onClick={() => setTab("jogos")} icon={<CalendarDays className="size-4" />}>
+        <AdminTabButton
+          active={tab === "jogos"}
+          onClick={() => setTab("jogos")}
+          icon={<CalendarDays className="size-4" />}
+        >
           Jogos Oficiais
         </AdminTabButton>
-        <AdminTabButton active={tab === "apoiadores"} onClick={() => setTab("apoiadores")} icon={<HeartHandshake className="size-4" />}>
+        <AdminTabButton
+          active={tab === "apoiadores"}
+          onClick={() => setTab("apoiadores")}
+          icon={<HeartHandshake className="size-4" />}
+        >
           Apoiadores
         </AdminTabButton>
-        <AdminTabButton active={tab === "participantes"} onClick={() => setTab("participantes")} icon={<UserCheck className="size-4" />}>
+        <AdminTabButton
+          active={tab === "participantes"}
+          onClick={() => setTab("participantes")}
+          icon={<UserCheck className="size-4" />}
+        >
           Participantes
         </AdminTabButton>
-        <AdminTabButton active={tab === "usuarios"} onClick={() => setTab("usuarios")} icon={<Users className="size-4" />}>
+        <AdminTabButton
+          active={tab === "usuarios"}
+          onClick={() => setTab("usuarios")}
+          icon={<Users className="size-4" />}
+        >
           Usuários
         </AdminTabButton>
       </nav>
@@ -302,7 +371,7 @@ function SuperAdmin() {
               onTogglePropaganda={handleTogglePropaganda}
             />
           )}
-          {tab === "jogos" && <JogosOficiais data={data} />}
+          {tab === "jogos" && <JogosOficiais getAccessToken={getAccessToken} navigate={navigate} />}
           {tab === "apoiadores" && (
             <Apoiadores
               data={data}
@@ -351,7 +420,9 @@ function AdminTabButton({
       type="button"
       onClick={onClick}
       className={`h-11 rounded-2xl px-3 text-sm font-semibold transition flex items-center justify-center gap-2 md:px-4 ${
-        active ? "bg-primary text-primary-foreground" : "glass text-muted-foreground hover:text-foreground"
+        active
+          ? "bg-primary text-primary-foreground"
+          : "glass text-muted-foreground hover:text-foreground"
       }`}
     >
       {icon}
@@ -390,7 +461,9 @@ function EspacoApoiadorToggle({
         disabled={loading}
         onClick={() => onToggle(!visivel)}
         className={`h-10 rounded-xl px-4 text-sm font-semibold transition flex items-center justify-center gap-2 disabled:opacity-50 shrink-0 ${
-          visivel ? "bg-primary text-primary-foreground" : "glass text-muted-foreground hover:text-foreground"
+          visivel
+            ? "bg-primary text-primary-foreground"
+            : "glass text-muted-foreground hover:text-foreground"
         }`}
       >
         {loading ? "..." : visivel ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
@@ -454,18 +527,261 @@ function Dashboard({
   );
 }
 
-function JogosOficiais({ data }: { data: SuperAdminPanelData }) {
+type JogosOficiaisProps = {
+  getAccessToken: () => string | null;
+  navigate: ReturnType<typeof useNavigate>;
+};
+
+function JogosOficiais({ getAccessToken, navigate }: JogosOficiaisProps) {
+  const getStatusMapFn = useServerFn(getOfficialCatalogStatusMap);
+  const setStatusFn = useServerFn(setOfficialCatalogMatchStatus);
+  const [hidePassed, setHidePassed] = useState(false);
+  const [statusByMatchId, setStatusByMatchId] = useState<Record<string, string>>({});
+  const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [selectedDayKey, setSelectedDayKey] = useState<string>("all");
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadStatuses() {
+      try {
+        const token = getAccessToken();
+        const map = await getStatusMapFn({ data: { accessToken: token ?? undefined } });
+        if (!cancelled) setStatusByMatchId(map);
+      } catch (err) {
+        if (!cancelled) {
+          setStatusError(err instanceof Error ? err.message : "Erro ao carregar status oficial");
+        }
+      }
+    }
+    void loadStatuses();
+    return () => {
+      cancelled = true;
+    };
+  }, [getStatusMapFn, getAccessToken]);
+
+  const toggleEncerrado = async (match: OfficialCatalogMatch) => {
+    const token = getAccessToken();
+    if (!token) {
+      setStatusError("Sessão inválida. Faça login novamente.");
+      return;
+    }
+    const current = statusByMatchId[match.id] ?? "agendado";
+    const nextStatus = current === "encerrado" ? "agendado" : "encerrado";
+    setSavingMatchId(match.id);
+    setStatusError(null);
+    try {
+      await setStatusFn({
+        data: {
+          accessToken: token,
+          timeCasa: match.timeCasa,
+          timeFora: match.timeFora,
+          dataPartida: match.dataPartida,
+          status: nextStatus,
+        },
+      });
+      setStatusByMatchId((currentMap) => ({ ...currentMap, [match.id]: nextStatus }));
+    } catch (err) {
+      setStatusError(err instanceof Error ? err.message : "Erro ao atualizar status da partida");
+    } finally {
+      setSavingMatchId(null);
+    }
+  };
+
+  const now = Date.now();
+  const visibleMatches = hidePassed
+    ? WORLD_CUP_2026_CATALOG.filter((m) => {
+        const isManualClosed = (statusByMatchId[m.id] ?? "agendado") === "encerrado";
+        const hasPassed = new Date(m.dataPartida).getTime() < now;
+        return !isManualClosed && !hasPassed;
+      })
+    : WORLD_CUP_2026_CATALOG;
+  const availableDays = [
+    ...new Set(visibleMatches.map((m) => toLocalDayKey(m.dataPartida))),
+  ].sort();
+
+  useEffect(() => {
+    if (selectedDayKey !== "all" && !availableDays.includes(selectedDayKey)) {
+      setSelectedDayKey("all");
+    }
+    if (selectedDayKey === "all" && availableDays.length > 0) {
+      const todayKey = toLocalDayKey(new Date());
+      if (availableDays.includes(todayKey)) {
+        setSelectedDayKey(todayKey);
+      }
+    }
+  }, [availableDays, selectedDayKey]);
+
+  const matchesForDay =
+    selectedDayKey === "all"
+      ? visibleMatches
+      : visibleMatches.filter((m) => toLocalDayKey(m.dataPartida) === selectedDayKey);
+
+  const grupos = groupCatalogByGrupo(matchesForDay);
+
   return (
-    <Panel title="Jogos Oficiais">
-      <CompactList
-        empty="Nenhum jogo oficial encontrado."
-        items={data.jogosOficiais.map((jogo) => ({
-          title: `${jogo.casa} × ${jogo.fora}`,
-          subtitle: `${jogo.campeonato} · ${formatDate(jogo.data)}`,
-          chip: jogo.status,
-        }))}
-      />
-    </Panel>
+    <div className="space-y-6">
+      {statusError && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
+          {statusError}
+        </div>
+      )}
+      <Panel title="Catálogo oficial — Copa do Mundo 2026">
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Use este catálogo para escolher o jogo oficial do bolão. O botão de encerrar marca a
+            partida como encerrada no painel (sem apagar jogo ou bolão).
+          </p>
+          <label className="inline-flex items-center gap-2 text-sm text-foreground/90">
+            <input
+              type="checkbox"
+              checked={hidePassed}
+              onChange={(e) => setHidePassed(e.target.checked)}
+            />
+            Ocultar jogos que já passaram
+          </label>
+        </div>
+      </Panel>
+
+      <Panel title="Partidas do catálogo">
+        <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+          <button
+            type="button"
+            onClick={() => setSelectedDayKey("all")}
+            className={`h-8 shrink-0 rounded-full px-3 text-xs font-semibold transition ${
+              selectedDayKey === "all"
+                ? "bg-primary text-primary-foreground"
+                : "border border-border bg-background/40 text-foreground"
+            }`}
+          >
+            Todas as datas
+          </button>
+          {availableDays.map((dayKey) => (
+            <button
+              key={dayKey}
+              type="button"
+              onClick={() => setSelectedDayKey(dayKey)}
+              className={`h-8 shrink-0 rounded-full px-3 text-xs font-semibold transition ${
+                selectedDayKey === dayKey
+                  ? "bg-primary text-primary-foreground"
+                  : "border border-border bg-background/40 text-foreground"
+              }`}
+            >
+              {formatDayLabel(dayKey)}
+            </button>
+          ))}
+        </div>
+
+        {grupos.length === 0 ? (
+          <div className="rounded-2xl bg-surface/50 p-5 text-center text-sm text-muted-foreground">
+            Nenhuma partida para exibir com o filtro atual.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {grupos.map((grupo, index) => (
+              <div key={`${grupo.grupo}-${index}`} className="space-y-2">
+                <h3 className="px-1 text-xs font-bold uppercase tracking-wide text-gold">
+                  [{grupo.grupo}]
+                </h3>
+                {grupo.jogos.map((match) => (
+                  <div
+                    key={match.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
+                      navigate({
+                        to: "/create",
+                        search: { aba: "bolao", passo: 1, catalogMatchId: match.id },
+                      })
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        navigate({
+                          to: "/create",
+                          search: { aba: "bolao", passo: 1, catalogMatchId: match.id },
+                        });
+                      }
+                    }}
+                    className="rounded-2xl border border-border/70 bg-surface/40 p-3 sm:p-4 cursor-pointer hover:border-primary/40"
+                  >
+                    {(() => {
+                      const isManualClosed =
+                        (statusByMatchId[match.id] ?? "agendado") === "encerrado";
+                      const hasPassed = new Date(match.dataPartida).getTime() < now;
+                      const isClosed = isManualClosed || hasPassed;
+                      return (
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <TeamFlag
+                                code={teamNameToCode(match.timeCasa)}
+                                teamName={match.timeCasa}
+                                size="sm"
+                              />
+                              <div className="text-sm font-semibold truncate">
+                                {match.timeCasa} × {match.timeFora}
+                              </div>
+                              <TeamFlag
+                                code={teamNameToCode(match.timeFora)}
+                                teamName={match.timeFora}
+                                size="sm"
+                              />
+                              {isClosed && (
+                                <span className="chip text-[10px] border-red-400/30 text-red-400">
+                                  Encerrado
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {formatDate(match.dataPartida)}
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                navigate({
+                                  to: "/create",
+                                  search: { aba: "bolao", passo: 1, catalogMatchId: match.id },
+                                });
+                              }}
+                              className="h-9 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground transition"
+                            >
+                              Usar este jogo para o bolão
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void toggleEncerrado(match);
+                              }}
+                              disabled={savingMatchId === match.id}
+                              className={`h-9 rounded-xl px-3 text-xs font-semibold transition ${
+                                isManualClosed
+                                  ? "border border-primary/40 bg-primary/10 text-primary"
+                                  : "border border-border bg-background/40 text-foreground hover:bg-surface-2"
+                              }`}
+                            >
+                              {savingMatchId === match.id
+                                ? "Salvando..."
+                                : isManualClosed
+                                  ? "Reabrir no painel"
+                                  : "Marcar encerrado"}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
+    </div>
   );
 }
 
@@ -531,7 +847,10 @@ function Apoiadores({
           items={data.apoiadores.map((apoiador) => ({
             title: apoiador.nome,
             subtitle: `${apoiador.cidade || "Sem cidade"} · ${apoiador.mensagem || "Sem mensagem"} · ${formatDate(apoiador.created_at)}`,
-            chip: apoiador.valor != null ? formatMoney(Number(apoiador.valor)) : apoiador.status || "Apoio",
+            chip:
+              apoiador.valor != null
+                ? formatMoney(Number(apoiador.valor))
+                : apoiador.status || "Apoio",
           }))}
         />
       </Panel>
@@ -561,7 +880,8 @@ function Usuarios({
     <Panel title="Usuários do sistema">
       {data.usuarios.length === 0 ? (
         <div className="rounded-2xl bg-surface/50 p-5 text-center text-sm text-muted-foreground">
-          Nenhum usuário encontrado. Rode docs/supabase/super-admin-list-users.sql no Supabase e confirme que você está logado como Super ADM.
+          Nenhum usuário encontrado. Rode docs/supabase/super-admin-list-users.sql no Supabase e
+          confirme que você está logado como Super ADM.
         </div>
       ) : (
         <div className="space-y-4">
@@ -577,7 +897,8 @@ function Usuarios({
               />
             </div>
             <div className="text-xs text-muted-foreground sm:shrink-0">
-              {filteredUsers.length} de {data.usuarios.length} usuário{data.usuarios.length === 1 ? "" : "s"}
+              {filteredUsers.length} de {data.usuarios.length} usuário
+              {data.usuarios.length === 1 ? "" : "s"}
             </div>
           </div>
 
@@ -590,21 +911,27 @@ function Usuarios({
               {filteredUsers.map((usuario) => {
                 const label = displaySystemUserName(usuario);
                 return (
-                  <div key={usuario.id} className="rounded-2xl border border-border/70 bg-surface/40 p-4">
+                  <div
+                    key={usuario.id}
+                    className="rounded-2xl border border-border/70 bg-surface/40 p-4"
+                  >
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <div className="font-semibold">{label}</div>
                           <UserRoleBadge user={usuario} />
                         </div>
-                        <div className="mt-1 text-sm text-foreground/90 break-all">{displaySystemUserEmail(usuario)}</div>
+                        <div className="mt-1 text-sm text-foreground/90 break-all">
+                          {displaySystemUserEmail(usuario)}
+                        </div>
                         <div className="mt-1 text-xs text-muted-foreground">
                           {displaySystemUserSubtitle(usuario)}
                         </div>
                         {usuario.boloes_count > 0 && (
                           <div className="mt-2 flex flex-wrap gap-2">
                             <span className="chip text-[10px]">
-                              {usuario.boloes_count} bolão{usuario.boloes_count === 1 ? "" : "ões"} criado{usuario.boloes_count === 1 ? "" : "s"}
+                              {usuario.boloes_count} bolão{usuario.boloes_count === 1 ? "" : "ões"}{" "}
+                              criado{usuario.boloes_count === 1 ? "" : "s"}
                             </span>
                           </div>
                         )}
@@ -691,7 +1018,9 @@ function MoneyStatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="glass rounded-3xl p-5">
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-2 font-display text-2xl font-bold tabular-nums md:text-3xl">{formatMoney(value)}</div>
+      <div className="mt-2 font-display text-2xl font-bold tabular-nums md:text-3xl">
+        {formatMoney(value)}
+      </div>
     </div>
   );
 }
@@ -713,13 +1042,20 @@ function CompactList({
   empty: string;
 }) {
   if (items.length === 0) {
-    return <div className="rounded-2xl bg-surface/50 p-5 text-center text-sm text-muted-foreground">{empty}</div>;
+    return (
+      <div className="rounded-2xl bg-surface/50 p-5 text-center text-sm text-muted-foreground">
+        {empty}
+      </div>
+    );
   }
 
   return (
     <div className="divide-y divide-border/70 overflow-hidden rounded-2xl border border-border/70">
       {items.map((item, index) => (
-        <div key={`${item.title}-${index}`} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          key={`${item.title}-${index}`}
+          className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between"
+        >
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold">{item.title}</div>
             <div className="truncate text-xs text-muted-foreground">{item.subtitle}</div>

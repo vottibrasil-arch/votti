@@ -28,6 +28,11 @@ export const Route = createFileRoute("/create")({
     const modo: ModoCriacao = search.modo === "jogo-unico" ? "jogo-unico" : "campeonato";
     const campeonatoId = Number(search.campeonatoId);
     const partidaId = Number(search.partidaId);
+    const catalogMatchIdRaw = search.catalogMatchId;
+    const catalogMatchId =
+      typeof catalogMatchIdRaw === "string" && catalogMatchIdRaw.trim().length > 0
+        ? catalogMatchIdRaw.trim()
+        : undefined;
     return {
       aba,
       passo: passo as 1 | 2 | 3 | 4,
@@ -35,6 +40,7 @@ export const Route = createFileRoute("/create")({
       modo,
       campeonatoId: campeonatoId > 0 ? campeonatoId : undefined,
       partidaId: partidaId > 0 ? partidaId : undefined,
+      catalogMatchId,
     };
   },
   head: () => ({ meta: [{ title: "Palpite Gol — Campeonatos e Bolões" }] }),
@@ -57,7 +63,7 @@ function BolaoStepDots({ passo }: { passo: number }) {
 }
 
 function Create() {
-  const { aba, passo, etapa, modo, campeonatoId, partidaId } = Route.useSearch();
+  const { aba, passo, etapa, modo, campeonatoId, partidaId, catalogMatchId } = Route.useSearch();
   const navigate = useNavigate();
   const checkSuperAdminFn = useServerFn(checkSuperAdmin);
   const { user, loading, getAccessToken } = useAuth();
@@ -89,7 +95,8 @@ function Create() {
       setCheckingSuperAdmin(true);
       try {
         const result = await checkSuperAdminFn({ data: { accessToken: token } });
-        if (!cancelled && result.isSuperAdmin) {
+        const canOpenBolaoFromCatalog = aba === "bolao" && Boolean(catalogMatchId);
+        if (!cancelled && result.isSuperAdmin && !canOpenBolaoFromCatalog) {
           navigate({ to: "/super-admin", replace: true });
           return;
         }
@@ -104,7 +111,7 @@ function Create() {
     return () => {
       cancelled = true;
     };
-  }, [loading, navigate, user?.id]);
+  }, [loading, navigate, user?.id, aba, catalogMatchId]);
 
   useEffect(() => {
     if (aba === "campeonato" && !campeonatoId && !loading && user) {
@@ -121,10 +128,22 @@ function Create() {
     );
   }
 
-  const topBarBack = resolveCreateTopBarBack(aba, passo, etapa, modo, campeonatoId, partidaId);
+  const topBarBack = resolveCreateTopBarBack(
+    aba,
+    passo,
+    etapa,
+    modo,
+    campeonatoId,
+    partidaId,
+    catalogMatchId,
+  );
   const navActive: AppTab = aba === "campeonato" ? "meus" : aba;
   const campeonatoTitle =
-    aba === "campeonato" && partidaId ? "Configurar bolão" : aba === "campeonato" ? "Jogos do campeonato" : "Palpite Gol";
+    aba === "campeonato" && partidaId
+      ? "Configurar bolão"
+      : aba === "campeonato"
+        ? "Jogos do campeonato"
+        : "Palpite Gol";
 
   return (
     <Shell className="pb-32">
@@ -136,13 +155,7 @@ function Create() {
 
       {aba === "criar" && <CriarCampeonatoWizard etapa={etapa} modo={modo} />}
 
-      {aba === "bolao" && (
-        <CriarBolaoWizard
-          passo={passo}
-          prefillCampeonatoId={campeonatoId}
-          prefillPartidaId={partidaId}
-        />
-      )}
+      {aba === "bolao" && <CriarBolaoWizard passo={passo} prefillCatalogMatchId={catalogMatchId} />}
 
       {aba === "campeonato" && campeonatoId && (
         <CampeonatoJogosPanel campeonatoId={campeonatoId} partidaId={partidaId} />

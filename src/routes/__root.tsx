@@ -10,9 +10,40 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { ADSENSE_CLIENT, ADSENSE_SCRIPT_SRC } from "../lib/adsense";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SupportersFooter } from "../components/supporters-footer";
 import { DemoBolaoProvider } from "../lib/demo-bolao-store";
+
+const DEBUG_LOG_ENDPOINT = "http://127.0.0.1:7866/ingest/4638851f-adea-4848-b7b7-754b8f808572";
+const DEBUG_SESSION_ID = "789d0f";
+
+function sendClientDebugLog(payload: {
+  runId: string;
+  hypothesisId: string;
+  location: string;
+  message: string;
+  data: Record<string, unknown>;
+}) {
+  // #region agent log
+  fetch(DEBUG_LOG_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Debug-Session-Id": DEBUG_SESSION_ID,
+    },
+    body: JSON.stringify({
+      sessionId: DEBUG_SESSION_ID,
+      runId: payload.runId,
+      hypothesisId: payload.hypothesisId,
+      location: payload.location,
+      message: payload.message,
+      data: payload.data,
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+}
 
 function NotFoundComponent() {
   return (
@@ -80,6 +111,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#0d1f17" },
+      { name: "google-adsense-account", content: ADSENSE_CLIENT },
       { title: "Palpite Gol — o bolão em tempo real" },
       { name: "description", content: "Veja em tempo real quem leva o prêmio se o jogo acabar agora. Crie seu bolão da Copa em segundos." },
       { property: "og:title", content: "Palpite Gol — o bolão em tempo real" },
@@ -97,6 +129,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-icon", href: "/logo-full.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "preconnect", href: "https://pagead2.googlesyndication.com" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" },
     ],
   }),
@@ -111,6 +144,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="pt-BR">
       <head>
         <HeadContent />
+        <script async src={ADSENSE_SCRIPT_SRC} crossOrigin="anonymous" suppressHydrationWarning />
       </head>
       <body>
         {children}
@@ -122,6 +156,28 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    // #region agent log
+    sendClientDebugLog({
+      runId: "initial",
+      hypothesisId: "H6",
+      location: "src/routes/__root.tsx:159",
+      message: "Client app mounted with AdSense head config",
+      data: {
+        path: window.location.pathname,
+        hasAdSenseScriptTagInDom: Boolean(
+          document.querySelector(
+            'head script[src*="adsbygoogle.js?client=ca-pub-1870651771757279"]',
+          ),
+        ),
+        hasAdSenseMetaInDom: Boolean(
+          document.querySelector('head meta[name="google-adsense-account"]'),
+        ),
+      },
+    });
+    // #endregion
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

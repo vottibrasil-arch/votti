@@ -1,16 +1,29 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Heart } from "lucide-react";
+import { SupporterMonetizationCard } from "@/components/footer/supporter-monetization-card";
 import { getPublicApoiadoresData } from "@/lib/api/apoiadores.server";
+import { getFooterAdConfig } from "@/lib/footer-ad";
 import { SUPPORTERS, type Supporter } from "@/lib/bolao";
 
 import { DEMO_FLOW_PATHS } from "@/lib/demo-flow";
 
 const HIDE_ON = new Set<string>(["/", "/super-admin"]);
 const REFRESH_MS = 30_000;
+const ROTATION_MS = 6_000;
 const COPYRIGHT =
   "Palpite Gol · Feito para a galera que ama viver cada lance.";
+
+function toSupporterProfile(s: Supporter) {
+  return {
+    id: s.id,
+    name: s.name,
+    city: s.city,
+    initial: s.initial,
+    color: s.color,
+    message: s.message,
+  };
+}
 
 function CopyrightFooter() {
   return (
@@ -34,17 +47,20 @@ export function SupportersFooter() {
   const [idx, setIdx] = useState(0);
   const [visible, setVisible] = useState(true);
   const [supporters, setSupporters] = useState<Supporter[]>(SUPPORTERS);
+  const [adsenseFooterSlot, setAdsenseFooterSlot] = useState<string | null>(null);
 
   const loadFooterData = useCallback(async () => {
     try {
       const data = await getPublicDataFn();
       setVisible(data.propagandaRodapeVisivel);
+      setAdsenseFooterSlot(data.adsenseFooterSlot ?? null);
       if (data.apoiadores.length > 0) {
         setSupporters(data.apoiadores);
       }
     } catch {
       setVisible(true);
       setSupporters(SUPPORTERS);
+      setAdsenseFooterSlot(null);
     }
   }, [getPublicDataFn]);
 
@@ -60,56 +76,29 @@ export function SupportersFooter() {
   const rotation = useMemo(() => (supporters.length > 0 ? supporters : SUPPORTERS), [supporters]);
 
   useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % rotation.length), 30_000);
+    const t = setInterval(() => setIdx((i) => (i + 1) % rotation.length), ROTATION_MS);
     return () => clearInterval(t);
   }, [rotation.length]);
 
   if (HIDE_ON.has(pathname) || DEMO_FLOW_PATHS.has(pathname)) return null;
 
   if (!visible) return <CopyrightFooter />;
-  const s = rotation[idx % rotation.length];
+
+  const supporter = rotation[idx % rotation.length];
 
   return (
     <div
-      className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
-      style={{ background: "linear-gradient(180deg, transparent 0%, color-mix(in oklab, var(--background) 80%, transparent) 25%, var(--background) 70%)" }}
+      className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)] pointer-events-none"
+      style={{
+        background:
+          "linear-gradient(180deg, transparent 0%, color-mix(in oklab, var(--background) 90%, transparent) 30%, var(--background) 100%)",
+      }}
     >
-      <div className="mx-auto max-w-md px-3 pb-3">
-        <div className="flex items-center justify-between text-[11px] mb-1.5 px-1">
-          <span key={`msg-${s.id}`} className="text-muted-foreground truncate animate-rise">
-            💬 <span className="text-foreground/90 font-medium">{s.message}</span>
-          </span>
-          <Link to="/apoiar" className="inline-flex items-center gap-1 font-semibold text-primary shrink-0">
-            <Heart className="size-3 fill-current" /> Apoie o Palpite Gol
-          </Link>
-        </div>
-
-        <div className="rounded-2xl glass overflow-hidden grid grid-cols-[35%_65%]">
-          <div key={s.id} className="flex items-center gap-2 p-2 animate-rise border-r border-border/70">
-            <div
-              className="size-10 rounded-xl grid place-items-center font-display font-bold text-base shrink-0"
-              style={{ background: `linear-gradient(135deg, ${s.color}, color-mix(in oklab, ${s.color} 50%, var(--surface)))`, color: "white" }}
-            >
-              {s.initial}
-            </div>
-            <div className="min-w-0">
-              <div className="font-semibold text-xs truncate">{s.name}</div>
-              <div className="text-[10px] text-muted-foreground truncate">{s.city}</div>
-            </div>
-          </div>
-
-          <Link
-            to="/apoiar"
-            className="relative flex items-center justify-center px-3 py-2 overflow-hidden"
-            style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--gold) 22%, var(--surface)), color-mix(in oklab, var(--primary) 18%, var(--surface)))" }}
-          >
-            <div className="text-center">
-              <div className="text-[9px] uppercase tracking-[0.18em] text-gold font-bold">Espaço do apoiador</div>
-              <div className="font-display font-bold text-xs mt-0.5">Seu nome aqui ✨</div>
-              <div className="text-[10px] text-muted-foreground">A cada 30s um apoiador</div>
-            </div>
-          </Link>
-        </div>
+      <div className="mx-auto w-full max-w-md px-2 pb-2 pointer-events-auto md:max-w-2xl">
+        <SupporterMonetizationCard
+          supporter={toSupporterProfile(supporter)}
+          adConfig={getFooterAdConfig(undefined, adsenseFooterSlot)}
+        />
       </div>
     </div>
   );

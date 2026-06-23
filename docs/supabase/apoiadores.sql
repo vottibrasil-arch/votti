@@ -51,4 +51,50 @@ create policy "app_settings_select_propaganda"
   to anon, authenticated
   using (key = 'propaganda_rodape_visivel');
 
+-- Super ADM: leitura/escrita de todas as chaves (requer auth.uid() no client)
+-- Rode também docs/supabase/fix-api-settings-rls.sql para função is_active_super_admin().
+grant insert, update on public.app_settings to authenticated;
+
+drop policy if exists "app_settings_super_admin_select" on public.app_settings;
+create policy "app_settings_super_admin_select"
+  on public.app_settings
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.super_admins sa
+      where sa.user_id = auth.uid() and sa.ativo = true
+    )
+  );
+
+drop policy if exists "app_settings_super_admin_insert" on public.app_settings;
+create policy "app_settings_super_admin_insert"
+  on public.app_settings
+  for insert
+  to authenticated
+  with check (
+    exists (
+      select 1 from public.super_admins sa
+      where sa.user_id = auth.uid() and sa.ativo = true
+    )
+  );
+
+drop policy if exists "app_settings_super_admin_update" on public.app_settings;
+create policy "app_settings_super_admin_update"
+  on public.app_settings
+  for update
+  to authenticated
+  using (
+    exists (
+      select 1 from public.super_admins sa
+      where sa.user_id = auth.uid() and sa.ativo = true
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.super_admins sa
+      where sa.user_id = auth.uid() and sa.ativo = true
+    )
+  );
+
 commit;

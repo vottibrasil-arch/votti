@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const SIZES = {
   xs: "w-7 h-5",
@@ -50,14 +50,30 @@ function TeamInitialBadge({
 }
 
 /** Escudo do time, bandeira conhecida ou inicial do nome. */
-export function TeamFlag({ code, escudoUrl, teamName, size = "md", className = "" }: TeamFlagProps) {
+export function TeamFlag({
+  code,
+  escudoUrl,
+  teamName,
+  size = "md",
+  className = "",
+}: TeamFlagProps) {
   const [failedEscudo, setFailedEscudo] = useState(false);
-  const [failedFlag, setFailedFlag] = useState(false);
+  const [flagSourceIndex, setFlagSourceIndex] = useState(0);
 
   useEffect(() => {
     setFailedEscudo(false);
-    setFailedFlag(false);
+    setFlagSourceIndex(0);
   }, [code, escudoUrl, teamName]);
+
+  const flagSources = useMemo(() => {
+    if (!code || code === "xx") return [];
+    const normalizedCode = code.toLowerCase();
+    return [
+      `/flags/${normalizedCode}.png`,
+      `https://cdn.jsdelivr.net/gh/lipis/flag-icons/flags/4x3/${normalizedCode}.svg`,
+      `https://flagcdn.com/w80/${normalizedCode}.png`,
+    ];
+  }, [code]);
 
   if (escudoUrl && !failedEscudo) {
     return (
@@ -72,15 +88,17 @@ export function TeamFlag({ code, escudoUrl, teamName, size = "md", className = "
     );
   }
 
-  if (code && code !== "xx" && !failedFlag) {
+  const activeFlagSource = flagSources[flagSourceIndex];
+  if (activeFlagSource) {
     return (
       <img
-        src={`/flags/${code}.png`}
+        src={activeFlagSource}
         alt=""
         className={`${SIZES[size]} object-cover rounded-[4px] shadow-sm border border-white/10 ${className}`}
         loading="lazy"
         decoding="async"
-        onError={() => setFailedFlag(true)}
+        referrerPolicy="no-referrer"
+        onError={() => setFlagSourceIndex((current) => current + 1)}
       />
     );
   }

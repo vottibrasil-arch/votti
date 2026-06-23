@@ -9,6 +9,7 @@ export function resolveCreateTopBarBack(
   modo: ModoCriacao,
   campeonatoId?: number,
   partidaId?: number,
+  catalogMatchId?: string,
 ): Pick<TopBarProps, "back" | "backSearch" | "useHistoryBack" | "hideBack"> {
   if (aba === "campeonato") {
     if (partidaId && campeonatoId) {
@@ -33,6 +34,7 @@ export function resolveCreateTopBarBack(
         aba: "bolao",
         passo: (passo - 1) as 1 | 2 | 3 | 4,
         campeonatoId,
+        catalogMatchId,
       },
     };
   }

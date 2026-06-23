@@ -84,12 +84,14 @@ export function CriarBolaoPersonalConfig({
   if (step === 1) {
     return (
       <div className="space-y-5 animate-rise">
-        <div className="rounded-2xl glass p-4 flex items-center gap-3">
-          <TeamFlag code={match.homeCode} escudoUrl={match.homeEscudo} teamName={match.home} size="sm" />
-          <div className="flex-1 font-semibold text-sm truncate">
-            {match.home} × {match.away}
+        <div className="rounded-2xl glass p-4">
+          <div className="mx-auto flex w-full max-w-md items-center justify-center gap-3">
+            <TeamFlag code={match.homeCode} escudoUrl={match.homeEscudo} teamName={match.home} size="sm" />
+            <div className="max-w-[240px] text-center font-semibold text-sm truncate">
+              {match.home} × {match.away}
+            </div>
+            <TeamFlag code={match.awayCode} escudoUrl={match.awayEscudo} teamName={match.away} size="sm" />
           </div>
-          <TeamFlag code={match.awayCode} escudoUrl={match.awayEscudo} teamName={match.away} size="sm" />
         </div>
 
         <div>
@@ -195,9 +197,9 @@ export function CriarBolaoPersonalConfig({
   return (
     <div className="space-y-5 animate-rise">
       <div className="rounded-2xl glass p-4 space-y-2">
-        <div className="flex items-center gap-3">
+        <div className="mx-auto flex w-full max-w-md items-center justify-center gap-3">
           <TeamFlag code={match.homeCode} escudoUrl={match.homeEscudo} teamName={match.home} size="sm" />
-          <div className="flex-1 font-semibold text-sm">{match.home} × {match.away}</div>
+          <div className="max-w-[240px] text-center font-semibold text-sm">{match.home} × {match.away}</div>
           <TeamFlag code={match.awayCode} escudoUrl={match.awayEscudo} teamName={match.away} size="sm" />
         </div>
         <div className="grid grid-cols-3 gap-2 text-xs">
