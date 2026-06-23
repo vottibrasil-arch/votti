@@ -50,13 +50,14 @@ export function FooterAdSlot({ config, advertiseHref }: Props) {
     config.provider !== "adsense" &&
     (config.provider === "none" ||
       ((config.provider === "monetag" || config.provider === "image") && !adLoaded));
+  const showAdSensePlaceholder = isAdSense && !adLoaded;
 
   return (
     <div className="relative flex h-full w-full items-center overflow-hidden">
       {isAdSense ? (
         <div
           ref={containerRef}
-          className="flex h-full w-full items-center justify-center px-1.5"
+          className="relative flex h-full w-full items-center justify-center px-1.5"
           aria-label="Anúncio"
         >
           {hasSlot ? (
@@ -71,6 +72,13 @@ export function FooterAdSlot({ config, advertiseHref }: Props) {
           ) : (
             <div className="h-full min-h-[92px] w-full md:min-h-[80px]" aria-hidden />
           )}
+          {showAdSensePlaceholder ? (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <span className="rounded-full border border-border/50 bg-background/60 px-3 py-1 text-[11px] text-muted-foreground backdrop-blur-sm">
+                Espaço reservado para anúncio
+              </span>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

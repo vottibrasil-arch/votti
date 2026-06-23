@@ -20,13 +20,13 @@ export function SupporterMonetizationCard({
         <a
           href={advertiseHref}
           key={supporter.id}
-          className="min-h-0 w-[138px] shrink-0 animate-rise border-r border-border/40 md:w-[172px]"
+          className="min-h-0 basis-[35%] shrink-0 animate-rise border-r border-border/40"
           aria-label="Abrir contribuicao via Pix"
         >
           <SupporterProfilePanel supporter={supporter} />
         </a>
 
-        <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-[color-mix(in_oklab,var(--surface-2)_60%,transparent)]">
+        <div className="relative min-h-0 min-w-0 basis-[65%] overflow-hidden bg-[color-mix(in_oklab,var(--surface-2)_60%,transparent)]">
           <FooterAdSlot config={resolvedAd} advertiseHref={advertiseHref} />
         </div>
       </div>
