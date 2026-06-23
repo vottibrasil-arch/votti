@@ -50,35 +50,23 @@ export function FooterAdSlot({ config, advertiseHref }: Props) {
     config.provider !== "adsense" &&
     (config.provider === "none" ||
       ((config.provider === "monetag" || config.provider === "image") && !adLoaded));
-  const showAdSensePlaceholder = isAdSense && !adLoaded;
 
   return (
     <div className="relative flex h-full w-full items-center overflow-hidden">
       {isAdSense ? (
         <div
           ref={containerRef}
-          className="relative flex h-full w-full items-center justify-center px-1.5"
+          className="flex h-full w-full items-center justify-center px-1.5"
           aria-label="Anúncio"
         >
-          {hasSlot ? (
-            <ins
-              className="adsbygoogle block h-full min-h-[92px] w-full overflow-hidden md:min-h-[80px]"
-              style={{ display: "block", width: "100%", height: "100%" }}
-              data-ad-client={ADSENSE_CLIENT}
-              data-ad-slot={config.adsenseSlot}
-              data-ad-format={config.adsenseFormat ?? "horizontal"}
-              data-full-width-responsive="true"
-            />
-          ) : (
-            <div className="h-full min-h-[92px] w-full md:min-h-[80px]" aria-hidden />
-          )}
-          {showAdSensePlaceholder ? (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <span className="rounded-full border border-border/50 bg-background/60 px-3 py-1 text-[11px] text-muted-foreground backdrop-blur-sm">
-                Espaço reservado para anúncio
-              </span>
-            </div>
-          ) : null}
+          <ins
+            className="adsbygoogle block h-full min-h-[92px] w-full overflow-hidden md:min-h-[80px]"
+            style={{ display: "block", width: "100%", height: "100%" }}
+            data-ad-client={ADSENSE_CLIENT}
+            data-ad-slot={config.adsenseSlot}
+            data-ad-format={config.adsenseFormat ?? "horizontal"}
+            data-full-width-responsive="true"
+          />
         </div>
       ) : null}
 
