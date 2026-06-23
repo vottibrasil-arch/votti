@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { injectAdSenseVerification } from "./lib/adsense";
+import { processMercadoPagoWebhook } from "./lib/api/mercadopago.server";
 
 const DEBUG_LOG_ENDPOINT = "http://127.0.0.1:7866/ingest/4638851f-adea-4848-b7b7-754b8f808572";
 const DEBUG_SESSION_ID = "789d0f";
@@ -149,6 +150,24 @@ function applyDevicePermissionsPolicy(response: Response): Response {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/mercadopago/webhook") {
+      try {
+        const rawBody = await request.text();
+        const result = await processMercadoPagoWebhook({
+          url,
+          headers: request.headers,
+          rawBody,
+        });
+        if (!result.ok && result.reason === "invalid_signature") {
+          return new Response("invalid signature", { status: 401 });
+        }
+        return new Response("ok", { status: 200 });
+      } catch (error) {
+        console.error("[mercadopago webhook] erro:", error);
+        return new Response("error", { status: 500 });
+      }
+    }
+
     const userAgent = request.headers.get("user-agent") ?? "";
     const accept = request.headers.get("accept") ?? "";
 

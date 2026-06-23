@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Supporter } from "@/lib/bolao";
 import { getSupabaseAdmin } from "./supabase.server";
+import { createMercadoPagoPixOrder, getMercadoPagoPublicKey } from "./mercadopago.server";
 
 const SUPPORTER_COLORS = [
   "oklch(0.55 0.18 150)",
@@ -115,21 +116,62 @@ export const getPublicApoiadoresData = createServerFn({ method: "POST" }).handle
 
 export const createApoio = createServerFn({ method: "POST" })
   .validator((data: unknown) => createApoioInput.parse(data))
-  .handler(async ({ data }): Promise<{ ok: true }> => {
+  .handler(async ({ data }): Promise<{
+    ok: true;
+    apoioId: string;
+    paymentId: string;
+    status: string;
+    qrCode: string | null;
+    qrCodeBase64: string | null;
+    ticketUrl: string | null;
+    publicKey: string | null;
+  }> => {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("apoiadores").insert({
-      nome: data.nome,
-      cidade: data.cidade || null,
-      mensagem: data.mensagem || null,
-      valor: data.valor,
-      status: "ativo",
-    });
+    const { data: inserted, error } = await supabase
+      .from("apoiadores")
+      .insert({
+        nome: data.nome,
+        cidade: data.cidade || null,
+        mensagem: data.mensagem || null,
+        valor: data.valor,
+        status: "pendente",
+      })
+      .select("id")
+      .single();
 
-    if (error) {
-      throw new Error(`Erro ao registrar apoio: ${error.message}`);
+    if (error || !inserted?.id) {
+      throw new Error(`Erro ao registrar apoio: ${error?.message ?? "sem id retornado"}`);
     }
 
-    return { ok: true };
+    const appUrl =
+      (typeof import.meta !== "undefined" ? import.meta.env?.VITE_APP_URL : undefined) ||
+      process.env.VITE_APP_URL ||
+      process.env.APP_URL ||
+      "";
+    const webhookUrl = appUrl.trim() ? `${appUrl.replace(/\/$/, "")}/api/mercadopago/webhook` : undefined;
+
+    const pixOrder = await createMercadoPagoPixOrder({
+      externalReference: inserted.id,
+      description: `Apoio Palpite Gol · ${data.nome}`,
+      amount: data.valor,
+      payer: {
+        email: "pagamento@palpitegol.com",
+        firstName: data.nome.slice(0, 60),
+        lastName: "Apoiador",
+      },
+      webhookUrl,
+    });
+
+    return {
+      ok: true,
+      apoioId: inserted.id,
+      paymentId: pixOrder.paymentId,
+      status: pixOrder.status,
+      qrCode: pixOrder.qrCode,
+      qrCodeBase64: pixOrder.qrCodeBase64,
+      ticketUrl: pixOrder.ticketUrl,
+      publicKey: getMercadoPagoPublicKey() || null,
+    };
   });
 
 export { readPropagandaRodapeVisivel };

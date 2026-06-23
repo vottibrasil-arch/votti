@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Shell, TopBar, PrimaryButton } from "@/components/ui-kit";
 import { FormField } from "@/components/bolao/form-primitives";
 import { createApoio } from "@/lib/api/apoiadores.server";
-import { Heart, Camera, Check } from "lucide-react";
+import { Heart, Camera, Check, Copy } from "lucide-react";
 
 const FIXED_SUPPORT_VALUE = 2;
 const MAX_MESSAGE_LENGTH = 18;
@@ -20,6 +20,10 @@ function Apoiar() {
   const [city, setCity] = useState("");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
+  const [pixCode, setPixCode] = useState<string | null>(null);
+  const [pixQrBase64, setPixQrBase64] = useState<string | null>(null);
+  const [pixTicketUrl, setPixTicketUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const initial = (name.trim()[0] ?? "?").toUpperCase();
@@ -33,7 +37,7 @@ function Apoiar() {
     setLoading(true);
     setError(null);
     try {
-      await createApoioFn({
+      const result = await createApoioFn({
         data: {
           nome: name.trim(),
           cidade: city.trim() || undefined,
@@ -41,11 +45,25 @@ function Apoiar() {
           valor: FIXED_SUPPORT_VALUE,
         },
       });
+      setPixCode(result.qrCode);
+      setPixQrBase64(result.qrCodeBase64);
+      setPixTicketUrl(result.ticketUrl);
       setSent(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao registrar apoio.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const copyPixCode = async () => {
+    if (!pixCode) return;
+    try {
+      await navigator.clipboard.writeText(pixCode);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setError("Não foi possível copiar o código Pix.");
     }
   };
 
@@ -107,14 +125,53 @@ function Apoiar() {
           </div>
         )}
         {sent ? (
-          <div className="rounded-2xl bg-primary/15 border border-primary/40 p-4 flex items-center gap-3">
-            <div className="size-9 rounded-full bg-primary/20 grid place-items-center text-primary shrink-0">
-              <Check className="size-5" />
+          <div className="rounded-2xl bg-primary/15 border border-primary/40 p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="size-9 rounded-full bg-primary/20 grid place-items-center text-primary shrink-0">
+                <Check className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold">Pix gerado com sucesso 💚</div>
+                <div className="text-sm text-muted-foreground">
+                  Depois da confirmação, seu apoio será ativado automaticamente.
+                </div>
+              </div>
             </div>
-            <div className="min-w-0">
-              <div className="font-semibold">Obrigado! 💚</div>
-              <div className="text-sm text-muted-foreground">Você entrou na fila dos apoiadores ativos.</div>
-            </div>
+            {pixQrBase64 ? (
+              <div className="rounded-xl border border-border/70 bg-background/40 p-3 flex justify-center">
+                <img
+                  src={`data:image/png;base64,${pixQrBase64}`}
+                  alt="QR Code Pix"
+                  className="size-44 rounded-lg"
+                />
+              </div>
+            ) : null}
+            {pixCode ? (
+              <div className="rounded-xl border border-border/70 bg-background/40 p-3 space-y-2">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Copia e cola Pix
+                </div>
+                <p className="text-xs break-all text-foreground/90">{pixCode}</p>
+                <button
+                  type="button"
+                  onClick={() => void copyPixCode()}
+                  className="w-full h-10 rounded-xl border border-border/70 bg-surface/50 inline-flex items-center justify-center gap-2 text-sm font-semibold"
+                >
+                  <Copy className="size-4" />
+                  {copied ? "Código copiado" : "Copiar código Pix"}
+                </button>
+              </div>
+            ) : null}
+            {pixTicketUrl ? (
+              <a
+                href={pixTicketUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-center text-xs text-primary underline"
+              >
+                Abrir cobrança no Mercado Pago
+              </a>
+            ) : null}
           </div>
         ) : (
           <PrimaryButton variant="gold" disabled={loading} onClick={() => void handleSubmit()}>
