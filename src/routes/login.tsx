@@ -32,6 +32,7 @@ function Login() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signupDone, setSignupDone] = useState(false);
+  const SUPER_ADMIN_CHECK_TIMEOUT_MS = 1800;
 
   const navigateAfterPermissionCheck = async (fallbackRedirect: string) => {
     try {
@@ -40,7 +41,12 @@ function Login() {
       const token = data.session?.access_token;
 
       if (token) {
-        const result = await checkSuperAdminFn({ data: { accessToken: token } });
+        const result = await Promise.race([
+          checkSuperAdminFn({ data: { accessToken: token } }),
+          new Promise<{ isSuperAdmin: false }>((resolve) =>
+            window.setTimeout(() => resolve({ isSuperAdmin: false }), SUPER_ADMIN_CHECK_TIMEOUT_MS),
+          ),
+        ]);
         if (result.isSuperAdmin) {
           navigate({ to: "/super-admin", replace: true });
           return;

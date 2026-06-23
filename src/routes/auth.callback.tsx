@@ -24,7 +24,12 @@ async function navigateAfterLogin(
   session: Session,
   checkSuperAdminFn: ReturnType<typeof useServerFn<typeof checkSuperAdmin>>,
 ) {
-  const result = await checkSuperAdminFn({ data: { accessToken: session.access_token } });
+  const result = await Promise.race([
+    checkSuperAdminFn({ data: { accessToken: session.access_token } }),
+    new Promise<{ isSuperAdmin: false }>((resolve) =>
+      window.setTimeout(() => resolve({ isSuperAdmin: false }), 1800),
+    ),
+  ]);
   if (result.isSuperAdmin) {
     navigate({ to: "/super-admin", replace: true });
     return;

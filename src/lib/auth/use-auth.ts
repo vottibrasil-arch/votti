@@ -46,7 +46,10 @@ async function signIn(email: string, password: string) {
   const { getSupabaseBrowser } = await import("@/lib/api/supabase-browser");
   const { data, error } = await getSupabaseBrowser().auth.signInWithPassword({ email, password });
   if (error) throw error;
-  if (data.user) await syncUserProfile(data.user);
+  if (data.user) {
+    // Não bloqueia o login por uma escrita auxiliar de perfil.
+    void syncUserProfile(data.user);
+  }
 }
 
 async function signUp(email: string, password: string, name?: string) {

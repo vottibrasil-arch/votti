@@ -6,6 +6,20 @@ import { injectAdSenseVerification } from "./lib/adsense";
 
 const DEBUG_LOG_ENDPOINT = "http://127.0.0.1:7866/ingest/4638851f-adea-4848-b7b7-754b8f808572";
 const DEBUG_SESSION_ID = "789d0f";
+const DEVICE_APIS_PERMISSION_POLICY = [
+  "bluetooth=()",
+  "camera=()",
+  "display-capture=()",
+  "geolocation=()",
+  "hid=()",
+  "identity-credentials-get=()",
+  "microphone=()",
+  "nfc=()",
+  "otp-credentials=()",
+  "publickey-credentials-get=()",
+  "serial=()",
+  "usb=()",
+].join(", ");
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -122,6 +136,16 @@ async function injectAdSenseIntoHtmlResponse(response: Response, request: Reques
   });
 }
 
+function applyDevicePermissionsPolicy(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set("Permission-Policy", DEVICE_APIS_PERMISSION_POLICY);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     const url = new URL(request.url);
@@ -163,7 +187,8 @@ export default {
       // #endregion
 
       const normalized = await normalizeCatastrophicSsrResponse(response);
-      return injectAdSenseIntoHtmlResponse(normalized, request);
+      const withAdSense = await injectAdSenseIntoHtmlResponse(normalized, request);
+      return applyDevicePermissionsPolicy(withAdSense);
     } catch (error) {
       console.error(error);
       // #region agent log
@@ -175,10 +200,11 @@ export default {
         data: { path: url.pathname, error: error instanceof Error ? error.message : String(error) },
       });
       // #endregion
-      return new Response(renderErrorPage(), {
+      const errorResponse = new Response(renderErrorPage(), {
         status: 500,
         headers: { "content-type": "text/html; charset=utf-8" },
       });
+      return applyDevicePermissionsPolicy(errorResponse);
     }
   },
 };
