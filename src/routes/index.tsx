@@ -43,39 +43,16 @@ function Home() {
           <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-medium text-muted-foreground">
             <a href="#como-funciona" className="hover:text-foreground transition">Como funciona</a>
             <Link to="/demonstracao" search={{ passo: 1 }} className="hover:text-foreground transition">Demonstração</Link>
-            <Link
-              to="/login"
-              search={{ redirect: "/create", mode: "login" }}
-              className="hover:text-foreground transition text-primary"
-            >
-              Entrar
-            </Link>
-            <Link
-              to="/login"
-              search={{ redirect: "/super-admin", mode: "login" }}
-              className="hover:text-foreground transition"
-            >
-              Admin
-            </Link>
           </nav>
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              to="/login"
-              search={{ redirect: "/super-admin", mode: "login" }}
-              className="inline-flex md:hidden items-center h-9 px-3 rounded-full border border-border text-[11px] font-semibold text-muted-foreground"
-            >
-              Admin
-            </Link>
-            <Link
-              to="/create"
-              className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-3.5 sm:px-5 rounded-full font-display font-semibold text-xs sm:text-sm"
-              style={{ background: "var(--gradient-gold)", color: "var(--gold-foreground)" }}
-            >
-              <span className="hidden sm:inline">Criar bolão</span>
-              <span className="sm:hidden">Criar</span>
-              <ArrowRight className="size-3.5 sm:size-4" />
-            </Link>
-          </div>
+          <Link
+            to="/create"
+            className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-3.5 sm:px-5 rounded-full font-display font-semibold text-xs sm:text-sm shrink-0"
+            style={{ background: "var(--gradient-gold)", color: "var(--gold-foreground)" }}
+          >
+            <span className="hidden sm:inline">Criar bolão</span>
+            <span className="sm:hidden">Criar</span>
+            <ArrowRight className="size-3.5 sm:size-4" />
+          </Link>
         </header>
 
         {/* Hero */}
