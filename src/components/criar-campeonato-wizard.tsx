@@ -240,7 +240,15 @@ function JogoListItem({ jogo, onRemove }: { jogo: JogoDraft; onRemove: () => voi
 
 
 
-export function CriarCampeonatoWizard({ etapa, modo }: { etapa: number; modo: ModoCriacao }) {
+export function CriarCampeonatoWizard({
+  etapa,
+  modo,
+  onRequireAuth,
+}: {
+  etapa: number;
+  modo: ModoCriacao;
+  onRequireAuth?: (mode?: "signup" | "login") => Promise<boolean>;
+}) {
 
   const navigate = useNavigate();
 
@@ -343,6 +351,8 @@ export function CriarCampeonatoWizard({ etapa, modo }: { etapa: number; modo: Mo
 
 
   const handleFinalize = async () => {
+    const authOk = onRequireAuth ? await onRequireAuth("signup") : true;
+    if (!authOk) return;
 
     const token = getAccessToken();
 
@@ -517,6 +527,13 @@ export function CriarCampeonatoWizard({ etapa, modo }: { etapa: number; modo: Mo
 
     }
 
+  };
+
+  const handleContinueStep = async () => {
+    if (etapa >= TOTAL_STEPS) return;
+    const authOk = onRequireAuth ? await onRequireAuth("signup") : true;
+    if (!authOk) return;
+    goEtapa(etapa + 1);
   };
 
 
@@ -781,7 +798,7 @@ export function CriarCampeonatoWizard({ etapa, modo }: { etapa: number; modo: Mo
 
           <PrimaryButton
 
-            onClick={() => goEtapa(etapa + 1)}
+            onClick={() => void handleContinueStep()}
 
             variant="primary"
 

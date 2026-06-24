@@ -190,7 +190,13 @@ function Create() {
           </section>
         ))}
 
-      {aba === "criar" && <CriarCampeonatoWizard etapa={etapa} modo={modo} />}
+      {aba === "criar" && (
+        <CriarCampeonatoWizard
+          etapa={etapa}
+          modo={modo}
+          onRequireAuth={(mode) => requestAuth(mode)}
+        />
+      )}
 
       {aba === "bolao" && (
         <CriarBolaoWizard
