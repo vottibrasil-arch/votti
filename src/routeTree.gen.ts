@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuperAdminRouteImport } from './routes/super-admin'
+import { Route as SupRouteImport } from './routes/sup'
 import { Route as ShareRouteImport } from './routes/share'
 import { Route as PickRouteImport } from './routes/pick'
 import { Route as MeusBoloesRouteImport } from './routes/meus-boloes'
@@ -30,6 +31,11 @@ import { Route as CampeonatoSlugAdminRouteImport } from './routes/campeonato.$sl
 const SuperAdminRoute = SuperAdminRouteImport.update({
   id: '/super-admin',
   path: '/super-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupRoute = SupRouteImport.update({
+  id: '/sup',
+  path: '/sup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShareRoute = ShareRouteImport.update({
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/meus-boloes': typeof MeusBoloesRoute
   '/pick': typeof PickRoute
   '/share': typeof ShareRoute
+  '/sup': typeof SupRoute
   '/super-admin': typeof SuperAdminRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/campeonato/$slug': typeof CampeonatoSlugRouteWithChildren
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/meus-boloes': typeof MeusBoloesRoute
   '/pick': typeof PickRoute
   '/share': typeof ShareRoute
+  '/sup': typeof SupRoute
   '/super-admin': typeof SuperAdminRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/campeonato/$slug': typeof CampeonatoSlugRouteWithChildren
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/meus-boloes': typeof MeusBoloesRoute
   '/pick': typeof PickRoute
   '/share': typeof ShareRoute
+  '/sup': typeof SupRoute
   '/super-admin': typeof SuperAdminRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/campeonato/$slug': typeof CampeonatoSlugRouteWithChildren
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/meus-boloes'
     | '/pick'
     | '/share'
+    | '/sup'
     | '/super-admin'
     | '/auth/callback'
     | '/campeonato/$slug'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/meus-boloes'
     | '/pick'
     | '/share'
+    | '/sup'
     | '/super-admin'
     | '/auth/callback'
     | '/campeonato/$slug'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/meus-boloes'
     | '/pick'
     | '/share'
+    | '/sup'
     | '/super-admin'
     | '/auth/callback'
     | '/campeonato/$slug'
@@ -245,6 +257,7 @@ export interface RootRouteChildren {
   MeusBoloesRoute: typeof MeusBoloesRoute
   PickRoute: typeof PickRoute
   ShareRoute: typeof ShareRoute
+  SupRoute: typeof SupRoute
   SuperAdminRoute: typeof SuperAdminRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   CampeonatoSlugRoute: typeof CampeonatoSlugRouteWithChildren
@@ -257,6 +270,13 @@ declare module '@tanstack/react-router' {
       path: '/super-admin'
       fullPath: '/super-admin'
       preLoaderRoute: typeof SuperAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sup': {
+      id: '/sup'
+      path: '/sup'
+      fullPath: '/sup'
+      preLoaderRoute: typeof SupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/share': {
@@ -400,6 +420,7 @@ const rootRouteChildren: RootRouteChildren = {
   MeusBoloesRoute: MeusBoloesRoute,
   PickRoute: PickRoute,
   ShareRoute: ShareRoute,
+  SupRoute: SupRoute,
   SuperAdminRoute: SuperAdminRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   CampeonatoSlugRoute: CampeonatoSlugRouteWithChildren,
