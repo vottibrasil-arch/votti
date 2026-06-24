@@ -2,9 +2,9 @@ import { resolveShareOrigin } from "@/lib/bolao/share-url";
 
 export function getAuthRedirectOrigin() {
   if (typeof window !== "undefined") {
-    return resolveShareOrigin(window.location.origin);
+    return window.location.origin;
   }
-  return import.meta.env.VITE_APP_URL ?? "http://localhost:8080";
+  return resolveShareOrigin(import.meta.env.VITE_APP_URL ?? "http://localhost:8080");
 }
 
 export function buildOAuthCallbackUrl(redirectPath = "/create") {

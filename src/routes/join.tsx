@@ -2,7 +2,6 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Shell, TopBar, PrimaryButton } from "@/components/ui-kit";
-import { GuestRankingScreen } from "@/components/bolao/guest-ranking-screen";
 import { MatchHeader } from "@/components/bolao/match-header";
 import { ScorePicker } from "@/components/bolao/score-picker";
 import { TakenScoresList } from "@/components/bolao/taken-scores-list";
@@ -193,24 +192,12 @@ function Join() {
     }
   };
 
-  const showLiveRanking =
-    activeBolao.isStarted &&
-    activeBolao.status !== "encerrado" &&
-    guest &&
-    guestEntryStatus === "approved";
-
   if (activeBolao.status === "encerrado") {
     return <Navigate to="/final" search={buildBolaoGuestFinalSearch(slug)} replace />;
   }
 
-  if (showLiveRanking) {
-    return (
-      <Shell className="pb-32">
-        <TopBar title="Ranking ao vivo" useHistoryBack />
-        {realtimeFallback}
-        <GuestRankingScreen slug={slug} bolao={activeBolao} />
-      </Shell>
-    );
+  if (activeBolao.isStarted) {
+    return <Navigate to="/live" search={{ bolao: slug }} replace />;
   }
 
   return (
@@ -220,11 +207,6 @@ function Join() {
       {realtimeFallback}
 
       <div className="space-y-5">
-        {activeBolao.isStarted && (
-          <div className="rounded-2xl border border-primary/40 bg-primary/10 p-4 text-sm text-center text-muted-foreground animate-rise">
-            O jogo já começou. Envie seu palpite e aguarde o organizador confirmar sua entrada.
-          </div>
-        )}
         <div className="rounded-3xl glass p-5 relative overflow-hidden animate-rise">
           <div className="absolute inset-0 opacity-50" style={{ background: "var(--gradient-pitch)" }} />
           <div className="relative">

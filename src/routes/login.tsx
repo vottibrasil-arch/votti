@@ -31,7 +31,7 @@ function Login() {
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [signupDone, setSignupDone] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const SUPER_ADMIN_CHECK_TIMEOUT_MS = 1800;
 
   const navigateAfterPermissionCheck = async (fallbackRedirect: string) => {
@@ -62,10 +62,12 @@ function Login() {
   useEffect(() => {
     setMode(initialMode);
     setError(null);
+    setNotice(null);
   }, [initialMode]);
 
   const onGoogle = async () => {
     setError(null);
+    setNotice(null);
     setGoogleLoading(true);
     try {
       const target = redirect.startsWith("/") ? redirect : "/create";
@@ -79,12 +81,20 @@ function Login() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setNotice(null);
     setSubmitting(true);
 
     try {
       if (mode === "signup") {
         await signUp(email.trim(), password, name.trim() || undefined);
-        setSignupDone(true);
+        try {
+          await signIn(email.trim(), password);
+          await navigateAfterPermissionCheck(redirect);
+          return;
+        } catch {
+          setMode("login");
+          setNotice("Conta criada com sucesso. Entre com e-mail/senha ou com Google.");
+        }
       } else {
         await signIn(email.trim(), password);
         await navigateAfterPermissionCheck(redirect);
@@ -106,25 +116,6 @@ function Login() {
             <code className="text-foreground">{envStatus.missing.join(", ") || "variáveis"}</code> no arquivo{" "}
             <code className="text-foreground">.env</code> na raiz do projeto.
           </p>
-        </div>
-      </Shell>
-    );
-  }
-
-  if (signupDone) {
-    return (
-      <Shell>
-        <TopBar title="Conta criada" useHistoryBack />
-        <div className="text-center animate-rise space-y-4">
-          <div className="text-5xl">✉️</div>
-          <h1 className="font-display text-2xl font-bold">Confirme seu e-mail</h1>
-          <p className="text-sm text-muted-foreground">
-            Enviamos um link de confirmação para <span className="text-foreground font-medium">{email}</span>.
-            Depois de confirmar, volte e entre na sua conta.
-          </p>
-          <PrimaryButton onClick={() => { setSignupDone(false); setMode("login"); }} variant="primary">
-            <LogIn className="size-5" /> Ir para o login
-          </PrimaryButton>
         </div>
       </Shell>
     );
@@ -232,6 +223,9 @@ function Login() {
 
           {error && (
             <p className="text-sm text-red-400 text-center px-2">{error}</p>
+          )}
+          {notice && (
+            <p className="text-sm text-primary text-center px-2">{notice}</p>
           )}
 
           <PrimaryButton type="submit" variant="gold" className={submitting || loading || googleLoading ? "opacity-70 pointer-events-none" : ""}>
