@@ -6,10 +6,23 @@ import { FormField } from "@/components/bolao/form-primitives";
 import { createApoio, getApoioStatus } from "@/lib/api/apoiadores.server";
 import { Heart, Camera, Check, Copy, Clock3, AlertCircle } from "lucide-react";
 
-const FIXED_SUPPORT_VALUE = 2;
+const DEFAULT_SUPPORT_VALUE = "2,00";
 const MAX_MESSAGE_LENGTH = 18;
 const STATUS_POLL_INTERVAL_MS = 5000;
 const STATUS_POLL_MAX_ATTEMPTS = 24;
+
+function parseSupportValue(raw: string) {
+  const normalized = raw.replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : NaN;
+}
+
+function formatMoney(value: number) {
+  return value.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 export const Route = createFileRoute("/apoiar")({
   head: () => ({ meta: [{ title: "Apoiar — Palpite Gol" }] }),
@@ -22,6 +35,7 @@ function Apoiar() {
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [message, setMessage] = useState("");
+  const [supportValueInput, setSupportValueInput] = useState(DEFAULT_SUPPORT_VALUE);
   const [sent, setSent] = useState(false);
   const [apoioId, setApoioId] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<"pendente" | "ativo" | "inativo">("pendente");
@@ -33,10 +47,19 @@ function Apoiar() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const initial = (name.trim()[0] ?? "?").toUpperCase();
+  const supportValue = useMemo(() => parseSupportValue(supportValueInput), [supportValueInput]);
+  const supportValueLabel = useMemo(
+    () => (Number.isFinite(supportValue) ? `R$ ${formatMoney(supportValue)}` : "R$ --"),
+    [supportValue],
+  );
 
   const handleSubmit = async () => {
     if (!name.trim()) {
       setError("Informe como você quer aparecer.");
+      return;
+    }
+    if (!Number.isFinite(supportValue) || supportValue < 1 || supportValue > 9999) {
+      setError("Informe um valor de apoio válido entre R$ 1,00 e R$ 9.999,00.");
       return;
     }
 
@@ -48,7 +71,7 @@ function Apoiar() {
           nome: name.trim(),
           cidade: city.trim() || undefined,
           mensagem: message.trim() || undefined,
-          valor: FIXED_SUPPORT_VALUE,
+          valor: supportValue,
         },
       });
       if (!result.qrCode && !result.ticketUrl) {
@@ -165,6 +188,15 @@ function Apoiar() {
         <FormField label={`Mensagem · ${message.length}/${MAX_MESSAGE_LENGTH}`}>
           <input value={message} onChange={(e) => setMessage(e.target.value.slice(0, MAX_MESSAGE_LENGTH))} maxLength={MAX_MESSAGE_LENGTH} placeholder="Boa sorte a todos." className="w-full bg-transparent outline-none font-semibold" />
         </FormField>
+        <FormField label="Valor do apoio (R$)">
+          <input
+            value={supportValueInput}
+            onChange={(e) => setSupportValueInput(e.target.value)}
+            placeholder="Ex: 2,00"
+            inputMode="decimal"
+            className="w-full bg-transparent outline-none font-semibold"
+          />
+        </FormField>
         <button type="button" className="w-full glass rounded-2xl p-3.5 flex items-center gap-3 text-left">
           <div className="size-10 rounded-xl bg-surface-2 grid place-items-center text-gold shrink-0">
             <Camera className="size-4" />
@@ -237,7 +269,7 @@ function Apoiar() {
           </div>
         ) : (
           <PrimaryButton variant="gold" disabled={loading} onClick={() => void handleSubmit()}>
-            {loading ? "Registrando..." : "❤️ Apoiar com R$ 2,00"}
+            {loading ? "Registrando..." : `❤️ Apoiar com ${supportValueLabel}`}
           </PrimaryButton>
         )}
         <p className="text-xs text-center text-muted-foreground mt-3">Pagamento via PIX.</p>
