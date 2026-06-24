@@ -44,16 +44,14 @@ function Home() {
             <a href="#como-funciona" className="hover:text-foreground transition">Como funciona</a>
             <Link to="/demonstracao" search={{ passo: 1 }} className="hover:text-foreground transition">Demonstração</Link>
             <Link
-              to="/login"
-              search={{ redirect: "/create", mode: "signup" }}
+              to="/create"
               className="hover:text-foreground transition text-primary"
             >
               Cadastro
             </Link>
           </nav>
           <Link
-            to="/login"
-            search={{ redirect: "/create" }}
+            to="/create"
             className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-3.5 sm:px-5 rounded-full font-display font-semibold text-xs sm:text-sm shrink-0"
             style={{ background: "var(--gradient-gold)", color: "var(--gold-foreground)" }}
           >
@@ -91,8 +89,7 @@ function Home() {
 
             <div className="mt-5 sm:hidden max-w-md mx-auto lg:mx-0 w-full">
               <Link
-                to="/login"
-                search={{ redirect: "/create" }}
+                to="/create"
                 className="w-full h-12 rounded-2xl font-display font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition text-sm"
                 style={{ background: "var(--gradient-gold)", color: "var(--gold-foreground)" }}
               >
@@ -110,8 +107,7 @@ function Home() {
 
             <div className="mt-6 sm:mt-8 max-w-md mx-auto lg:mx-0 w-full hidden sm:block">
               <Link
-                to="/login"
-                search={{ redirect: "/create" }}
+                to="/create"
                 className="w-full h-14 rounded-2xl font-display font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition sm:[box-shadow:var(--shadow-glow-gold)]"
                 style={{ background: "var(--gradient-gold)", color: "var(--gold-foreground)" }}
               >
@@ -157,8 +153,7 @@ function Home() {
           </p>
           <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row justify-center gap-3 w-full max-w-xs sm:max-w-sm mx-auto">
             <Link
-              to="/login"
-              search={{ redirect: "/create" }}
+              to="/create"
               className="h-12 px-6 rounded-2xl font-display font-bold inline-flex items-center justify-center gap-2 w-full sm:w-auto"
               style={{ background: "var(--gradient-gold)", color: "var(--gold-foreground)" }}
             >

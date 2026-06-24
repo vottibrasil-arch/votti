@@ -63,12 +63,14 @@ function formatDayLabel(dayKey: string) {
 export function CriarBolaoWizard({
   passo,
   prefillCatalogMatchId,
+  onRequireAuth,
 }: {
   passo: number;
   prefillCatalogMatchId?: string;
+  onRequireAuth?: (mode?: "signup" | "login") => Promise<boolean>;
 }) {
   const navigate = useNavigate();
-  const { user, loading, getAccessToken } = useAuth();
+  const { loading, getAccessToken } = useAuth();
   const getStatusMapFn = useServerFn(getOfficialCatalogStatusMap);
   const resolveCatalogMatchFn = useServerFn(resolveOfficialCatalogMatch);
   const createBolaoFn = useServerFn(createBolao);
@@ -245,8 +247,9 @@ export function CriarBolaoWizard({
   }, [passo, selectedDayKey, dayMeta.length]);
 
   const handleCreate = async () => {
+    const authOk = onRequireAuth ? await onRequireAuth("signup") : true;
     const token = getAccessToken();
-    if (!token || !selectedMatch) return;
+    if (!authOk || !token || !selectedMatch) return;
     if (isMatchClosed(selectedMatch)) {
       setError("Esta partida está encerrada e não pode ser usada para criar bolão.");
       return;
@@ -280,7 +283,7 @@ export function CriarBolaoWizard({
     }
   };
 
-  if (loading || !user) {
+  if (loading) {
     return <p className="text-center text-sm text-muted-foreground">Carregando...</p>;
   }
 
@@ -292,6 +295,13 @@ export function CriarBolaoWizard({
     }
     setError(null);
     goTo(3);
+  };
+
+  const handleContinueFromConfigStep = async () => {
+    if (stake < 1) return;
+    const authOk = onRequireAuth ? await onRequireAuth("signup") : Boolean(getAccessToken());
+    if (!authOk) return;
+    goTo(4);
   };
 
   return (
@@ -584,7 +594,7 @@ export function CriarBolaoWizard({
               <ChevronLeft className="size-5" /> Voltar
             </PrimaryButton>
             <PrimaryButton
-              onClick={() => goTo(4)}
+              onClick={() => void handleContinueFromConfigStep()}
               variant="primary"
               className={`flex-[2] ${stake < 1 ? "opacity-50 pointer-events-none" : ""}`}
             >
