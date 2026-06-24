@@ -252,6 +252,9 @@ function AuthEntryModal({
     setSubmitting(true);
     setError(null);
     try {
+      if (mode === "signup" && !name.trim()) {
+        throw new Error("Informe seu nome para continuar.");
+      }
       const safeEmail = email.trim();
       if (mode === "signup") {
         await signUp(safeEmail, password, name.trim() || undefined);
@@ -340,10 +343,11 @@ function AuthEntryModal({
         <button
           type="button"
           onClick={() => onModeChange(mode === "signup" ? "login" : "signup")}
-          className="w-full text-center text-sm font-semibold text-primary inline-flex items-center justify-center gap-1"
+          className="w-full text-center text-base font-bold text-primary inline-flex items-center justify-center gap-2"
         >
-          {mode === "signup" ? "Já uso o Palpite Gol" : "Ainda não tenho conta"} <ArrowRight className="size-4" />
-          {mode === "signup" ? " Entrar" : " Criar conta"}
+          {mode === "signup" ? "Já uso o Palpite Gol" : "Ainda não tenho conta"}
+          <ArrowRight className="size-4" />
+          {mode === "signup" ? "Entrar" : "Criar conta"}
         </button>
       </div>
     </div>
