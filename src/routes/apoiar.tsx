@@ -1,21 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Shell, TopBar, PrimaryButton } from "@/components/ui-kit";
 import { FormField } from "@/components/bolao/form-primitives";
-import { createApoio, getApoioStatus } from "@/lib/api/apoiadores.server";
+import { createApoio, getApoioPublicConfig, getApoioStatus } from "@/lib/api/apoiadores.server";
 import { Heart, Camera, Check, Copy, Clock3, AlertCircle } from "lucide-react";
 
-const DEFAULT_SUPPORT_VALUE = "2,00";
+const DEFAULT_SUPPORT_VALUE = 2;
 const MAX_MESSAGE_LENGTH = 18;
 const STATUS_POLL_INTERVAL_MS = 5000;
 const STATUS_POLL_MAX_ATTEMPTS = 24;
-
-function parseSupportValue(raw: string) {
-  const normalized = raw.replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
-  const value = Number(normalized);
-  return Number.isFinite(value) ? value : NaN;
-}
 
 function formatMoney(value: number) {
   return value.toLocaleString("pt-BR", {
@@ -31,11 +25,12 @@ export const Route = createFileRoute("/apoiar")({
 
 function Apoiar() {
   const createApoioFn = useServerFn(createApoio);
+  const getApoioPublicConfigFn = useServerFn(getApoioPublicConfig);
   const getApoioStatusFn = useServerFn(getApoioStatus);
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [message, setMessage] = useState("");
-  const [supportValueInput, setSupportValueInput] = useState(DEFAULT_SUPPORT_VALUE);
+  const [supportValue, setSupportValue] = useState(DEFAULT_SUPPORT_VALUE);
   const [sent, setSent] = useState(false);
   const [apoioId, setApoioId] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<"pendente" | "ativo" | "inativo">("pendente");
@@ -47,11 +42,24 @@ function Apoiar() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const initial = (name.trim()[0] ?? "?").toUpperCase();
-  const supportValue = useMemo(() => parseSupportValue(supportValueInput), [supportValueInput]);
-  const supportValueLabel = useMemo(
-    () => (Number.isFinite(supportValue) ? `R$ ${formatMoney(supportValue)}` : "R$ --"),
-    [supportValue],
-  );
+  const supportValueLabel = `R$ ${formatMoney(supportValue)}`;
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const config = await getApoioPublicConfigFn();
+        if (!cancelled && Number.isFinite(config.supportValue) && config.supportValue >= 1) {
+          setSupportValue(config.supportValue);
+        }
+      } catch {
+        // Mantém valor padrão em caso de falha temporária.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [getApoioPublicConfigFn]);
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -76,6 +84,9 @@ function Apoiar() {
       });
       if (!result.qrCode && !result.ticketUrl) {
         throw new Error("Não foi possível gerar o Pix. Tente novamente.");
+      }
+      if (Number.isFinite(result.supportValue) && result.supportValue >= 1) {
+        setSupportValue(result.supportValue);
       }
       setApoioId(result.apoioId);
       setPaymentStatus("pendente");
@@ -188,15 +199,10 @@ function Apoiar() {
         <FormField label={`Mensagem · ${message.length}/${MAX_MESSAGE_LENGTH}`}>
           <input value={message} onChange={(e) => setMessage(e.target.value.slice(0, MAX_MESSAGE_LENGTH))} maxLength={MAX_MESSAGE_LENGTH} placeholder="Boa sorte a todos." className="w-full bg-transparent outline-none font-semibold" />
         </FormField>
-        <FormField label="Valor do apoio (R$)">
-          <input
-            value={supportValueInput}
-            onChange={(e) => setSupportValueInput(e.target.value)}
-            placeholder="Ex: 2,00"
-            inputMode="decimal"
-            className="w-full bg-transparent outline-none font-semibold"
-          />
-        </FormField>
+        <div className="rounded-2xl border border-border/70 bg-surface/40 p-3">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Valor do apoio (definido pelo Super ADM)</div>
+          <div className="mt-1 text-lg font-semibold">{supportValueLabel}</div>
+        </div>
         <button type="button" className="w-full glass rounded-2xl p-3.5 flex items-center gap-3 text-left">
           <div className="size-10 rounded-xl bg-surface-2 grid place-items-center text-gold shrink-0">
             <Camera className="size-4" />

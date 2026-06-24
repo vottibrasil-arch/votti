@@ -27,6 +27,10 @@ const propagandaVisibilityInput = authInput.extend({
   visivel: z.boolean(),
 });
 
+const apoioValorInput = authInput.extend({
+  valor: z.number().min(1).max(9999),
+});
+
 const officialCatalogMatchStatusInput = authInput.extend({
   timeCasa: z.string().trim().min(1).max(80),
   timeFora: z.string().trim().min(1).max(80),
@@ -105,6 +109,7 @@ export type SuperAdminPanelData = {
     total: number;
   };
   propagandaRodapeVisivel: boolean;
+  valorApoioPix: number;
   jogosOficiais: SuperAdminOfficialGameRow[];
   campeonatosOficiais: SuperAdminOfficialCampeonatoRow[];
   jogosOficiaisDetalhados: DbPartidaRow[];
@@ -112,6 +117,34 @@ export type SuperAdminPanelData = {
   participantes: SuperAdminParticipantRow[];
   usuarios: SuperAdminUserRow[];
 };
+
+const DEFAULT_SUPPORT_VALUE = 2;
+
+function parseSettingNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(",", ".").trim());
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  if (typeof value === "boolean") return value ? 1 : 0;
+  return null;
+}
+
+async function readValorApoioPix() {
+  const supabase = getSupabaseAdmin();
+  for (const table of ["app_settings", "api_settings"] as const) {
+    const { data } = await supabase
+      .from(table)
+      .select("value")
+      .eq("key", "valor_apoio_pix")
+      .maybeSingle();
+    const parsed = parseSettingNumber(data?.value);
+    if (parsed && parsed >= 1 && parsed <= 9999) {
+      return Number(parsed.toFixed(2));
+    }
+  }
+  return DEFAULT_SUPPORT_VALUE;
+}
 
 async function userHasSuperAdminFlag(userId: string, accessToken: string) {
   const supabase = getSupabaseAsUser(accessToken);
@@ -493,6 +526,7 @@ export const getSuperAdminPanelData = createServerFn({ method: "POST" })
       apoiadoresStats,
       participantesStats,
       propagandaRodapeVisivel,
+      valorApoioPix: await readValorApoioPix(),
       jogosOficiais,
       campeonatosOficiais: (
         (campeonatosOficiaisData ?? []) as Array<
@@ -531,6 +565,47 @@ export const getSuperAdminPanelData = createServerFn({ method: "POST" })
       participantes,
       usuarios: systemUsers.users,
     };
+  });
+
+export const setValorApoioPix = createServerFn({ method: "POST" })
+  .validator((data: unknown) => apoioValorInput.parse(data))
+  .handler(async ({ data }): Promise<{ ok: true; valor: number }> => {
+    await requireSuperAdmin(data.accessToken);
+    const supabase = getSupabaseAsUser(data.accessToken);
+    const value = Number(data.valor.toFixed(2));
+
+    const { error: rpcError } = await supabase.rpc("super_admin_upsert_app_setting", {
+      p_key: "valor_apoio_pix",
+      p_value: value,
+    });
+
+    if (!rpcError) {
+      return { ok: true, valor: value };
+    }
+
+    const rpcMissing =
+      rpcError.code === "PGRST202" ||
+      rpcError.code === "42883" ||
+      rpcError.message.toLowerCase().includes("super_admin_upsert_app_setting");
+
+    if (!rpcMissing) {
+      throw new Error(`Erro ao atualizar valor do apoio: ${rpcError.message}`);
+    }
+
+    const { error } = await supabase.from("app_settings").upsert(
+      {
+        key: "valor_apoio_pix",
+        value,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" },
+    );
+
+    if (error) {
+      throw new Error(`Erro ao atualizar valor do apoio: ${error.message}`);
+    }
+
+    return { ok: true, valor: value };
   });
 
 export const setPropagandaRodapeVisivel = createServerFn({ method: "POST" })

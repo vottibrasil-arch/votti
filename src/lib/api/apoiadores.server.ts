@@ -16,11 +16,12 @@ const createApoioInput = z.object({
   nome: z.string().trim().min(2).max(80),
   cidade: z.string().trim().max(80).optional(),
   mensagem: z.string().trim().max(18).optional(),
-  valor: z.number().min(1).max(9999),
 });
 const getApoioStatusInput = z.object({
   apoioId: z.string().uuid(),
 });
+
+const DEFAULT_SUPPORT_VALUE = 2;
 
 type ApoiadorRow = {
   id: string;
@@ -78,6 +79,17 @@ function parseSettingString(value: unknown): string | null {
   return null;
 }
 
+function parseSettingNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const normalized = value.replace(",", ".").trim();
+    const parsed = Number(normalized);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  if (typeof value === "boolean") return value ? 1 : 0;
+  return null;
+}
+
 /** Slot da unidade Display do AdSense no rodapé (app_settings ou api_settings). */
 async function readFooterAdSenseSlot() {
   const supabase = getSupabaseAdmin();
@@ -95,6 +107,29 @@ async function readFooterAdSenseSlot() {
 
   return null;
 }
+
+async function readSupportValueSetting() {
+  const supabase = getSupabaseAdmin();
+
+  for (const table of ["app_settings", "api_settings"] as const) {
+    const { data } = await supabase
+      .from(table)
+      .select("value")
+      .eq("key", "valor_apoio_pix")
+      .maybeSingle();
+    const amount = parseSettingNumber(data?.value);
+    if (amount && amount >= 1 && amount <= 9999) {
+      return Number(amount.toFixed(2));
+    }
+  }
+
+  return DEFAULT_SUPPORT_VALUE;
+}
+
+export const getApoioPublicConfig = createServerFn({ method: "POST" }).handler(async () => {
+  const supportValue = await readSupportValueSetting();
+  return { supportValue };
+});
 
 export const getPublicApoiadoresData = createServerFn({ method: "POST" }).handler(async () => {
   const supabase = getSupabaseAdmin();
@@ -128,15 +163,17 @@ export const createApoio = createServerFn({ method: "POST" })
     qrCodeBase64: string | null;
     ticketUrl: string | null;
     publicKey: string | null;
+    supportValue: number;
   }> => {
     const supabase = getSupabaseAdmin();
+    const supportValue = await readSupportValueSetting();
     const { data: inserted, error } = await supabase
       .from("apoiadores")
       .insert({
         nome: data.nome,
         cidade: data.cidade || null,
         mensagem: data.mensagem || null,
-        valor: data.valor,
+        valor: supportValue,
         status: "pendente",
       })
       .select("id")
@@ -169,7 +206,7 @@ export const createApoio = createServerFn({ method: "POST" })
       pixOrder = await createMercadoPagoPixOrder({
         externalReference: inserted.id,
         description: `Apoio Palpite Gol · ${data.nome}`,
-        amount: data.valor,
+        amount: supportValue,
         payer: {
           email: "pagamento@palpitegol.com",
           firstName: data.nome.slice(0, 60),
@@ -191,6 +228,7 @@ export const createApoio = createServerFn({ method: "POST" })
       qrCodeBase64: pixOrder.qrCodeBase64,
       ticketUrl: pixOrder.ticketUrl,
       publicKey: getMercadoPagoPublicKey() || null,
+      supportValue,
     };
   });
 

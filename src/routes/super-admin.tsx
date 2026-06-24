@@ -12,6 +12,7 @@ import {
   setOfficialCatalogMatchStatus,
   promoteBolaoAdminToSuperAdmin,
   setPropagandaRodapeVisivel,
+  setValorApoioPix,
   type SuperAdminPanelData,
   updateBolaoAdminName,
   updateBolaoAdminPassword,
@@ -145,6 +146,7 @@ function SuperAdmin() {
   const promoteFn = useServerFn(promoteBolaoAdminToSuperAdmin);
   const deleteAccountFn = useServerFn(deleteBolaoAdminAccount);
   const setPropagandaFn = useServerFn(setPropagandaRodapeVisivel);
+  const setValorApoioPixFn = useServerFn(setValorApoioPix);
 
   const [tab, setTab] = useState<SuperAdminTab>("dashboard");
   const [checking, setChecking] = useState(true);
@@ -377,6 +379,12 @@ function SuperAdmin() {
               data={data}
               actionLoading={actionLoading}
               onTogglePropaganda={handleTogglePropaganda}
+              onSetValorApoio={(valor) =>
+                runAdminAction("apoio-valor", async (token) => {
+                  await setValorApoioPixFn({ data: { accessToken: token, valor } });
+                  return `Valor de apoio atualizado para ${formatMoney(valor)}.`;
+                })
+              }
             />
           )}
           {tab === "participantes" && <Participantes data={data} />}
@@ -816,13 +824,27 @@ function Apoiadores({
   data,
   actionLoading,
   onTogglePropaganda,
+  onSetValorApoio,
 }: {
   data: SuperAdminPanelData;
   actionLoading: string | null;
   onTogglePropaganda: (visivel: boolean) => void;
+  onSetValorApoio: (valor: number) => void;
 }) {
   const visivel = data.propagandaRodapeVisivel;
   const toggleLoading = actionLoading === "propaganda-toggle";
+  const valorLoading = actionLoading === "apoio-valor";
+  const [valorInput, setValorInput] = useState(() => String(data.valorApoioPix).replace(".", ","));
+
+  useEffect(() => {
+    setValorInput(String(data.valorApoioPix).replace(".", ","));
+  }, [data.valorApoioPix]);
+
+  const salvarValor = () => {
+    const parsed = Number(valorInput.replace(/\./g, "").replace(",", ".").trim());
+    if (!Number.isFinite(parsed) || parsed < 1 || parsed > 9999) return;
+    onSetValorApoio(Number(parsed.toFixed(2)));
+  };
 
   return (
     <div className="space-y-6">
@@ -839,6 +861,31 @@ function Apoiadores({
           loading={toggleLoading}
           onToggle={onTogglePropaganda}
         />
+      </Panel>
+
+      <Panel title="Valor padrão do apoio Pix">
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Este valor será usado na tela de apoio para todos os usuários.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              value={valorInput}
+              onChange={(event) => setValorInput(event.target.value)}
+              inputMode="decimal"
+              placeholder="Ex: 2,00"
+              className="h-10 rounded-xl border border-border/70 bg-background/40 px-3 text-sm outline-none transition focus:border-primary/40"
+            />
+            <button
+              type="button"
+              disabled={valorLoading}
+              onClick={salvarValor}
+              className="h-10 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            >
+              {valorLoading ? "Salvando..." : "Salvar valor"}
+            </button>
+          </div>
+        </div>
       </Panel>
 
       <Panel title="Apoiadores">
