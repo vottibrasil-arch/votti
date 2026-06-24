@@ -43,6 +43,14 @@ import {
 
 type SuperAdminTab = "dashboard" | "jogos" | "apoiadores" | "participantes" | "usuarios";
 
+const AUTO_CLOSE_DELAY_MS = 2 * 24 * 60 * 60 * 1000;
+
+function isAutoClosedByTime(dataPartida: string, nowMs: number) {
+  const partidaMs = new Date(dataPartida).getTime();
+  if (!Number.isFinite(partidaMs)) return false;
+  return nowMs >= partidaMs + AUTO_CLOSE_DELAY_MS;
+}
+
 export const Route = createFileRoute("/super-admin")({
   head: () => ({ meta: [{ title: "Super ADM — Palpite Gol" }] }),
   component: SuperAdmin,
@@ -600,7 +608,7 @@ function JogosOficiais({ getAccessToken, navigate }: JogosOficiaisProps) {
   const visibleMatches = hidePassed
     ? WORLD_CUP_2026_CATALOG.filter((m) => {
         const isManualClosed = (statusByMatchId[m.id] ?? "agendado") === "encerrado";
-        const hasPassed = new Date(m.dataPartida).getTime() < now;
+        const hasPassed = isAutoClosedByTime(m.dataPartida, now);
         return !isManualClosed && !hasPassed;
       })
     : WORLD_CUP_2026_CATALOG;
@@ -716,7 +724,7 @@ function JogosOficiais({ getAccessToken, navigate }: JogosOficiaisProps) {
                     {(() => {
                       const isManualClosed =
                         (statusByMatchId[match.id] ?? "agendado") === "encerrado";
-                      const hasPassed = new Date(match.dataPartida).getTime() < now;
+                      const hasPassed = isAutoClosedByTime(match.dataPartida, now);
                       const isClosed = isManualClosed || hasPassed;
                       return (
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

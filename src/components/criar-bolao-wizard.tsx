@@ -43,6 +43,14 @@ type CatalogMatchCard = {
   raw: OfficialCatalogMatch;
 };
 
+const AUTO_CLOSE_DELAY_MS = 2 * 24 * 60 * 60 * 1000;
+
+function isAutoClosedByTime(dataPartida: string, nowMs = Date.now()) {
+  const partidaMs = new Date(dataPartida).getTime();
+  if (!Number.isFinite(partidaMs)) return false;
+  return nowMs >= partidaMs + AUTO_CLOSE_DELAY_MS;
+}
+
 function toLocalDayKey(value: string | Date) {
   const d = typeof value === "string" ? new Date(value) : value;
   const y = d.getFullYear();
@@ -150,7 +158,7 @@ export function CriarBolaoWizard({
   const isMatchClosed = useMemo(
     () => (m: CatalogMatchCard) => {
       const fromAdmin = statusByMatchId[m.id] === "encerrado";
-      const byDate = new Date(m.raw.dataPartida).getTime() < Date.now();
+      const byDate = isAutoClosedByTime(m.raw.dataPartida);
       return fromAdmin || byDate;
     },
     [statusByMatchId],
