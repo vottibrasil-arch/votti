@@ -351,7 +351,7 @@ function AuthEntryModal({
           onClick={() => onModeChange(mode === "signup" ? "login" : "signup")}
           className="w-full text-center text-base font-bold text-primary inline-flex items-center justify-center gap-2"
         >
-          {mode === "signup" ? "Já tenho conta" : "Quero ter acesso"}
+          {mode === "signup" ? "Já tenho acesso" : "Quero ter acesso"}
         </button>
       </div>
     </div>
