@@ -81,6 +81,7 @@ type MercadoPagoOrderResponse = {
 type MercadoPagoPaymentResponse = {
   id?: string | number;
   status?: string;
+  external_reference?: string;
   point_of_interaction?: {
     transaction_data?: {
       qr_code?: string;
@@ -97,6 +98,10 @@ function normalizePixData(payment: MercadoPagoPaymentResponse) {
     qrCodeBase64: tx?.qr_code_base64 ?? null,
     ticketUrl: tx?.ticket_url ?? null,
   };
+}
+
+function generateIdempotencyKey(externalReference: string) {
+  return `order-${externalReference}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export async function createMercadoPagoPixOrder(params: {
@@ -140,6 +145,10 @@ export async function createMercadoPagoPixOrder(params: {
 
   const order = await mpFetch<MercadoPagoOrderResponse>("/v1/orders", {
     method: "POST",
+    headers: {
+      // Necessário no endpoint Orders para evitar HTTP 400.
+      "X-Idempotency-Key": generateIdempotencyKey(params.externalReference),
+    },
     body: JSON.stringify(body),
   });
 
@@ -168,10 +177,9 @@ export async function createMercadoPagoPixOrder(params: {
 }
 
 export async function syncApoiadorStatusFromMercadoPagoPaymentId(paymentId: string) {
-  const payment = await mpFetch<MercadoPagoPaymentResponse & { external_reference?: string }>(
-    `/v1/payments/${paymentId}`,
-    { method: "GET" },
-  );
+  const payment = await mpFetch<MercadoPagoPaymentResponse>(`/v1/payments/${paymentId}`, {
+    method: "GET",
+  });
   const externalReference = payment.external_reference?.trim();
   if (!externalReference) return;
 
@@ -267,7 +275,6 @@ export async function processMercadoPagoWebhook(params: {
     return { ok: true, ignored: false };
   }
 
-  // fallback: alguns webhooks podem vir como order; tentamos localizar pagamento associado.
   const order = await mpFetch<MercadoPagoOrderResponse>(`/v1/orders/${dataId}`, { method: "GET" });
   const paymentId = order.transactions?.payments?.[0]?.id;
   if (paymentId) {

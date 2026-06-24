@@ -143,7 +143,18 @@ export const createApoio = createServerFn({ method: "POST" })
       .single();
 
     if (error || !inserted?.id) {
-      throw new Error(`Erro ao registrar apoio: ${error?.message ?? "sem id retornado"}`);
+      if (error) {
+        const rlsBlocked =
+          error.code === "42501" ||
+          /row-level security|new row violates row-level security policy/i.test(error.message);
+        if (rlsBlocked) {
+          throw new Error(
+            "Apoio temporariamente indisponível por configuração de segurança do banco. Atualize as policies de RLS da tabela apoiadores e tente novamente.",
+          );
+        }
+        throw new Error(`Erro ao registrar apoio: ${error.message}`);
+      }
+      throw new Error("Erro ao registrar apoio: sem id retornado");
     }
 
     const appUrl =

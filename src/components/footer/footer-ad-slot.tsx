@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ADSENSE_CLIENT } from "@/lib/adsense";
 import type { FooterAdConfig } from "@/lib/footer-ad";
 import { useFooterAdLoaded } from "@/lib/footer-ad/use-footer-ad-loaded";
@@ -21,12 +21,17 @@ function requestAdSenseFill() {
 /** Slot Google AdSense no rodapé — barra horizontal compacta. */
 export function FooterAdSlot({ config, advertiseHref }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
   const adLoaded = useFooterAdLoaded(config, containerRef);
   const isAdSense = config.provider === "adsense";
   const hasSlot = Boolean(config.adsenseSlot?.trim());
 
   useEffect(() => {
-    if (!isAdSense || !hasSlot) return;
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !isAdSense || !hasSlot) return;
 
     requestAdSenseFill();
 
@@ -44,7 +49,7 @@ export function FooterAdSlot({ config, advertiseHref }: Props) {
       window.clearInterval(interval);
       window.clearTimeout(timeout);
     };
-  }, [isAdSense, hasSlot, config.adsenseSlot]);
+  }, [mounted, isAdSense, hasSlot, config.adsenseSlot]);
 
   const showFallback =
     config.provider !== "adsense" &&
@@ -52,21 +57,29 @@ export function FooterAdSlot({ config, advertiseHref }: Props) {
       ((config.provider === "monetag" || config.provider === "image") && !adLoaded));
 
   return (
-    <div className="relative flex h-full w-full items-center overflow-hidden">
+    <div className="relative flex h-full w-full items-center overflow-hidden" suppressHydrationWarning>
       {isAdSense ? (
         <div
           ref={containerRef}
           className="flex h-full w-full items-center justify-center px-1.5"
           aria-label="Anúncio"
         >
-          <ins
-            className="adsbygoogle block h-full min-h-[92px] w-full overflow-hidden md:min-h-[80px]"
-            style={{ display: "block", width: "100%", height: "100%" }}
-            data-ad-client={ADSENSE_CLIENT}
-            data-ad-slot={config.adsenseSlot}
-            data-ad-format={config.adsenseFormat ?? "horizontal"}
-            data-full-width-responsive="true"
-          />
+          {mounted ? (
+            <ins
+              className="adsbygoogle block h-full min-h-[92px] w-full overflow-hidden md:min-h-[80px]"
+              style={{ display: "block", width: "100%", height: "100%" }}
+              data-ad-client={ADSENSE_CLIENT}
+              data-ad-slot={config.adsenseSlot}
+              data-ad-format={config.adsenseFormat ?? "horizontal"}
+              data-full-width-responsive="true"
+              suppressHydrationWarning
+            />
+          ) : (
+            <div
+              className="block h-full min-h-[92px] w-full md:min-h-[80px]"
+              aria-hidden
+            />
+          )}
         </div>
       ) : null}
 
