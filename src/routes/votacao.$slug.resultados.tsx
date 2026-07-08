@@ -5,7 +5,6 @@ import { PollPublicShell } from "@/components/votti/poll-public-shell";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { PollSharePanel } from "@/components/votti/poll-share-panel";
 import { SecurityBadge } from "@/components/votti/security-badge";
-import { LiveDot } from "@/components/ui-kit";
 import { formatPollStats } from "@/lib/votti/poll-stats";
 import { getPollBySlug, getPollErrorMessage, voterHasCompletedPoll } from "@/lib/votti/poll-store";
 import { getPollCoverUrl } from "@/lib/votti/poll-types";
@@ -79,8 +78,12 @@ function ResultadosPage() {
     );
   }
 
-  const liveLabel =
-    status === "connected" ? "ao vivo" : status === "connecting" ? "conectando…" : "atualizando";
+  const liveConnected = status === "connected";
+  const liveLabel = liveConnected
+    ? "AO VIVO"
+    : status === "connecting"
+      ? "CONECTANDO…"
+      : "ATUALIZANDO…";
   const coverUrl = getPollCoverUrl(poll);
 
   return (
@@ -93,44 +96,46 @@ function ResultadosPage() {
           </div>
         ) : null}
 
-        <div className={`votti-results-brand ${coverUrl ? "votti-results-brand--has-cover" : ""} animate-rise`}>
+        <div className="votti-results-hero animate-rise">
           {coverUrl ? (
             <div
-              className="votti-results-brand__cover"
+              className="votti-results-hero__cover"
               style={{ backgroundImage: `url(${coverUrl})` }}
               aria-hidden
             />
-          ) : null}
-          <div className="votti-results-brand__scrim" aria-hidden />
+          ) : (
+            <div className="votti-results-hero__cover votti-results-hero__cover--accent" aria-hidden />
+          )}
 
-          <div className="votti-results-brand__inner">
-            <header className="votti-results-focus">
-              <div className="votti-results-focus__meta">
-                <SecurityBadge compact />
-                <span className="votti-results-focus__live">
-                  <LiveDot />
-                  {liveLabel}
-                </span>
-              </div>
-              <h1 className="votti-results-focus__title">{poll.title}</h1>
-              <p className="votti-results-focus__stats tabular-nums">{formatPollStats(poll)}</p>
-            </header>
-
-            <div className="votti-results__stack votti-results__stack--focus">
-              {poll.questions.map((q) => (
-                <section key={q.id}>
-                  <PollRankingPreview
-                    question={q}
-                    primaryColor={poll.primaryColor}
-                    featured
-                    hideTitle
-                    live
-                    sortByVotes
-                  />
-                </section>
-              ))}
+          <div className="votti-results-hero__body">
+            <div className="votti-results-hero__meta">
+              <SecurityBadge compact />
+              <span
+                className={`votti-results-hero__live ${liveConnected ? "votti-results-hero__live--on" : "votti-results-hero__live--sync"}`}
+              >
+                <span className="votti-results-hero__live-dot" aria-hidden />
+                {liveLabel}
+              </span>
             </div>
+            <h1 className="votti-results-hero__title">{poll.title}</h1>
+            <p className="votti-results-hero__stats tabular-nums">{formatPollStats(poll)}</p>
           </div>
+        </div>
+
+        <div className="votti-results-official animate-rise">
+          {poll.questions.map((q) => (
+            <section key={q.id}>
+              <PollRankingPreview
+                question={q}
+                primaryColor={poll.primaryColor}
+                featured
+                hideTitle
+                hideFeaturedLive
+                live={false}
+                sortByVotes
+              />
+            </section>
+          ))}
         </div>
 
         <PollSharePanel slug={slug} title={poll.title} variant="footer" />
