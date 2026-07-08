@@ -60,7 +60,6 @@ export function LivePollBar({
               left: `${bubbleLeft}%`,
               width: bubbleSize,
               height: bubbleSize,
-              marginLeft: -bubbleSize / 2,
             }}
           />
         ) : null}

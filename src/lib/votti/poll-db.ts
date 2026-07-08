@@ -19,6 +19,181 @@ type DbOption = {
 };
 
 const OPTION_COLUMNS = "id, question_id, text, sort_order, image_url";
+const OPTION_COLUMNS_LEGACY = "id, question_id, text, sort_order";
+
+/** null = ainda não testado; false = coluna image_url ausente no Supabase. */
+let optionImageColumnAvailable: boolean | null = null;
+
+function isMissingImageUrlColumn(error: unknown): boolean {
+  const haystack = `${(error as { message?: string }).message ?? ""} ${(error as { details?: string }).details ?? ""}`.toLowerCase();
+  return haystack.includes("image_url") && haystack.includes("does not exist");
+}
+
+function normalizeDbOptions(rows: DbOption[]): DbOption[] {
+  return rows.map((o) => ({ ...o, image_url: o.image_url ?? null }));
+}
+
+async function fetchOptionsByQuestionIds(
+  supabase: ReturnType<typeof getSupabaseBrowser>,
+  questionIds: string[],
+): Promise<DbOption[]> {
+  if (questionIds.length === 0) return [];
+
+  const preferredCols =
+    optionImageColumnAvailable === false ? OPTION_COLUMNS_LEGACY : OPTION_COLUMNS;
+
+  const { data, error } = await supabase
+    .from("options")
+    .select(preferredCols)
+    .in("question_id", questionIds)
+    .order("sort_order");
+
+  if (!error) {
+    if (preferredCols === OPTION_COLUMNS) optionImageColumnAvailable = true;
+    return normalizeDbOptions((data ?? []) as DbOption[]);
+  }
+
+  if (isMissingImageUrlColumn(error)) {
+    optionImageColumnAvailable = false;
+    const { data: legacy, error: legacyError } = await supabase
+      .from("options")
+      .select(OPTION_COLUMNS_LEGACY)
+      .in("question_id", questionIds)
+      .order("sort_order");
+
+    if (legacyError) throw legacyError;
+    return normalizeDbOptions((legacy ?? []) as DbOption[]);
+  }
+
+  throw error;
+}
+
+async function fetchOptionsByQuestionId(
+  supabase: ReturnType<typeof getSupabaseBrowser>,
+  questionId: string,
+): Promise<DbOption[]> {
+  return fetchOptionsByQuestionIds(supabase, [questionId]);
+}
+
+function optionWritePayload(text: string, sortOrder: number, imageUrl?: string): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
+    text: text.trim(),
+    sort_order: sortOrder,
+  };
+
+  if (optionImageColumnAvailable === false) return payload;
+
+  const url = imageUrl?.trim();
+  if (optionImageColumnAvailable === true || url) {
+    payload.image_url = url || null;
+  }
+
+  return payload;
+}
+
+async function updateOptionRow(
+  supabase: ReturnType<typeof getSupabaseBrowser>,
+  optionId: string,
+  text: string,
+  sortOrder: number,
+  imageUrl?: string,
+): Promise<void> {
+  const payload = optionWritePayload(text, sortOrder, imageUrl);
+  const { error } = await supabase.from("options").update(payload).eq("id", optionId);
+
+  if (!error) {
+    if ("image_url" in payload) optionImageColumnAvailable = true;
+    return;
+  }
+
+  if (isMissingImageUrlColumn(error)) {
+    optionImageColumnAvailable = false;
+    const { error: retryError } = await supabase
+      .from("options")
+      .update({ text: text.trim(), sort_order: sortOrder })
+      .eq("id", optionId);
+    if (retryError) throw retryError;
+    return;
+  }
+
+  throw error;
+}
+
+async function insertOptionRow(
+  supabase: ReturnType<typeof getSupabaseBrowser>,
+  questionId: string,
+  text: string,
+  sortOrder: number,
+  imageUrl?: string,
+): Promise<DbOption> {
+  const payload: Record<string, unknown> = {
+    question_id: questionId,
+    ...optionWritePayload(text, sortOrder, imageUrl),
+  };
+
+  const selectCols =
+    optionImageColumnAvailable === false ? OPTION_COLUMNS_LEGACY : OPTION_COLUMNS;
+
+  let { data, error } = await supabase.from("options").insert(payload).select(selectCols).single();
+
+  if (!error && data) {
+    if (selectCols === OPTION_COLUMNS) optionImageColumnAvailable = true;
+    return normalizeDbOptions([data as DbOption])[0];
+  }
+
+  if (error && isMissingImageUrlColumn(error)) {
+    optionImageColumnAvailable = false;
+    const retry = await supabase
+      .from("options")
+      .insert({ question_id: questionId, text: text.trim(), sort_order: sortOrder })
+      .select(OPTION_COLUMNS_LEGACY)
+      .single();
+    if (retry.error) throw retry.error;
+    return normalizeDbOptions([retry.data as DbOption])[0];
+  }
+
+  throw error;
+}
+
+async function insertOptionsBulk(
+  supabase: ReturnType<typeof getSupabaseBrowser>,
+  rows: Array<{ question_id: string; text: string; sort_order: number; imageUrl?: string }>,
+): Promise<DbOption[]> {
+  if (rows.length === 0) return [];
+
+  const payload = rows.map((row) => ({
+    question_id: row.question_id,
+    ...optionWritePayload(row.text, row.sort_order, row.imageUrl),
+  }));
+
+  const selectCols =
+    optionImageColumnAvailable === false ? OPTION_COLUMNS_LEGACY : OPTION_COLUMNS;
+
+  const { data, error } = await supabase.from("options").insert(payload).select(selectCols);
+
+  if (!error) {
+    if (selectCols === OPTION_COLUMNS) optionImageColumnAvailable = true;
+    return normalizeDbOptions((data ?? []) as DbOption[]);
+  }
+
+  if (isMissingImageUrlColumn(error)) {
+    optionImageColumnAvailable = false;
+    const legacyPayload = rows.map((row) => ({
+      question_id: row.question_id,
+      text: row.text.trim(),
+      sort_order: row.sort_order,
+    }));
+    const { data: legacy, error: legacyError } = await supabase
+      .from("options")
+      .insert(legacyPayload)
+      .select(OPTION_COLUMNS_LEGACY);
+
+    if (legacyError) throw legacyError;
+    return normalizeDbOptions((legacy ?? []) as DbOption[]);
+  }
+
+  throw error;
+}
 
 function mapDbOption(o: DbOption, votes = 0): PollOption {
   return {
@@ -168,14 +343,7 @@ async function fetchPollBundle(slug: string) {
   let options: DbOption[] = [];
 
   if (questionIds.length > 0) {
-    const { data: optionRows, error: oError } = await supabase
-      .from("options")
-      .select(OPTION_COLUMNS)
-      .in("question_id", questionIds)
-      .order("sort_order");
-
-    if (oError) throw oError;
-    options = optionRows ?? [];
+    options = await fetchOptionsByQuestionIds(supabase, questionIds);
   }
 
   const { data: results, error: rError } = await supabase
@@ -245,14 +413,7 @@ export async function getPollByIdForOwnerDb(
   let options: DbOption[] = [];
 
   if (questionIds.length > 0) {
-    const { data: optionRows, error: oError } = await supabase
-      .from("options")
-      .select(OPTION_COLUMNS)
-      .in("question_id", questionIds)
-      .order("sort_order");
-
-    if (oError) throw oError;
-    options = optionRows ?? [];
+    options = await fetchOptionsByQuestionIds(supabase, questionIds);
   }
 
   const { data: results, error: rError } = await supabase
@@ -367,14 +528,7 @@ export async function updatePollDb(
 
     let dbOptions: DbOption[] = [];
     if (isExistingQuestion) {
-      const { data: optRows, error: oFetchError } = await supabase
-        .from("options")
-        .select(OPTION_COLUMNS)
-        .eq("question_id", questionId)
-        .order("sort_order");
-
-      if (oFetchError) throw oFetchError;
-      dbOptions = optRows ?? [];
+      dbOptions = await fetchOptionsByQuestionId(supabase, questionId);
     }
 
     const dbOptionIds = new Set(dbOptions.map((o) => o.id));
@@ -389,16 +543,7 @@ export async function updatePollDb(
       const isExistingOption = dbOptionIds.has(option.id);
 
       if (isExistingOption) {
-        const { error: oUpdateError } = await supabase
-          .from("options")
-          .update({
-            text: option.text.trim(),
-            sort_order: oi,
-            image_url: option.imageUrl?.trim() || null,
-          })
-          .eq("id", option.id);
-
-        if (oUpdateError) throw oUpdateError;
+        await updateOptionRow(supabase, option.id, option.text, oi, option.imageUrl);
         builtOptions.push({
           id: option.id,
           text: option.text.trim(),
@@ -406,18 +551,13 @@ export async function updatePollDb(
           imageUrl: option.imageUrl?.trim() ?? "",
         });
       } else {
-        const { data: newO, error: oInsertError } = await supabase
-          .from("options")
-          .insert({
-            question_id: questionId,
-            text: option.text.trim(),
-            sort_order: oi,
-            image_url: option.imageUrl?.trim() || null,
-          })
-          .select(OPTION_COLUMNS)
-          .single();
-
-        if (oInsertError) throw oInsertError;
+        const newO = await insertOptionRow(
+          supabase,
+          questionId,
+          option.text,
+          oi,
+          option.imageUrl,
+        );
         builtOptions.push(mapDbOption(newO, 0));
       }
     }
@@ -542,14 +682,7 @@ export async function listPollsByOwnerDb(ownerId: string): Promise<StoredPoll[]>
   let options: DbOption[] = [];
 
   if (questionIds.length > 0) {
-    const { data: optionRows, error: oError } = await supabase
-      .from("options")
-      .select(OPTION_COLUMNS)
-      .in("question_id", questionIds)
-      .order("sort_order");
-
-    if (oError) throw oError;
-    options = optionRows ?? [];
+    options = await fetchOptionsByQuestionIds(supabase, questionIds);
   }
 
   const { data: results, error: rError } = await supabase
@@ -632,19 +765,14 @@ export async function publishPollDb(
         question_id: qRow.id,
         text: o.text.trim(),
         sort_order: oi,
-        image_url: o.imageUrl?.trim() || null,
+        imageUrl: o.imageUrl,
       }));
 
     if (optionRows.length === 0) {
       throw new Error("Cada pergunta precisa ter ao menos uma opção preenchida");
     }
 
-    const { data: insertedOptions, error: oError } = await supabase
-      .from("options")
-      .insert(optionRows)
-      .select(OPTION_COLUMNS);
-
-    if (oError) throw oError;
+    const insertedOptions = await insertOptionsBulk(supabase, optionRows);
 
     builtQuestions.push({
       id: qRow.id,
@@ -829,14 +957,7 @@ export async function duplicatePollDb(pollId: string, ownerId: string): Promise<
   let options: DbOption[] = [];
 
   if (questionIds.length > 0) {
-    const { data: optionRows, error: oError } = await supabase
-      .from("options")
-      .select(OPTION_COLUMNS)
-      .in("question_id", questionIds)
-      .order("sort_order");
-
-    if (oError) throw oError;
-    options = optionRows ?? [];
+    options = await fetchOptionsByQuestionIds(supabase, questionIds);
   }
 
   const slug = await generateSlug();
@@ -879,12 +1000,11 @@ export async function duplicatePollDb(pollId: string, ownerId: string): Promise<
         question_id: newQ.id,
         text: o.text,
         sort_order: o.sort_order,
-        image_url: o.image_url ?? null,
+        imageUrl: o.image_url ?? undefined,
       }));
 
     if (qOptions.length > 0) {
-      const { error: noError } = await supabase.from("options").insert(qOptions);
-      if (noError) throw noError;
+      await insertOptionsBulk(supabase, qOptions);
     }
   }
 
@@ -917,10 +1037,6 @@ function getSchemaSetupHint(error: unknown): string {
 
   if (msg.includes("poll_results")) {
     return "Falta a view poll_results. Execute docs/supabase/SETUP-COMPLETO.sql no SQL Editor e recarregue a página.";
-  }
-
-  if (msg.includes("image_url")) {
-    return "Falta a coluna image_url em options. Execute docs/supabase/migrations/add-option-image-url.sql no Supabase.";
   }
 
   if (msg.includes("polls") || msg.includes("questions") || msg.includes("options")) {

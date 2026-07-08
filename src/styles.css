@@ -1435,8 +1435,9 @@
 
 .live-poll-bar__bubble {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
   border-radius: 999px;
   object-fit: cover;
   border: 2px solid oklch(0.98 0.01 260);
@@ -1540,6 +1541,8 @@
 }
 
 .live-poll-bar__fill {
+  position: relative;
+  z-index: 1;
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(90deg, oklch(0.45 0.08 260), oklch(0.55 0.1 250));
