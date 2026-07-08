@@ -1,4 +1,5 @@
 import { LiveDot } from "@/components/ui-kit";
+import { LivePollBar } from "@/components/votti/live-poll-bar";
 import type { PollQuestion } from "@/lib/votti/poll-types";
 
 type PollRankingPreviewProps = {
@@ -58,26 +59,15 @@ export function PollRankingPreview({
           const pct = hasVotes ? Math.round((opt.votes / totalVotes) * 100) : 0;
           const isLeader = hasVotes && opt.votes === maxVotes && maxVotes > 0;
           return (
-            <div key={opt.id} className="live-poll-bar">
-              <div className="live-poll-bar__meta">
-                <span className="live-poll-bar__label">
-                  {isLeader ? "🥇 " : ""}
-                  {opt.text}
-                </span>
-                <span className={`live-poll-bar__pct tabular-nums ${isLeader ? "live-poll-bar__pct--lead" : ""}`}>
-                  {hasVotes ? `${opt.votes} · ${pct}%` : "0 votos"}
-                </span>
-              </div>
-              <div className="live-poll-bar__track">
-                <div
-                  className={`live-poll-bar__fill ${isLeader ? "live-poll-bar__fill--lead" : ""} ${!hasVotes ? "live-poll-bar__fill--zero" : ""}`}
-                  style={{
-                    width: hasVotes ? `${pct}%` : "0%",
-                    ...(isLeader ? { background: primaryColor } : {}),
-                  }}
-                />
-              </div>
-            </div>
+            <LivePollBar
+              key={opt.id}
+              option={opt}
+              pct={pct}
+              hasVotes={hasVotes}
+              isLeader={isLeader}
+              primaryColor={primaryColor}
+              featured={featured}
+            />
           );
         })}
       </div>

@@ -1,4 +1,4 @@
-export type PollOption = { id: string; text: string; votes: number };
+export type PollOption = { id: string; text: string; votes: number; imageUrl?: string };
 export type PollQuestion = { id: string; text: string; options: PollOption[] };
 
 export type CloseMode = "until_admin" | "scheduled_date" | "scheduled_datetime";
@@ -76,8 +76,8 @@ export const EMPTY_DRAFT: PollDraft = {
       id: "q1",
       text: "",
       options: [
-        { id: "o1", text: "", votes: 0 },
-        { id: "o2", text: "", votes: 0 },
+        { id: "o1", text: "", votes: 0, imageUrl: "" },
+        { id: "o2", text: "", votes: 0, imageUrl: "" },
       ],
     },
   ],
@@ -99,7 +99,12 @@ export function storedPollToDraft(poll: StoredPoll): PollDraft {
     questions: poll.questions.map((q) => ({
       id: q.id,
       text: q.text,
-      options: q.options.map((o) => ({ id: o.id, text: o.text, votes: o.votes })),
+      options: q.options.map((o) => ({
+        id: o.id,
+        text: o.text,
+        votes: o.votes,
+        imageUrl: o.imageUrl ?? "",
+      })),
     })),
     settings: { ...poll.settings },
   };

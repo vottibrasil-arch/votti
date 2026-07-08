@@ -114,6 +114,7 @@ export interface Database {
           question_id: string;
           text: string;
           sort_order: number;
+          image_url: string | null;
           created_at: string;
         };
         Insert: {
@@ -121,6 +122,7 @@ export interface Database {
           question_id: string;
           text: string;
           sort_order?: number;
+          image_url?: string | null;
           created_at?: string;
         };
         Update: {
@@ -128,6 +130,7 @@ export interface Database {
           question_id?: string;
           text?: string;
           sort_order?: number;
+          image_url?: string | null;
           created_at?: string;
         };
         Relationships: [];

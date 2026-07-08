@@ -10,7 +10,24 @@ import {
 } from "@/lib/votti/poll-types";
 
 type DbQuestion = { id: string; poll_id: string; text: string; sort_order: number };
-type DbOption = { id: string; question_id: string; text: string; sort_order: number };
+type DbOption = {
+  id: string;
+  question_id: string;
+  text: string;
+  sort_order: number;
+  image_url?: string | null;
+};
+
+const OPTION_COLUMNS = "id, question_id, text, sort_order, image_url";
+
+function mapDbOption(o: DbOption, votes = 0): PollOption {
+  return {
+    id: o.id,
+    text: o.text,
+    votes,
+    imageUrl: o.image_url?.trim() ?? "",
+  };
+}
 
 function parseSettings(raw: unknown): PollSettings {
   if (!raw || typeof raw !== "object") return DEFAULT_SETTINGS;
@@ -62,6 +79,7 @@ function buildQuestions(
           id: o.id,
           text: o.text,
           votes: votesByOption.get(o.id) ?? 0,
+          imageUrl: o.image_url?.trim() ?? "",
         })),
     }));
 }
@@ -152,7 +170,7 @@ async function fetchPollBundle(slug: string) {
   if (questionIds.length > 0) {
     const { data: optionRows, error: oError } = await supabase
       .from("options")
-      .select("id, question_id, text, sort_order")
+      .select(OPTION_COLUMNS)
       .in("question_id", questionIds)
       .order("sort_order");
 
@@ -229,7 +247,7 @@ export async function getPollByIdForOwnerDb(
   if (questionIds.length > 0) {
     const { data: optionRows, error: oError } = await supabase
       .from("options")
-      .select("id, question_id, text, sort_order")
+      .select(OPTION_COLUMNS)
       .in("question_id", questionIds)
       .order("sort_order");
 
@@ -351,7 +369,7 @@ export async function updatePollDb(
     if (isExistingQuestion) {
       const { data: optRows, error: oFetchError } = await supabase
         .from("options")
-        .select("id, question_id, text, sort_order")
+        .select(OPTION_COLUMNS)
         .eq("question_id", questionId)
         .order("sort_order");
 
@@ -373,7 +391,11 @@ export async function updatePollDb(
       if (isExistingOption) {
         const { error: oUpdateError } = await supabase
           .from("options")
-          .update({ text: option.text.trim(), sort_order: oi })
+          .update({
+            text: option.text.trim(),
+            sort_order: oi,
+            image_url: option.imageUrl?.trim() || null,
+          })
           .eq("id", option.id);
 
         if (oUpdateError) throw oUpdateError;
@@ -381,6 +403,7 @@ export async function updatePollDb(
           id: option.id,
           text: option.text.trim(),
           votes: votesByOption.get(option.id) ?? 0,
+          imageUrl: option.imageUrl?.trim() ?? "",
         });
       } else {
         const { data: newO, error: oInsertError } = await supabase
@@ -389,12 +412,13 @@ export async function updatePollDb(
             question_id: questionId,
             text: option.text.trim(),
             sort_order: oi,
+            image_url: option.imageUrl?.trim() || null,
           })
-          .select("id, text, sort_order")
+          .select(OPTION_COLUMNS)
           .single();
 
         if (oInsertError) throw oInsertError;
-        builtOptions.push({ id: newO.id, text: newO.text, votes: 0 });
+        builtOptions.push(mapDbOption(newO, 0));
       }
     }
 
@@ -520,7 +544,7 @@ export async function listPollsByOwnerDb(ownerId: string): Promise<StoredPoll[]>
   if (questionIds.length > 0) {
     const { data: optionRows, error: oError } = await supabase
       .from("options")
-      .select("id, question_id, text, sort_order")
+      .select(OPTION_COLUMNS)
       .in("question_id", questionIds)
       .order("sort_order");
 
@@ -608,6 +632,7 @@ export async function publishPollDb(
         question_id: qRow.id,
         text: o.text.trim(),
         sort_order: oi,
+        image_url: o.imageUrl?.trim() || null,
       }));
 
     if (optionRows.length === 0) {
@@ -617,7 +642,7 @@ export async function publishPollDb(
     const { data: insertedOptions, error: oError } = await supabase
       .from("options")
       .insert(optionRows)
-      .select("id, text, sort_order");
+      .select(OPTION_COLUMNS);
 
     if (oError) throw oError;
 
@@ -627,7 +652,7 @@ export async function publishPollDb(
       options: (insertedOptions ?? [])
         .slice()
         .sort((a, b) => a.sort_order - b.sort_order)
-        .map((o) => ({ id: o.id, text: o.text, votes: 0 })),
+        .map((o) => mapDbOption(o, 0)),
     });
   }
 
@@ -806,7 +831,7 @@ export async function duplicatePollDb(pollId: string, ownerId: string): Promise<
   if (questionIds.length > 0) {
     const { data: optionRows, error: oError } = await supabase
       .from("options")
-      .select("id, question_id, text, sort_order")
+      .select(OPTION_COLUMNS)
       .in("question_id", questionIds)
       .order("sort_order");
 
@@ -854,6 +879,7 @@ export async function duplicatePollDb(pollId: string, ownerId: string): Promise<
         question_id: newQ.id,
         text: o.text,
         sort_order: o.sort_order,
+        image_url: o.image_url ?? null,
       }));
 
     if (qOptions.length > 0) {
@@ -891,6 +917,10 @@ function getSchemaSetupHint(error: unknown): string {
 
   if (msg.includes("poll_results")) {
     return "Falta a view poll_results. Execute docs/supabase/SETUP-COMPLETO.sql no SQL Editor e recarregue a página.";
+  }
+
+  if (msg.includes("image_url")) {
+    return "Falta a coluna image_url em options. Execute docs/supabase/migrations/add-option-image-url.sql no Supabase.";
   }
 
   if (msg.includes("polls") || msg.includes("questions") || msg.includes("options")) {

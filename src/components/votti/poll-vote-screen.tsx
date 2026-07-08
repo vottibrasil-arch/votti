@@ -188,11 +188,14 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
                           <button
                             key={option.id}
                             type="button"
-                            className={`votti-vote-option votti-vote-option--branded ${selected ? "votti-vote-option--selected" : ""}`}
+                            className={`votti-vote-option votti-vote-option--branded ${selected ? "votti-vote-option--selected" : ""} ${option.imageUrl ? "votti-vote-option--with-photo" : ""}`}
                             disabled={confirming}
                             onClick={() => handleSelect(question, option.id)}
                           >
-                            {selected ? <Check className="size-4" /> : null}
+                            {option.imageUrl ? (
+                              <img src={option.imageUrl} alt="" className="votti-vote-option__photo" />
+                            ) : null}
+                            {selected ? <Check className="size-4 shrink-0" /> : null}
                             <span>{option.text}</span>
                           </button>
                         );

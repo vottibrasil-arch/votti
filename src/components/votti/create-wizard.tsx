@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/use-auth";
 import { PollImageField } from "@/components/votti/poll-image-field";
+import { OptionImagePicker } from "@/components/votti/option-image-picker";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { SecurityBadge } from "@/components/votti/security-badge";
 import { formatPollStats } from "@/lib/votti/poll-stats";
@@ -92,8 +93,8 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
           id: newId("q"),
           text: "",
           options: [
-            { id: newId("o"), text: "", votes: 0 },
-            { id: newId("o"), text: "", votes: 0 },
+            { id: newId("o"), text: "", votes: 0, imageUrl: "" },
+            { id: newId("o"), text: "", votes: 0, imageUrl: "" },
           ],
         },
       ],
@@ -205,7 +206,9 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
       {step === 1 && (
         <div className="votti-wizard__panel votti-wizard__panel--glass">
           <h2>Perguntas</h2>
-          <p className="votti-wizard__hint">Monte as opções em cards — o ranking aparece ao vivo para quem vota.</p>
+          <p className="votti-wizard__hint">
+            Monte as opções — opcionalmente adicione uma fotinha em cada uma; no ranking ela cresce junto com os votos.
+          </p>
           {draft.questions.map((q, qi) => (
             <div key={q.id} className="votti-question-card">
               <div className="votti-question-card__head">
@@ -220,22 +223,47 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
                 }} placeholder="O que você quer decidir?" />
               </label>
               {q.options.map((o, oi) => (
-                <label key={o.id} className="votti-field">
-                  <span className="votti-field__label">Opção {oi + 1}</span>
-                  <input className="votti-field__input" value={o.text} onChange={(e) => {
-                    const questions = [...draft.questions];
-                    const options = [...q.options];
-                    options[oi] = { ...o, text: e.target.value };
-                    questions[qi] = { ...q, options };
-                    patch({ questions });
-                  }} placeholder={`Opção ${oi + 1}`} />
-                </label>
+                <div key={o.id} className="votti-option-row">
+                  <OptionImagePicker
+                    value={o.imageUrl ?? ""}
+                    onChange={(imageUrl) => {
+                      const questions = [...draft.questions];
+                      const options = [...q.options];
+                      options[oi] = { ...o, imageUrl };
+                      questions[qi] = { ...q, options };
+                      patch({ questions });
+                    }}
+                    ownerId={user?.id}
+                  />
+                  <label className="votti-field votti-field--grow">
+                    <span className="votti-field__label">Opção {oi + 1}</span>
+                    <input
+                      className="votti-field__input"
+                      value={o.text}
+                      onChange={(e) => {
+                        const questions = [...draft.questions];
+                        const options = [...q.options];
+                        options[oi] = { ...o, text: e.target.value };
+                        questions[qi] = { ...q, options };
+                        patch({ questions });
+                      }}
+                      placeholder={`Opção ${oi + 1}`}
+                    />
+                  </label>
+                </div>
               ))}
-              <button type="button" className="votti-link-btn" onClick={() => {
-                const questions = [...draft.questions];
-                questions[qi] = { ...q, options: [...q.options, { id: newId("o"), text: "", votes: 0 }] };
-                patch({ questions });
-              }}>
+              <button
+                type="button"
+                className="votti-link-btn"
+                onClick={() => {
+                  const questions = [...draft.questions];
+                  questions[qi] = {
+                    ...q,
+                    options: [...q.options, { id: newId("o"), text: "", votes: 0, imageUrl: "" }],
+                  };
+                  patch({ questions });
+                }}
+              >
                 + Adicionar opção
               </button>
             </div>
