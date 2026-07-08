@@ -35,7 +35,7 @@ export function PollPublicShell({ poll, children }: PollPublicShellProps) {
         className="votti-public-poll__overlay"
         style={{
           background: coverUrl
-            ? `linear-gradient(180deg, color-mix(in oklab, ${accent} 10%, transparent) 0%, color-mix(in oklab, ${bgColor} 55%, transparent) 55%, color-mix(in oklab, ${bgColor} 82%, transparent) 100%)`
+            ? `linear-gradient(180deg, color-mix(in oklab, ${accent} 6%, transparent) 0%, color-mix(in oklab, ${bgColor} 35%, transparent) 52%, color-mix(in oklab, ${bgColor} 62%, transparent) 100%)`
             : `linear-gradient(180deg, color-mix(in oklab, ${accent} 28%, transparent) 0%, color-mix(in oklab, ${bgColor} 92%, transparent) 45%, color-mix(in oklab, ${bgColor} 98%, transparent) 100%)`,
         }}
         aria-hidden

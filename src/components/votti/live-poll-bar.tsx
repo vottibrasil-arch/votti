@@ -10,10 +10,10 @@ type LivePollBarProps = {
   stackZ?: number;
 };
 
-/** Tamanho da bolha da foto: cresce com a porcentagem (28px → 64px). */
+/** Tamanho da bolha da foto: pequena e discreta (16px → 28px). */
 export function optionBubbleSize(pct: number, hasVotes: boolean) {
-  const min = 28;
-  const max = 64;
+  const min = 16;
+  const max = 28;
   if (!hasVotes) return min;
   return Math.round(min + (Math.max(pct, 6) / 100) * (max - min));
 }
@@ -46,7 +46,7 @@ export function LivePollBar({
       <div className="live-poll-bar__meta">
         <span className="live-poll-bar__label">
           {imageUrl && !hasVotes ? (
-            <img src={imageUrl} alt="" className="live-poll-bar__thumb" width={24} height={24} />
+            <img src={imageUrl} alt="" className="live-poll-bar__thumb" width={18} height={18} />
           ) : null}
           {isLeader ? "🥇 " : ""}
           {option.text}

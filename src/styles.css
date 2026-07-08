@@ -1440,9 +1440,9 @@
 
 .live-poll-bar--photo .live-poll-bar__track {
   overflow: visible;
-  height: 0.75rem;
-  margin-top: 0.5rem;
-  margin-bottom: 1.75rem;
+  height: 0.625rem;
+  margin-top: 0.375rem;
+  margin-bottom: 1rem;
   z-index: 1;
 }
 
@@ -1453,12 +1453,12 @@
 }
 
 .live-poll-bar__thumb {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.125rem;
+  height: 1.125rem;
   border-radius: 999px;
   object-fit: cover;
   flex-shrink: 0;
-  border: 2px solid oklch(0.95 0.01 260 / 85%);
+  border: 1px solid oklch(0.95 0.01 260 / 85%);
 }
 
 .live-poll-bar__bubble {
@@ -1468,10 +1468,10 @@
   transform: translate(-50%, -50%);
   border-radius: 999px;
   object-fit: cover;
-  border: 2px solid oklch(0.98 0.01 260);
+  border: 1.5px solid oklch(0.98 0.01 260);
   box-shadow:
-    0 4px 14px oklch(0 0 0 / 45%),
-    0 0 0 1px oklch(0 0 0 / 15%);
+    0 2px 8px oklch(0 0 0 / 40%),
+    0 0 0 1px oklch(0 0 0 / 12%);
   transition:
     left 0.9s cubic-bezier(0.34, 1.2, 0.64, 1),
     width 0.9s cubic-bezier(0.34, 1.2, 0.64, 1),
@@ -1492,7 +1492,7 @@
 }
 
 .live-poll-bar--featured.live-poll-bar--photo .live-poll-bar__track {
-  margin-bottom: 2.25rem;
+  margin-bottom: 1.125rem;
 }
 
 .votti-option-row {
@@ -1515,8 +1515,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;
-  height: 3rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 999px;
   border: 2px dashed oklch(0.38 0.06 260 / 55%);
   background: oklch(0.17 0.04 260 / 80%);
@@ -1553,6 +1553,130 @@
   line-height: 1.2;
 }
 
+/* ── Ajuste de enquadramento (capa / opção) ── */
+.votti-focus-editor {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.votti-focus-editor__backdrop {
+  position: absolute;
+  inset: 0;
+  background: oklch(0 0 0 / 72%);
+  backdrop-filter: blur(4px);
+}
+
+.votti-focus-editor__panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 22rem);
+  padding: 1.125rem;
+  border-radius: 1rem;
+  background: oklch(0.16 0.04 260 / 98%);
+  border: 1px solid oklch(0.38 0.06 260 / 55%);
+  box-shadow: 0 24px 64px oklch(0 0 0 / 45%);
+}
+
+.votti-focus-editor__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: oklch(0.96 0.01 260);
+}
+
+.votti-focus-editor__hint {
+  margin: 0.375rem 0 0.875rem;
+  font-size: 0.75rem;
+  color: oklch(0.68 0.02 260);
+}
+
+.votti-focus-editor__viewport {
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
+  touch-action: none;
+  cursor: grab;
+  background: oklch(0.1 0.03 260);
+  border: 1px solid oklch(0.35 0.06 260 / 45%);
+}
+
+.votti-focus-editor__viewport:active {
+  cursor: grabbing;
+}
+
+.votti-focus-editor__viewport--circle {
+  width: 10rem;
+  height: 10rem;
+  border-radius: 999px;
+}
+
+.votti-focus-editor__viewport--landscape {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 0.625rem;
+}
+
+.votti-focus-editor__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  pointer-events: none;
+}
+
+.votti-focus-editor__sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-top: 0.875rem;
+}
+
+.votti-focus-editor__slider {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: oklch(0.72 0.02 260);
+}
+
+.votti-focus-editor__slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--poll-button, var(--primary));
+}
+
+.votti-focus-editor__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.votti-focus-editor__btn {
+  flex: 1;
+  min-height: 2.375rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.votti-focus-editor__btn--ghost {
+  color: oklch(0.78 0.02 260);
+  background: oklch(0.22 0.04 260);
+  border: 1px solid oklch(0.35 0.06 260 / 45%);
+}
+
+.votti-focus-editor__btn--primary {
+  color: oklch(0.99 0.005 260);
+  background: var(--poll-button, var(--primary));
+  border: none;
+}
+
 .votti-vote-option--with-photo {
   justify-content: flex-start;
   gap: 0.625rem;
@@ -1560,8 +1684,8 @@
 }
 
 .votti-vote-option__photo {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 1.375rem;
+  height: 1.375rem;
   border-radius: 999px;
   object-fit: cover;
   flex-shrink: 0;
@@ -3269,41 +3393,47 @@
 /* ── Página pública da votação (fundo personalizado) ── */
 .votti-public-poll {
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
   background: oklch(0.12 0.04 260);
 }
 
 .votti-public-poll__bg {
-  position: fixed;
+  position: absolute;
   inset: 0;
+  min-height: 100dvh;
   background-size: cover;
   background-position: center;
-  filter: blur(28px) saturate(1.2);
-  transform: scale(1.08);
-  opacity: 0.55;
+  background-repeat: no-repeat;
+  filter: blur(20px) saturate(1.2);
+  transform: scale(1.06);
+  opacity: 0.6;
   pointer-events: none;
 }
 
 .votti-public-poll--has-cover .votti-public-poll__bg {
-  filter: blur(14px) saturate(1.3);
-  opacity: 0.85;
+  filter: blur(12px) saturate(1.25);
+  opacity: 0.92;
+  transform: scale(1.04);
 }
 
 .votti-public-poll__overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
+  min-height: 100dvh;
   pointer-events: none;
 }
 
 .votti-public-poll__glow {
-  position: fixed;
+  position: absolute;
   inset: 0;
+  min-height: 100dvh;
   pointer-events: none;
 }
 
 .votti-public-poll__grid {
-  position: fixed;
+  position: absolute;
   inset: 0;
+  min-height: 100dvh;
   background-image:
     linear-gradient(oklch(0.5 0.06 250 / 6%) 1px, transparent 1px),
     linear-gradient(90deg, oklch(0.5 0.06 250 / 6%) 1px, transparent 1px);

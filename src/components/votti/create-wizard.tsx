@@ -207,7 +207,7 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
         <div className="votti-wizard__panel votti-wizard__panel--glass">
           <h2>Perguntas</h2>
           <p className="votti-wizard__hint">
-            Monte as opções — opcionalmente adicione uma fotinha em cada uma; no ranking ela cresce junto com os votos.
+            Monte as opções — a fotinha é opcional, pequena e discreta. Depois de escolher, arraste para ajustar o que aparece.
           </p>
           {draft.questions.map((q, qi) => (
             <div key={q.id} className="votti-question-card">
@@ -360,7 +360,7 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
 
           <PollImageField
             label="Imagem de capa"
-            hint="Opcional. Aparece como fundo atrás da votação e do ranking."
+            hint="Opcional. Aparece como fundo no celular e no ranking. Depois de escolher, você ajusta o enquadramento."
             variant="cover"
             value={draft.coverUrl}
             onChange={(coverUrl) => patch({ coverUrl, logoUrl: "" })}
