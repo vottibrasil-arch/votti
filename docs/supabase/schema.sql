@@ -1,99 +1,273 @@
--- Palpite Gol — schema alinhado ao Supabase do projeto
--- Execute no SQL Editor (banco zerado)
+-- VOTTI — schema inicial
+-- Execute no SQL Editor de um projeto Supabase NOVO (banco zerado)
 
 create extension if not exists "pgcrypto";
 
--- Perfil do usuário (vinculado ao auth.users)
+-- ---------------------------------------------------------------------------
+-- Perfis (organizadores autenticados)
+-- ---------------------------------------------------------------------------
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  nome text not null,
-  created_at timestamptz not null default now()
-);
-
--- Campeonatos
-create table if not exists public.campeonatos (
-  id bigint generated always as identity primary key,
-  nome text not null,
-  api_league_id integer,
-  ativo boolean not null default true,
-  owner_id uuid references auth.users(id) on delete set null,
-  tipo text not null default 'personalizado' check (tipo in ('oficial', 'personalizado')),
-  banner_url text,
-  descricao text,
+  nome text not null default '',
+  plan text not null default 'free' check (plan in ('free', 'premium')),
   created_at timestamptz not null default now(),
-  constraint campeonatos_oficial_sem_owner check (
-    (tipo = 'oficial' and owner_id is null) or tipo = 'personalizado'
-  ),
-  constraint campeonatos_personalizado_com_owner check (
-    tipo <> 'personalizado' or owner_id is not null
-  )
+  updated_at timestamptz not null default now()
 );
 
--- Partidas
-create table if not exists public.partidas (
-  id bigint generated always as identity primary key,
-  campeonato_id bigint references public.campeonatos(id),
-  time_casa text not null,
-  time_fora text not null,
-  placar_casa integer not null default 0,
-  placar_fora integer not null default 0,
-  status text not null default 'agendado',
-  data_partida timestamptz,
-  created_at timestamptz not null default now()
-);
-
--- Bolões
-create table if not exists public.boloes (
+-- ---------------------------------------------------------------------------
+-- Votações
+-- ---------------------------------------------------------------------------
+create table if not exists public.polls (
   id uuid primary key default gen_random_uuid(),
-  usuario_id uuid references auth.users(id),
-  partida_id bigint references public.partidas(id),
   slug text unique not null,
-  stake numeric not null default 10,
-  modo_exclusivo boolean not null default true,
-  cobra_taxa boolean not null default false,
-  status text not null default 'aberto',
-  created_at timestamptz not null default now()
+  owner_id uuid references auth.users(id) on delete set null,
+  title text not null,
+  description text,
+  category text,
+  organizer_name text,
+  logo_url text,
+  photo_url text,
+  primary_color text,
+  is_premium boolean not null default false,
+  status text not null default 'active' check (status in ('draft', 'active', 'closed')),
+  settings jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
--- Participantes
-create table if not exists public.participantes (
+create index if not exists idx_polls_slug on public.polls(slug);
+create index if not exists idx_polls_owner_id on public.polls(owner_id);
+create index if not exists idx_polls_status on public.polls(status);
+
+-- ---------------------------------------------------------------------------
+-- Perguntas e opções
+-- ---------------------------------------------------------------------------
+create table if not exists public.questions (
   id uuid primary key default gen_random_uuid(),
-  bolao_id uuid references public.boloes(id) on delete cascade,
-  nome text not null,
-  cidade text,
-  palpite_casa integer not null,
-  palpite_fora integer not null,
-  status text not null default 'pendente',
+  poll_id uuid not null references public.polls(id) on delete cascade,
+  text text not null,
+  sort_order integer not null default 0,
   created_at timestamptz not null default now()
 );
 
--- Índices
-create index if not exists idx_campeonatos_owner_id on public.campeonatos(owner_id);
-create index if not exists idx_campeonatos_tipo on public.campeonatos(tipo);
-create index if not exists idx_boloes_slug on public.boloes(slug);
-create index if not exists idx_boloes_usuario on public.boloes(usuario_id);
-create index if not exists idx_participantes_bolao on public.participantes(bolao_id);
-create index if not exists idx_partidas_campeonato on public.partidas(campeonato_id);
+create index if not exists idx_questions_poll_id on public.questions(poll_id);
 
--- RLS (ajuste antes de produção)
-alter table public.profiles enable row level security;
-alter table public.campeonatos enable row level security;
-alter table public.partidas enable row level security;
-alter table public.boloes enable row level security;
-alter table public.participantes enable row level security;
-
-create policy "campeonatos_select_oficial" on public.campeonatos for select to anon, authenticated using (tipo = 'oficial' and ativo = true);
-create policy "campeonatos_select_own" on public.campeonatos for select to authenticated using (tipo = 'personalizado' and owner_id = auth.uid());
-create policy "campeonatos_insert_personalizado" on public.campeonatos for insert to authenticated with check (tipo = 'personalizado' and owner_id = auth.uid());
-create policy "campeonatos_update_own" on public.campeonatos for update to authenticated using (tipo = 'personalizado' and owner_id = auth.uid()) with check (tipo = 'personalizado' and owner_id = auth.uid());
-create policy "partidas_select_all" on public.partidas for select to anon, authenticated using (true);
-create policy "partidas_insert_own_campeonato" on public.partidas for insert to authenticated with check (
-  exists (select 1 from public.campeonatos c where c.id = campeonato_id and c.tipo = 'personalizado' and c.owner_id = auth.uid())
+create table if not exists public.options (
+  id uuid primary key default gen_random_uuid(),
+  question_id uuid not null references public.questions(id) on delete cascade,
+  text text not null,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
 );
-create policy "boloes_read_all" on public.boloes for select using (true);
-create policy "participantes_read_all" on public.participantes for select using (true);
-create policy "profiles_read_own" on public.profiles for select using (auth.uid() = id);
-create policy "profiles_insert_own" on public.profiles for insert with check (auth.uid() = id);
-create policy "profiles_update_own" on public.profiles for update using (auth.uid() = id);
-create policy "boloes_insert_auth" on public.boloes for insert with check (auth.uid() = usuario_id);
-create policy "participantes_insert_all" on public.participantes for insert with check (true);
+
+create index if not exists idx_options_question_id on public.options(question_id);
+
+-- ---------------------------------------------------------------------------
+-- Votos (1 por pergunta por participante anônimo)
+-- ---------------------------------------------------------------------------
+create table if not exists public.votes (
+  id uuid primary key default gen_random_uuid(),
+  poll_id uuid not null references public.polls(id) on delete cascade,
+  question_id uuid not null references public.questions(id) on delete cascade,
+  option_id uuid not null references public.options(id) on delete cascade,
+  voter_token text not null,
+  created_at timestamptz not null default now(),
+  unique (poll_id, question_id, voter_token)
+);
+
+create index if not exists idx_votes_poll_id on public.votes(poll_id);
+create index if not exists idx_votes_question_id on public.votes(question_id);
+
+-- ---------------------------------------------------------------------------
+-- View de resultados agregados
+-- ---------------------------------------------------------------------------
+create or replace view public.poll_results as
+select
+  q.poll_id,
+  q.id as question_id,
+  o.id as option_id,
+  o.text as option_text,
+  o.sort_order,
+  count(v.id)::bigint as vote_count
+from public.questions q
+join public.options o on o.question_id = q.id
+left join public.votes v on v.option_id = o.id
+group by q.poll_id, q.id, o.id, o.text, o.sort_order;
+
+-- ---------------------------------------------------------------------------
+-- Slug curto (ex: ABC123)
+-- ---------------------------------------------------------------------------
+create or replace function public.generate_poll_slug()
+returns text
+language plpgsql
+as $$
+declare
+  chars constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  result text := '';
+  i integer;
+begin
+  loop
+    result := '';
+    for i in 1..6 loop
+      result := result || substr(chars, floor(random() * length(chars) + 1)::int, 1);
+    end loop;
+    exit when not exists (select 1 from public.polls where slug = result);
+  end loop;
+  return result;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Trigger: perfil ao cadastrar
+-- ---------------------------------------------------------------------------
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, nome)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name', split_part(new.email, '@', 1), 'Organizador')
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- ---------------------------------------------------------------------------
+-- updated_at automático
+-- ---------------------------------------------------------------------------
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists polls_set_updated_at on public.polls;
+create trigger polls_set_updated_at
+  before update on public.polls
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists profiles_set_updated_at on public.profiles;
+create trigger profiles_set_updated_at
+  before update on public.profiles
+  for each row execute function public.set_updated_at();
+
+-- ---------------------------------------------------------------------------
+-- RLS
+-- ---------------------------------------------------------------------------
+alter table public.profiles enable row level security;
+alter table public.polls enable row level security;
+alter table public.questions enable row level security;
+alter table public.options enable row level security;
+alter table public.votes enable row level security;
+
+-- profiles
+create policy "profiles_select_own" on public.profiles for select to authenticated
+  using (auth.uid() = id);
+create policy "profiles_update_own" on public.profiles for update to authenticated
+  using (auth.uid() = id) with check (auth.uid() = id);
+
+-- polls: leitura pública de votações ativas
+create policy "polls_select_active" on public.polls for select to anon, authenticated
+  using (status = 'active');
+create policy "polls_select_own" on public.polls for select to authenticated
+  using (owner_id = auth.uid());
+create policy "polls_insert_auth" on public.polls for insert to authenticated
+  with check (owner_id = auth.uid());
+create policy "polls_update_own" on public.polls for update to authenticated
+  using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+create policy "polls_delete_own" on public.polls for delete to authenticated
+  using (owner_id = auth.uid());
+
+-- questions / options: leitura pública quando a votação está ativa
+create policy "questions_select_public" on public.questions for select to anon, authenticated
+  using (exists (
+    select 1 from public.polls p
+    where p.id = poll_id and (p.status = 'active' or p.owner_id = auth.uid())
+  ));
+create policy "questions_insert_own" on public.questions for insert to authenticated
+  with check (exists (
+    select 1 from public.polls p where p.id = poll_id and p.owner_id = auth.uid()
+  ));
+create policy "questions_update_own" on public.questions for update to authenticated
+  using (exists (
+    select 1 from public.polls p where p.id = poll_id and p.owner_id = auth.uid()
+  ));
+create policy "questions_delete_own" on public.questions for delete to authenticated
+  using (exists (
+    select 1 from public.polls p where p.id = poll_id and p.owner_id = auth.uid()
+  ));
+
+create policy "options_select_public" on public.options for select to anon, authenticated
+  using (exists (
+    select 1 from public.questions q
+    join public.polls p on p.id = q.poll_id
+    where q.id = question_id and (p.status = 'active' or p.owner_id = auth.uid())
+  ));
+create policy "options_insert_own" on public.options for insert to authenticated
+  with check (exists (
+    select 1 from public.questions q
+    join public.polls p on p.id = q.poll_id
+    where q.id = question_id and p.owner_id = auth.uid()
+  ));
+create policy "options_update_own" on public.options for update to authenticated
+  using (exists (
+    select 1 from public.questions q
+    join public.polls p on p.id = q.poll_id
+    where q.id = question_id and p.owner_id = auth.uid()
+  ));
+create policy "options_delete_own" on public.options for delete to authenticated
+  using (exists (
+    select 1 from public.questions q
+    join public.polls p on p.id = q.poll_id
+    where q.id = question_id and p.owner_id = auth.uid()
+  ));
+
+-- votes: qualquer um vota em votação ativa; leitura pública para resultados ao vivo
+create policy "votes_select_public" on public.votes for select to anon, authenticated
+  using (exists (
+    select 1 from public.polls p where p.id = poll_id and p.status = 'active'
+  ));
+create policy "votes_insert_public" on public.votes for insert to anon, authenticated
+  with check (exists (
+    select 1 from public.polls p where p.id = poll_id and p.status = 'active'
+  ));
+create policy "votes_select_own" on public.votes for select to authenticated
+  using (exists (
+    select 1 from public.polls p where p.id = poll_id and p.owner_id = auth.uid()
+  ));
+
+-- View poll_results (leitura pública)
+grant select on public.poll_results to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Storage: logos e fotos do organizador
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('poll-assets', 'poll-assets', true)
+on conflict (id) do nothing;
+
+create policy "poll_assets_public_read" on storage.objects for select to anon, authenticated
+  using (bucket_id = 'poll-assets');
+
+create policy "poll_assets_auth_upload" on storage.objects for insert to authenticated
+  with check (bucket_id = 'poll-assets' and auth.uid()::text = (storage.foldername(name))[1]);
+
+create policy "poll_assets_auth_update" on storage.objects for update to authenticated
+  using (bucket_id = 'poll-assets' and auth.uid()::text = (storage.foldername(name))[1]);
+
+create policy "poll_assets_auth_delete" on storage.objects for delete to authenticated
+  using (bucket_id = 'poll-assets' and auth.uid()::text = (storage.foldername(name))[1]);

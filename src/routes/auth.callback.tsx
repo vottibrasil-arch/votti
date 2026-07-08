@@ -1,120 +1,44 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { useServerFn } from "@tanstack/react-start";
-import { Shell, TopBar, PrimaryButton } from "@/components/ui-kit";
-import { checkSuperAdmin } from "@/lib/api/super-admin.server";
-import { navigateAfterAuth } from "@/lib/auth/navigate-after-auth";
-import { getSupabaseEnvStatus } from "@/lib/supabase-env";
+import { getSupabaseBrowser, isSupabaseBrowserConfigured } from "@/lib/api/supabase-browser";
+import { navigateAfterAuth, sanitizeRedirect } from "@/lib/auth/redirect";
+import { AppShell } from "@/components/app/app-shell";
+
+type CallbackSearch = { redirect?: string };
 
 export const Route = createFileRoute("/auth/callback")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirect:
-      typeof search.redirect === "string" && search.redirect.startsWith("/")
-        ? search.redirect
-        : "/create",
+  validateSearch: (search: Record<string, unknown>): CallbackSearch => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
   }),
-  head: () => ({ meta: [{ title: "Entrando — Palpite Gol" }] }),
-  component: AuthCallback,
+  component: AuthCallbackPage,
 });
 
-async function navigateAfterLogin(
-  navigate: ReturnType<typeof useNavigate>,
-  redirect: string,
-  session: Session,
-  checkSuperAdminFn: ReturnType<typeof useServerFn<typeof checkSuperAdmin>>,
-) {
-  const result = await Promise.race([
-    checkSuperAdminFn({ data: { accessToken: session.access_token } }),
-    new Promise<{ isSuperAdmin: false }>((resolve) =>
-      window.setTimeout(() => resolve({ isSuperAdmin: false }), 1800),
-    ),
-  ]);
-  if (result.isSuperAdmin) {
-    navigate({ to: "/super-admin", replace: true });
-    return;
-  }
-
-  navigateAfterAuth(navigate, redirect);
-}
-
-function AuthCallback() {
+function AuthCallbackPage() {
   const { redirect } = Route.useSearch();
   const navigate = useNavigate();
-  const checkSuperAdminFn = useServerFn(checkSuperAdmin);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!getSupabaseEnvStatus().ok) {
-      setError("Supabase não configurado.");
+    if (!isSupabaseBrowserConfigured()) {
+      navigateAfterAuth(navigate, redirect);
       return;
     }
 
-    let cancelled = false;
-    let unsubscribe: (() => void) | undefined;
-    const timeout = window.setTimeout(() => {
-      if (!cancelled) {
-        setError("Não foi possível completar o login com Google. Tente novamente.");
-      }
-    }, 12000);
-
-    async function finish(session: Session | null) {
-      if (cancelled || !session) return;
-      window.clearTimeout(timeout);
-      try {
-        await navigateAfterLogin(navigate, redirect, session, checkSuperAdminFn);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Não foi possível verificar permissão.");
-      }
-    }
-
-    async function init() {
-      const { getSupabaseBrowser } = await import("@/lib/api/supabase-browser");
-      const supabase = getSupabaseBrowser();
-
-      const { data, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        if (!cancelled) setError(sessionError.message);
+    const supabase = getSupabaseBrowser();
+    supabase.auth.getSession().then(({ data, error: sessionError }) => {
+      if (sessionError || !data.session) {
+        setError("Não foi possível completar o login.");
         return;
       }
-      if (data.session) {
-        await finish(data.session);
-        return;
-      }
-
-      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (session) void finish(session);
-      });
-      unsubscribe = () => listener.subscription.unsubscribe();
-    }
-
-    void init();
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeout);
-      unsubscribe?.();
-    };
-  }, [redirect, navigate, checkSuperAdminFn]);
-
-  if (error) {
-    return (
-      <Shell>
-        <TopBar title="Login" useHistoryBack />
-        <div className="glass rounded-2xl p-6 text-center space-y-4 animate-rise">
-          <p className="text-sm text-red-400">{error}</p>
-          <PrimaryButton to="/login" search={{ redirect }} variant="primary">
-            Voltar ao login
-          </PrimaryButton>
-        </div>
-      </Shell>
-    );
-  }
+      navigateAfterAuth(navigate, redirect);
+    });
+  }, [navigate, redirect]);
 
   return (
-    <Shell>
-      <TopBar title="Entrando" hideBack />
-      <p className="text-center text-sm text-muted-foreground py-12">Conectando com Google...</p>
-    </Shell>
+    <AppShell feed={false}>
+      <div className="votti-app-page flex-1 flex items-center justify-center px-5">
+        <p className="votti-app-muted">{error || "Conectando…"}</p>
+      </div>
+    </AppShell>
   );
 }

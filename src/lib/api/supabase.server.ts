@@ -1,60 +1,42 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { assertSupabaseConfigured, getServerConfig } from "../config.server";
-import { getSupabaseEnvStatus } from "../supabase-env";
 
-function createBaseClient(key: string): SupabaseClient {
+import type { Database } from "@/lib/supabase/database.types";
+import {
+  assertSupabaseAdminConfigured,
+  assertSupabaseConfigured,
+  getServerConfig,
+} from "@/lib/config.server";
+
+let adminClient: SupabaseClient<Database> | null = null;
+let anonClient: SupabaseClient<Database> | null = null;
+
+export function getSupabaseAdmin(): SupabaseClient<Database> {
+  assertSupabaseAdminConfigured();
+  if (!adminClient) {
+    const { supabase } = getServerConfig();
+    adminClient = createClient<Database>(supabase.url!, supabase.serviceRoleKey!, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+  return adminClient;
+}
+
+export function getSupabaseAnonServer(): SupabaseClient<Database> {
+  assertSupabaseConfigured();
+  if (!anonClient) {
+    const { supabase } = getServerConfig();
+    anonClient = createClient<Database>(supabase.url!, supabase.anonKey!, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+  return anonClient;
+}
+
+export function getSupabaseWithToken(accessToken: string): SupabaseClient<Database> {
+  assertSupabaseConfigured();
   const { supabase } = getServerConfig();
-  return createClient(supabase.url, key, {
+  return createClient<Database>(supabase.url!, supabase.anonKey!, {
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
-}
-
-/** Leituras no servidor — usa service role se existir (ignora RLS), senão anon. */
-export function getSupabaseForRead() {
-  return getSupabaseAdmin();
-}
-
-/** Leituras públicas — sempre anon/publishable. */
-export function getSupabaseServer() {
-  assertSupabaseConfigured();
-  const { supabase } = getServerConfig();
-  return createBaseClient(supabase.anonKey);
-}
-
-/** Operações elevadas — service role se existir, senão anon. */
-export function getSupabaseAdmin() {
-  assertSupabaseConfigured();
-  const { supabase } = getServerConfig();
-  const key = supabase.serviceRoleKey || supabase.anonKey;
-  return createBaseClient(key);
-}
-
-/** Operações como usuário logado (insert com RLS). */
-export function getSupabaseAsUser(accessToken: string) {
-  assertSupabaseConfigured();
-  const { supabase } = getServerConfig();
-  const token = accessToken.trim();
-
-  return createClient(supabase.url, supabase.anonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-    accessToken: async () => token,
-    global: {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        apikey: supabase.anonKey,
-      },
-    },
-  });
-}
-
-export function getSupabaseAnon() {
-  return getSupabaseServer();
-}
-
-export function describeSupabaseConfig() {
-  return getSupabaseEnvStatus();
 }

@@ -6,7 +6,7 @@ type Props = {
 };
 
 /** Fallback mínimo — só para providers que não sejam AdSense. */
-export function FooterAdFallback({ href = "/apoiar" }: Props) {
+export function FooterAdFallback({ href = "/criar" }: Props) {
   return (
     <div className="flex h-full w-full items-center justify-center gap-2 px-2 text-center">
       <Link

@@ -1,34 +1,46 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { getSupabaseAnonKey, getSupabaseEnvStatus, getSupabaseUrl } from "@/lib/supabase-env";
 
-let browserClient: SupabaseClient | null = null;
+import type { Database } from "@/lib/supabase/database.types";
+import {
+  resolveVottiSupabaseAnonKey,
+  resolveVottiSupabaseUrl,
+} from "@/lib/votti/supabase-project";
 
-export function getSupabaseBrowser() {
+let browserClient: SupabaseClient<Database> | null = null;
+let browserClientUrl: string | null = null;
+let browserClientKey: string | null = null;
+
+export function getSupabaseBrowser(): SupabaseClient<Database> {
   if (typeof window === "undefined") {
-    throw new Error("getSupabaseBrowser só pode ser usado no cliente");
+    throw new Error("getSupabaseBrowser() só pode ser usado no browser");
   }
 
-  const status = getSupabaseEnvStatus();
-  if (!status.ok) {
-    throw new Error(`Configure ${status.missing.join(" e ")} no arquivo .env`);
-  }
+  const url = resolveVottiSupabaseUrl(import.meta.env.VITE_SUPABASE_URL);
+  const anonKey = resolveVottiSupabaseAnonKey(import.meta.env.VITE_SUPABASE_ANON_KEY);
 
-  const url = getSupabaseUrl();
-  const anonKey = getSupabaseAnonKey();
-
-  if (!browserClient) {
-    browserClient = createClient(url, anonKey, {
+  if (!browserClient || browserClientUrl !== url || browserClientKey !== anonKey) {
+    browserClient = createClient<Database>(url, anonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
       },
     });
+    browserClientUrl = url;
+    browserClientKey = anonKey;
   }
 
   return browserClient;
 }
 
-export function isSupabaseBrowserConfigured() {
-  return getSupabaseEnvStatus().ok;
+export function isSupabaseBrowserConfigured(): boolean {
+  return Boolean(resolveVottiSupabaseAnonKey(import.meta.env.VITE_SUPABASE_ANON_KEY));
+}
+
+export function getSupabaseBrowserUrl(): string {
+  return resolveVottiSupabaseUrl(import.meta.env.VITE_SUPABASE_URL);
+}
+
+export function getSupabaseBrowserAnonKey(): string {
+  return resolveVottiSupabaseAnonKey(import.meta.env.VITE_SUPABASE_ANON_KEY);
 }

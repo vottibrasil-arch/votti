@@ -1,5 +1,5 @@
 {
-  "name": "palpite_gol",
+  "name": "votti",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -9,12 +9,11 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "test:supabase": "node scripts/test-supabase.mjs",
-    "diagnose:campeonatos": "node scripts/diagnose-campeonatos.mjs",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.8",
+    "@supabase/supabase-js": "^2.110.1",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-router": "^1.168.25",

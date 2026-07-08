@@ -20,7 +20,7 @@ const errorMiddleware = createMiddleware().server(async ({ next, request, handle
     if (error != null && typeof error === "object" && "statusCode" in error) {
       throw error;
     }
-    console.error("[Palpite Gol] Erro no servidor:", error);
+    console.error("[VOTTI] Erro no servidor:", error);
 
     const message =
       error instanceof Error

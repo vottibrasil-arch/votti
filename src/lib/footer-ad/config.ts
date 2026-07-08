@@ -8,7 +8,7 @@ function pickEnv(...values: Array<string | undefined>) {
 /**
  * Configuração padrão do slot de anúncio no rodapé.
  * Prioridade:
- * prop explícita > slot do servidor (Supabase) > VITE_ADSENSE_FOOTER_SLOT / VITE_ADSENSE_SLOT > Monetag > AdSense (cliente).
+ * prop explícita > VITE_ADSENSE_FOOTER_SLOT / VITE_ADSENSE_SLOT > Monetag > AdSense (cliente).
  */
 export function getFooterAdConfig(override?: FooterAdConfig, slotFromServer?: string | null): FooterAdConfig {
   if (override) return override;

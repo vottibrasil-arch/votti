@@ -1,97 +1,82 @@
-/**
- * Teste local de conexão Supabase (rodar: node scripts/test-supabase.mjs)
- * Carrega .env da raiz e consulta public.campeonatos.
- */
+#!/usr/bin/env node
+import process from "node:process";
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const envPath = resolve(root, ".env");
+const VOTTI_URL = "https://ppvhlocqetyrsqidijms.supabase.co";
+const VOTTI_PUBLISHABLE_KEY = "sb_publishable_L2YOLHMcq2Sw-20FobWVzw_4xdd4F7S";
 
-function loadDotEnv() {
-  if (!existsSync(envPath)) {
-    console.error(`[teste] .env não encontrado em: ${envPath}`);
-    process.exit(1);
-  }
-  console.log(`[teste] .env encontrado em: ${envPath}`);
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const root = resolve(__dirname, "..");
 
-  for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
+function loadEnvFile() {
+  const envPath = resolve(root, ".env");
+  if (!existsSync(envPath)) return;
+  for (const line of readFileSync(envPath, "utf8").split("\n")) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#")) continue;
     const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
+    if (eq <= 0) continue;
     const key = trimmed.slice(0, eq).trim();
     const value = trimmed.slice(eq + 1).trim();
-    if (!(key in process.env)) process.env[key] = value;
+    if (!process.env[key]) process.env[key] = value;
   }
 }
 
-function pick(...values) {
-  return values.find((v) => typeof v === "string" && v.trim().length > 0)?.trim() ?? "";
+function resolveUrl(raw) {
+  const trimmed = raw?.trim()?.replace(/\/rest\/v1\/?$/i, "")?.replace(/\/$/, "");
+  if (trimmed?.includes("ppvhlocqetyrsqidijms")) return VOTTI_URL;
+  return VOTTI_URL;
 }
 
-loadDotEnv();
+function resolveKey(raw) {
+  const trimmed = raw?.trim();
+  return trimmed === VOTTI_PUBLISHABLE_KEY ? trimmed : VOTTI_PUBLISHABLE_KEY;
+}
 
-const url = pick(process.env.SUPABASE_URL, process.env.VITE_SUPABASE_URL);
-const anonKey = pick(
-  process.env.SUPABASE_ANON_KEY,
-  process.env.VITE_SUPABASE_ANON_KEY,
-);
+loadEnvFile();
 
-const serviceRoleKey = pick(process.env.SUPABASE_SERVICE_ROLE_KEY, process.env.SUPABASE_SECRET_KEY);
+const rawUrl = process.env.SUPABASE_URL?.trim() || process.env.VITE_SUPABASE_URL?.trim();
+const rawKey =
+  process.env.VITE_SUPABASE_ANON_KEY?.trim() || process.env.SUPABASE_ANON_KEY?.trim();
 
-console.log("[teste] variáveis:", {
-  VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ? "definida" : "ausente",
-  VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY ? "definida" : "ausente",
-  SUPABASE_URL: process.env.SUPABASE_URL ? "definida" : "ausente",
-  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY ? "definida" : "ausente",
-  SUPABASE_SERVICE_ROLE_KEY: serviceRoleKey ? "definida" : "ausente",
-  url: url || "(vazio)",
-  anonKey: anonKey ? `${anonKey.slice(0, 12)}...` : "(vazio)",
-});
+const url = resolveUrl(rawUrl);
+const anonKey = resolveKey(rawKey);
 
-if (!url || !anonKey) {
-  console.error("[teste] FALHOU — configure URL e anon key no .env");
+const supabase = createClient(url, anonKey);
+
+const { error: authError } = await supabase.auth.getSession();
+if (authError?.message?.toLowerCase().includes("invalid api key")) {
+  console.error("❌ Invalid API key — publishable key não bate com o projeto.");
   process.exit(1);
 }
 
-async function queryCampeonatos(label, key) {
-  const client = createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data, error, count } = await client
-    .from("campeonatos")
-    .select("id, nome, ativo", { count: "exact" })
-    .order("id", { ascending: true });
+const { error: pollsError } = await supabase.from("polls").select("id").limit(1);
 
-  if (error) {
-    console.error(`[teste] ${label} — erro:`, error.message, error.code ?? "");
-    return null;
-  }
-
-  console.log(`[teste] ${label} — count:`, count, "rows:", data);
-  return { data, count };
-}
-
-const anonResult = await queryCampeonatos("anon/publishable", anonKey);
-
-if (serviceRoleKey) {
-  await queryCampeonatos("service_role", serviceRoleKey);
-}
-
-if (!anonResult) {
+if (pollsError) {
+  console.error("❌ Erro ao conectar:", pollsError.message);
+  console.error("   Execute docs/supabase/SETUP-COMPLETO.sql no SQL Editor do Supabase.");
   process.exit(1);
 }
 
-const { data, count } = anonResult;
+const { error: resultsError } = await supabase.from("poll_results").select("poll_id").limit(1);
+if (resultsError) {
+  console.error("❌ Tabela polls OK, mas poll_results falhou:", resultsError.message);
+  console.error("   Execute docs/supabase/SETUP-COMPLETO.sql no SQL Editor.");
+  process.exit(1);
+}
 
-if (!data?.length) {
-  console.warn("[teste] AVISO — anon retornou 0 registros (RLS/GRANT no banco).");
-  if (!serviceRoleKey) {
-    console.warn("[teste] Opção A: execute docs/supabase/fix-leitura-publica.sql no SQL Editor");
-    console.warn("[teste] Opção B: preencha SUPABASE_SERVICE_ROLE_KEY no .env e reinicie o dev server");
-  }
-  process.exitCode = 2;
+const { error: rpcError } = await supabase.rpc("generate_poll_slug");
+if (rpcError) {
+  console.error("❌ Função generate_poll_slug não encontrada:", rpcError.message);
+  console.error("   Execute docs/supabase/SETUP-COMPLETO.sql no SQL Editor.");
+  process.exit(1);
+}
+
+console.log("✅ Supabase OK — projeto ppvhlocqetyrsqidijms acessível.");
+console.log(`   URL: ${url}`);
+if (rawKey && rawKey !== VOTTI_PUBLISHABLE_KEY) {
+  console.warn("   ⚠️  VITE_SUPABASE_ANON_KEY no .env foi corrigida para a publishable key do VOTTI.");
 }

@@ -9,48 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SuperAdminRouteImport } from './routes/super-admin'
-import { Route as SupRouteImport } from './routes/sup'
-import { Route as ShareRouteImport } from './routes/share'
-import { Route as PickRouteImport } from './routes/pick'
-import { Route as MeusBoloesRouteImport } from './routes/meus-boloes'
+import { Route as MinhasRouteImport } from './routes/minhas'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as LiveRouteImport } from './routes/live'
-import { Route as JoinRouteImport } from './routes/join'
-import { Route as FinalRouteImport } from './routes/final'
-import { Route as DemonstracaoRouteImport } from './routes/demonstracao'
-import { Route as CreateRouteImport } from './routes/create'
-import { Route as ApoiarRouteImport } from './routes/apoiar'
-import { Route as AguardandoRouteImport } from './routes/aguardando'
-import { Route as AdminRouteImport } from './routes/admin'
+import { Route as CriarRouteImport } from './routes/criar'
+import { Route as ComoFuncionaRouteImport } from './routes/como-funciona'
+import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as CampeonatoSlugRouteImport } from './routes/campeonato.$slug'
+import { Route as CriarSucessoRouteImport } from './routes/criar.sucesso'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
-import { Route as CampeonatoSlugAdminRouteImport } from './routes/campeonato.$slug.admin'
+import { Route as VotacaoSlugResultadosRouteImport } from './routes/votacao.$slug.resultados'
 
-const SuperAdminRoute = SuperAdminRouteImport.update({
-  id: '/super-admin',
-  path: '/super-admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SupRoute = SupRouteImport.update({
-  id: '/sup',
-  path: '/sup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ShareRoute = ShareRouteImport.update({
-  id: '/share',
-  path: '/share',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PickRoute = PickRouteImport.update({
-  id: '/pick',
-  path: '/pick',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MeusBoloesRoute = MeusBoloesRouteImport.update({
-  id: '/meus-boloes',
-  path: '/meus-boloes',
+const MinhasRoute = MinhasRouteImport.update({
+  id: '/minhas',
+  path: '/minhas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -58,44 +29,19 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LiveRoute = LiveRouteImport.update({
-  id: '/live',
-  path: '/live',
+const CriarRoute = CriarRouteImport.update({
+  id: '/criar',
+  path: '/criar',
   getParentRoute: () => rootRouteImport,
 } as any)
-const JoinRoute = JoinRouteImport.update({
-  id: '/join',
-  path: '/join',
+const ComoFuncionaRoute = ComoFuncionaRouteImport.update({
+  id: '/como-funciona',
+  path: '/como-funciona',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FinalRoute = FinalRouteImport.update({
-  id: '/final',
-  path: '/final',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemonstracaoRoute = DemonstracaoRouteImport.update({
-  id: '/demonstracao',
-  path: '/demonstracao',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CreateRoute = CreateRouteImport.update({
-  id: '/create',
-  path: '/create',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApoiarRoute = ApoiarRouteImport.update({
-  id: '/apoiar',
-  path: '/apoiar',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AguardandoRoute = AguardandoRouteImport.update({
-  id: '/aguardando',
-  path: '/aguardando',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const CadastroRoute = CadastroRouteImport.update({
+  id: '/cadastro',
+  path: '/cadastro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -103,201 +49,110 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CampeonatoSlugRoute = CampeonatoSlugRouteImport.update({
-  id: '/campeonato/$slug',
-  path: '/campeonato/$slug',
-  getParentRoute: () => rootRouteImport,
+const CriarSucessoRoute = CriarSucessoRouteImport.update({
+  id: '/sucesso',
+  path: '/sucesso',
+  getParentRoute: () => CriarRoute,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CampeonatoSlugAdminRoute = CampeonatoSlugAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => CampeonatoSlugRoute,
+const VotacaoSlugResultadosRoute = VotacaoSlugResultadosRouteImport.update({
+  id: '/votacao/$slug/resultados',
+  path: '/votacao/$slug/resultados',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
-  '/aguardando': typeof AguardandoRoute
-  '/apoiar': typeof ApoiarRoute
-  '/create': typeof CreateRoute
-  '/demonstracao': typeof DemonstracaoRoute
-  '/final': typeof FinalRoute
-  '/join': typeof JoinRoute
-  '/live': typeof LiveRoute
+  '/cadastro': typeof CadastroRoute
+  '/como-funciona': typeof ComoFuncionaRoute
+  '/criar': typeof CriarRouteWithChildren
   '/login': typeof LoginRoute
-  '/meus-boloes': typeof MeusBoloesRoute
-  '/pick': typeof PickRoute
-  '/share': typeof ShareRoute
-  '/sup': typeof SupRoute
-  '/super-admin': typeof SuperAdminRoute
+  '/minhas': typeof MinhasRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/campeonato/$slug': typeof CampeonatoSlugRouteWithChildren
-  '/campeonato/$slug/admin': typeof CampeonatoSlugAdminRoute
+  '/criar/sucesso': typeof CriarSucessoRoute
+  '/votacao/$slug/resultados': typeof VotacaoSlugResultadosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
-  '/aguardando': typeof AguardandoRoute
-  '/apoiar': typeof ApoiarRoute
-  '/create': typeof CreateRoute
-  '/demonstracao': typeof DemonstracaoRoute
-  '/final': typeof FinalRoute
-  '/join': typeof JoinRoute
-  '/live': typeof LiveRoute
+  '/cadastro': typeof CadastroRoute
+  '/como-funciona': typeof ComoFuncionaRoute
+  '/criar': typeof CriarRouteWithChildren
   '/login': typeof LoginRoute
-  '/meus-boloes': typeof MeusBoloesRoute
-  '/pick': typeof PickRoute
-  '/share': typeof ShareRoute
-  '/sup': typeof SupRoute
-  '/super-admin': typeof SuperAdminRoute
+  '/minhas': typeof MinhasRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/campeonato/$slug': typeof CampeonatoSlugRouteWithChildren
-  '/campeonato/$slug/admin': typeof CampeonatoSlugAdminRoute
+  '/criar/sucesso': typeof CriarSucessoRoute
+  '/votacao/$slug/resultados': typeof VotacaoSlugResultadosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
-  '/aguardando': typeof AguardandoRoute
-  '/apoiar': typeof ApoiarRoute
-  '/create': typeof CreateRoute
-  '/demonstracao': typeof DemonstracaoRoute
-  '/final': typeof FinalRoute
-  '/join': typeof JoinRoute
-  '/live': typeof LiveRoute
+  '/cadastro': typeof CadastroRoute
+  '/como-funciona': typeof ComoFuncionaRoute
+  '/criar': typeof CriarRouteWithChildren
   '/login': typeof LoginRoute
-  '/meus-boloes': typeof MeusBoloesRoute
-  '/pick': typeof PickRoute
-  '/share': typeof ShareRoute
-  '/sup': typeof SupRoute
-  '/super-admin': typeof SuperAdminRoute
+  '/minhas': typeof MinhasRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/campeonato/$slug': typeof CampeonatoSlugRouteWithChildren
-  '/campeonato/$slug/admin': typeof CampeonatoSlugAdminRoute
+  '/criar/sucesso': typeof CriarSucessoRoute
+  '/votacao/$slug/resultados': typeof VotacaoSlugResultadosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin'
-    | '/aguardando'
-    | '/apoiar'
-    | '/create'
-    | '/demonstracao'
-    | '/final'
-    | '/join'
-    | '/live'
+    | '/cadastro'
+    | '/como-funciona'
+    | '/criar'
     | '/login'
-    | '/meus-boloes'
-    | '/pick'
-    | '/share'
-    | '/sup'
-    | '/super-admin'
+    | '/minhas'
     | '/auth/callback'
-    | '/campeonato/$slug'
-    | '/campeonato/$slug/admin'
+    | '/criar/sucesso'
+    | '/votacao/$slug/resultados'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
-    | '/aguardando'
-    | '/apoiar'
-    | '/create'
-    | '/demonstracao'
-    | '/final'
-    | '/join'
-    | '/live'
+    | '/cadastro'
+    | '/como-funciona'
+    | '/criar'
     | '/login'
-    | '/meus-boloes'
-    | '/pick'
-    | '/share'
-    | '/sup'
-    | '/super-admin'
+    | '/minhas'
     | '/auth/callback'
-    | '/campeonato/$slug'
-    | '/campeonato/$slug/admin'
+    | '/criar/sucesso'
+    | '/votacao/$slug/resultados'
   id:
     | '__root__'
     | '/'
-    | '/admin'
-    | '/aguardando'
-    | '/apoiar'
-    | '/create'
-    | '/demonstracao'
-    | '/final'
-    | '/join'
-    | '/live'
+    | '/cadastro'
+    | '/como-funciona'
+    | '/criar'
     | '/login'
-    | '/meus-boloes'
-    | '/pick'
-    | '/share'
-    | '/sup'
-    | '/super-admin'
+    | '/minhas'
     | '/auth/callback'
-    | '/campeonato/$slug'
-    | '/campeonato/$slug/admin'
+    | '/criar/sucesso'
+    | '/votacao/$slug/resultados'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
-  AguardandoRoute: typeof AguardandoRoute
-  ApoiarRoute: typeof ApoiarRoute
-  CreateRoute: typeof CreateRoute
-  DemonstracaoRoute: typeof DemonstracaoRoute
-  FinalRoute: typeof FinalRoute
-  JoinRoute: typeof JoinRoute
-  LiveRoute: typeof LiveRoute
+  CadastroRoute: typeof CadastroRoute
+  ComoFuncionaRoute: typeof ComoFuncionaRoute
+  CriarRoute: typeof CriarRouteWithChildren
   LoginRoute: typeof LoginRoute
-  MeusBoloesRoute: typeof MeusBoloesRoute
-  PickRoute: typeof PickRoute
-  ShareRoute: typeof ShareRoute
-  SupRoute: typeof SupRoute
-  SuperAdminRoute: typeof SuperAdminRoute
+  MinhasRoute: typeof MinhasRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
-  CampeonatoSlugRoute: typeof CampeonatoSlugRouteWithChildren
+  VotacaoSlugResultadosRoute: typeof VotacaoSlugResultadosRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/super-admin': {
-      id: '/super-admin'
-      path: '/super-admin'
-      fullPath: '/super-admin'
-      preLoaderRoute: typeof SuperAdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sup': {
-      id: '/sup'
-      path: '/sup'
-      fullPath: '/sup'
-      preLoaderRoute: typeof SupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/share': {
-      id: '/share'
-      path: '/share'
-      fullPath: '/share'
-      preLoaderRoute: typeof ShareRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pick': {
-      id: '/pick'
-      path: '/pick'
-      fullPath: '/pick'
-      preLoaderRoute: typeof PickRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/meus-boloes': {
-      id: '/meus-boloes'
-      path: '/meus-boloes'
-      fullPath: '/meus-boloes'
-      preLoaderRoute: typeof MeusBoloesRouteImport
+    '/minhas': {
+      id: '/minhas'
+      path: '/minhas'
+      fullPath: '/minhas'
+      preLoaderRoute: typeof MinhasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -307,60 +162,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/live': {
-      id: '/live'
-      path: '/live'
-      fullPath: '/live'
-      preLoaderRoute: typeof LiveRouteImport
+    '/criar': {
+      id: '/criar'
+      path: '/criar'
+      fullPath: '/criar'
+      preLoaderRoute: typeof CriarRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/join': {
-      id: '/join'
-      path: '/join'
-      fullPath: '/join'
-      preLoaderRoute: typeof JoinRouteImport
+    '/como-funciona': {
+      id: '/como-funciona'
+      path: '/como-funciona'
+      fullPath: '/como-funciona'
+      preLoaderRoute: typeof ComoFuncionaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/final': {
-      id: '/final'
-      path: '/final'
-      fullPath: '/final'
-      preLoaderRoute: typeof FinalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demonstracao': {
-      id: '/demonstracao'
-      path: '/demonstracao'
-      fullPath: '/demonstracao'
-      preLoaderRoute: typeof DemonstracaoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/create': {
-      id: '/create'
-      path: '/create'
-      fullPath: '/create'
-      preLoaderRoute: typeof CreateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/apoiar': {
-      id: '/apoiar'
-      path: '/apoiar'
-      fullPath: '/apoiar'
-      preLoaderRoute: typeof ApoiarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/aguardando': {
-      id: '/aguardando'
-      path: '/aguardando'
-      fullPath: '/aguardando'
-      preLoaderRoute: typeof AguardandoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
+    '/cadastro': {
+      id: '/cadastro'
+      path: '/cadastro'
+      fullPath: '/cadastro'
+      preLoaderRoute: typeof CadastroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -370,12 +190,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/campeonato/$slug': {
-      id: '/campeonato/$slug'
-      path: '/campeonato/$slug'
-      fullPath: '/campeonato/$slug'
-      preLoaderRoute: typeof CampeonatoSlugRouteImport
-      parentRoute: typeof rootRouteImport
+    '/criar/sucesso': {
+      id: '/criar/sucesso'
+      path: '/sucesso'
+      fullPath: '/criar/sucesso'
+      preLoaderRoute: typeof CriarSucessoRouteImport
+      parentRoute: typeof CriarRoute
     }
     '/auth/callback': {
       id: '/auth/callback'
@@ -384,46 +204,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/campeonato/$slug/admin': {
-      id: '/campeonato/$slug/admin'
-      path: '/admin'
-      fullPath: '/campeonato/$slug/admin'
-      preLoaderRoute: typeof CampeonatoSlugAdminRouteImport
-      parentRoute: typeof CampeonatoSlugRoute
+    '/votacao/$slug/resultados': {
+      id: '/votacao/$slug/resultados'
+      path: '/votacao/$slug/resultados'
+      fullPath: '/votacao/$slug/resultados'
+      preLoaderRoute: typeof VotacaoSlugResultadosRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface CampeonatoSlugRouteChildren {
-  CampeonatoSlugAdminRoute: typeof CampeonatoSlugAdminRoute
+interface CriarRouteChildren {
+  CriarSucessoRoute: typeof CriarSucessoRoute
 }
 
-const CampeonatoSlugRouteChildren: CampeonatoSlugRouteChildren = {
-  CampeonatoSlugAdminRoute: CampeonatoSlugAdminRoute,
+const CriarRouteChildren: CriarRouteChildren = {
+  CriarSucessoRoute: CriarSucessoRoute,
 }
 
-const CampeonatoSlugRouteWithChildren = CampeonatoSlugRoute._addFileChildren(
-  CampeonatoSlugRouteChildren,
-)
+const CriarRouteWithChildren = CriarRoute._addFileChildren(CriarRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
-  AguardandoRoute: AguardandoRoute,
-  ApoiarRoute: ApoiarRoute,
-  CreateRoute: CreateRoute,
-  DemonstracaoRoute: DemonstracaoRoute,
-  FinalRoute: FinalRoute,
-  JoinRoute: JoinRoute,
-  LiveRoute: LiveRoute,
+  CadastroRoute: CadastroRoute,
+  ComoFuncionaRoute: ComoFuncionaRoute,
+  CriarRoute: CriarRouteWithChildren,
   LoginRoute: LoginRoute,
-  MeusBoloesRoute: MeusBoloesRoute,
-  PickRoute: PickRoute,
-  ShareRoute: ShareRoute,
-  SupRoute: SupRoute,
-  SuperAdminRoute: SuperAdminRoute,
+  MinhasRoute: MinhasRoute,
   AuthCallbackRoute: AuthCallbackRoute,
-  CampeonatoSlugRoute: CampeonatoSlugRouteWithChildren,
+  VotacaoSlugResultadosRoute: VotacaoSlugResultadosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,84 +1,56 @@
-type SupabaseEnvStatus = {
-  ok: boolean;
-  missing: string[];
-  mode: string;
-  url: string;
-  anonKeySet: boolean;
-  anonKeyPrefix: string;
-  serviceRoleKeySet: boolean;
-};
+import process from "node:process";
 
-function readEnv(name: string): string {
-  const fromImportMeta =
-    typeof import.meta !== "undefined" && import.meta.env
-      ? (import.meta.env[name] as string | undefined)
-      : undefined;
-  if (typeof fromImportMeta === "string" && fromImportMeta.trim().length > 0) {
-    return fromImportMeta.trim();
+import {
+  getSupabaseProjectRef as extractProjectRef,
+  resolveVottiSupabaseAnonKey,
+  resolveVottiSupabaseUrl,
+} from "@/lib/votti/supabase-project";
+
+function readEnv(...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = process.env[key]?.trim();
+    if (value) return value;
   }
-
-  const fromProcess =
-    typeof process !== "undefined" && process.env
-      ? (process.env[name] as string | undefined)
-      : undefined;
-  return typeof fromProcess === "string" ? fromProcess.trim() : "";
+  return undefined;
 }
 
-function readMode(): string {
-  const fromImportMeta =
-    typeof import.meta !== "undefined" && import.meta.env
-      ? (import.meta.env.MODE as string | undefined)
-      : undefined;
-  if (typeof fromImportMeta === "string" && fromImportMeta.trim().length > 0) {
-    return fromImportMeta.trim();
-  }
-  const fromProcess =
-    typeof process !== "undefined" && process.env
-      ? (process.env.NODE_ENV as string | undefined)
-      : undefined;
-  return fromProcess?.trim() || "development";
+export function getRawSupabaseEnvUrl(): string | undefined {
+  return readEnv("SUPABASE_URL", "VITE_SUPABASE_URL");
 }
 
-function readSupabaseUrl() {
-  return readEnv("VITE_SUPABASE_URL") || readEnv("SUPABASE_URL");
+export function getSupabaseUrl(): string {
+  return resolveVottiSupabaseUrl(getRawSupabaseEnvUrl());
 }
 
-function readSupabaseAnonKey() {
-  return readEnv("VITE_SUPABASE_ANON_KEY") || readEnv("SUPABASE_ANON_KEY");
+export function getSupabaseAnonKey(): string {
+  return resolveVottiSupabaseAnonKey(readEnv("VITE_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY"));
 }
 
-function readSupabaseServiceRoleKey() {
+export function getSupabaseServiceRoleKey(): string | undefined {
   return readEnv("SUPABASE_SERVICE_ROLE_KEY");
 }
 
-export function getSupabaseEnvStatus(): SupabaseEnvStatus {
-  const url = readSupabaseUrl();
-  const anonKey = readSupabaseAnonKey();
-  const serviceRoleKey = readSupabaseServiceRoleKey();
+export function getSupabaseProjectRef(url?: string): string | undefined {
+  return extractProjectRef(url ?? getSupabaseUrl());
+}
 
+export function getSupabaseEnvMismatch() {
+  const rawVite = readEnv("VITE_SUPABASE_URL");
+  const rawServer = readEnv("SUPABASE_URL");
+  const viteRef = extractProjectRef(rawVite);
+  const serverRef = extractProjectRef(rawServer ?? rawVite);
+  return Boolean(viteRef && serverRef && viteRef !== serverRef);
+}
+
+export function getSupabaseEnvStatus() {
   const missing: string[] = [];
-  if (!url) missing.push("VITE_SUPABASE_URL");
-  if (!anonKey) missing.push("VITE_SUPABASE_ANON_KEY");
-
-  return {
-    ok: missing.length === 0,
-    missing,
-    mode: readMode(),
-    url,
-    anonKeySet: Boolean(anonKey),
-    anonKeyPrefix: anonKey ? `${anonKey.slice(0, 8)}...` : "",
-    serviceRoleKeySet: Boolean(serviceRoleKey),
-  };
+  if (!getSupabaseAnonKey()) missing.push("SUPABASE_ANON_KEY");
+  return { ok: missing.length === 0, missing };
 }
 
-export function getSupabaseUrl() {
-  return readSupabaseUrl();
-}
-
-export function getSupabaseAnonKey() {
-  return readSupabaseAnonKey();
-}
-
-export function getSupabaseServiceRoleKey() {
-  return readSupabaseServiceRoleKey();
+export function getSupabaseAdminEnvStatus() {
+  const base = getSupabaseEnvStatus();
+  const missing = [...base.missing];
+  if (!getSupabaseServiceRoleKey()) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  return { ok: missing.length === 0, missing };
 }

@@ -1,49 +1,73 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getSupabaseEnvStatus } from "../supabase-env";
-import { getSupabaseServer } from "./supabase.server";
+
+import { getSupabaseAnonServer } from "@/lib/api/supabase.server";
+import { getSupabaseEnvStatus } from "@/lib/supabase-env";
+import {
+  getSupabaseProjectRef,
+  isVottiSupabaseProject,
+  VOTTI_SUPABASE_PROJECT_REF,
+} from "@/lib/votti/supabase-project";
+
+export type SupabaseHealthResult = {
+  configured: boolean;
+  connected: boolean;
+  missing: string[];
+  error?: string;
+};
+
+export const checkSupabaseHealth = createServerFn({ method: "GET" }).handler(
+  async (): Promise<SupabaseHealthResult> => {
+    const status = getSupabaseEnvStatus();
+    if (!status.ok) {
+      return { configured: false, connected: false, missing: status.missing };
+    }
+
+    try {
+      const supabase = getSupabaseAnonServer();
+      const projectRef = getSupabaseProjectRef(process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL);
+      if (projectRef && !isVottiSupabaseProject(process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL)) {
+        console.warn(
+          `[VOTTI] Projeto Supabase errado (${projectRef}). Use ${VOTTI_SUPABASE_PROJECT_REF} no .env.`,
+        );
+      }
+      const { error } = await supabase.from("polls").select("id").limit(1);
+      if (error) {
+        return {
+          configured: true,
+          connected: false,
+          missing: [],
+          error: error.message,
+        };
+      }
+      return { configured: true, connected: true, missing: [] };
+    } catch (err) {
+      return {
+        configured: true,
+        connected: false,
+        missing: [],
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  },
+);
 
 export async function runSupabaseConnectionTest() {
-  const env = getSupabaseEnvStatus();
-
-  console.log("[Palpite Gol] Teste Supabase — variáveis:", {
-    ok: env.ok,
-    url: env.url || "(vazio)",
-    anonKey: env.anonKeySet ? env.anonKeyPrefix : "(vazio)",
-    serviceRole: env.serviceRoleKeySet ? "definida" : "não definida (ok para leituras)",
-    mode: env.mode,
-    missing: env.missing,
-  });
-
-  if (!env.ok) {
-    const message = `Variáveis ausentes: ${env.missing.join(", ")}`;
-    console.error("[Palpite Gol] Teste Supabase — FALHOU:", message);
-    return { ok: false as const, env, error: message, campeonatos: [] };
+  const status = getSupabaseEnvStatus();
+  if (!status.ok) {
+    console.warn(`[VOTTI] Supabase não configurado (${status.missing.join(", ")})`);
+    return;
   }
 
-  const supabase = getSupabaseServer();
-  const { data, error } = await supabase
-    .from("campeonatos")
-    .select("id, nome, ativo")
-    .order("id", { ascending: true });
-
-  if (error) {
-    const message = `${error.message}${error.code ? ` (código: ${error.code})` : ""}${error.details ? ` — ${error.details}` : ""}`;
-    console.error("[Palpite Gol] Teste Supabase — erro na query campeonatos:", message);
-    return { ok: false as const, env, error: message, campeonatos: [] };
+  try {
+    const supabase = getSupabaseAnonServer();
+    const { error } = await supabase.from("polls").select("id").limit(1);
+    if (error) {
+      console.warn("[VOTTI] Supabase configurado, mas a tabela polls não responde:", error.message);
+      console.warn("[VOTTI] Execute docs/supabase/SETUP-COMPLETO.sql no SQL Editor do Supabase.");
+      return;
+    }
+    console.info("[VOTTI] Supabase conectado.");
+  } catch (err) {
+    console.warn("[VOTTI] Erro ao testar Supabase:", err);
   }
-
-  console.log("[Palpite Gol] Teste Supabase — campeonatos:", data);
-
-  if (!data?.length) {
-    const hint =
-      "Conexão OK, mas 0 registros retornados. Se há dados no painel Supabase, habilite as políticas RLS em docs/supabase/schema.sql (campeonatos_read_all, partidas_read_all).";
-    console.warn("[Palpite Gol] Teste Supabase — AVISO:", hint);
-    return { ok: true as const, env, error: null, warning: hint, campeonatos: [] };
-  }
-
-  return { ok: true as const, env, error: null, warning: null, campeonatos: data ?? [] };
 }
-
-export const testSupabaseConnection = createServerFn({ method: "GET" }).handler(async () => {
-  return runSupabaseConnectionTest();
-});

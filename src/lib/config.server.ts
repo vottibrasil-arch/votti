@@ -1,5 +1,11 @@
 import process from "node:process";
-import { getSupabaseAnonKey, getSupabaseEnvStatus, getSupabaseServiceRoleKey, getSupabaseUrl } from "./supabase-env";
+
+import {
+  getSupabaseAnonKey,
+  getSupabaseEnvStatus,
+  getSupabaseServiceRoleKey,
+  getSupabaseUrl,
+} from "./supabase-env";
 
 export function getServerConfig() {
   const vercelHost = process.env.VERCEL_URL?.trim();
@@ -13,17 +19,10 @@ export function getServerConfig() {
   return {
     nodeEnv: process.env.NODE_ENV,
     appUrl,
-    platformFeePercent: Number(process.env.PLATFORM_FEE_PERCENT ?? "10"),
-
     supabase: {
       url: getSupabaseUrl(),
       anonKey: getSupabaseAnonKey(),
       serviceRoleKey: getSupabaseServiceRoleKey(),
-    },
-
-    footballApi: {
-      baseUrl: process.env.FOOTBALL_API_BASE ?? "https://v3.football.api-sports.io",
-      apiKey: process.env.FOOTBALL_API_KEY ?? "",
     },
   };
 }
@@ -37,9 +36,15 @@ export function assertSupabaseConfigured() {
   }
 }
 
-export function assertFootballApiConfigured() {
-  const { footballApi } = getServerConfig();
-  if (!footballApi.apiKey) {
-    throw new Error("API de jogos não configurada. Veja docs/api-jogos/README.md");
+export function assertSupabaseAdminConfigured() {
+  const { supabase } = getServerConfig();
+  const missing: string[] = [];
+  if (!supabase.url) missing.push("SUPABASE_URL");
+  if (!supabase.anonKey) missing.push("SUPABASE_ANON_KEY");
+  if (!supabase.serviceRoleKey) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  if (missing.length > 0) {
+    throw new Error(
+      `Supabase admin não configurado. Faltando: ${missing.join(", ")}. Veja docs/supabase/README.md`,
+    );
   }
 }

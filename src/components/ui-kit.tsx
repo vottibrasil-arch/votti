@@ -102,7 +102,7 @@ export function PrimaryButton({
     "w-full h-14 rounded-2xl font-display font-semibold text-base tracking-tight transition active:scale-[0.98] flex items-center justify-center gap-2";
 
   const variantClass: Record<string, string> = {
-    primary: "hover:brightness-110 btn-glow-green",
+    primary: "hover:brightness-110 btn-glow-primary",
     gold: "hover:brightness-110 btn-glow-gold",
     ghost: "bg-surface-2/60 text-foreground hover:bg-surface-2",
     outline: "border border-border bg-transparent text-foreground hover:bg-surface-2/60",
@@ -110,7 +110,7 @@ export function PrimaryButton({
 
   const variantStyle: Record<string, CSSProperties | undefined> = {
     primary: {
-      background: "var(--gradient-green)",
+      background: "var(--gradient-primary)",
       color: "var(--primary-foreground)",
     },
     gold: {

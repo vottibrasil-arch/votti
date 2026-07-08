@@ -8,36 +8,34 @@
 ## Passos
 
 ```powershell
-cd c:\Users\IDALINA\Desktop\palpite_gol
+cd c:\Users\IDALINA\Desktop\votti
 npm install
 npm run dev
 ```
 
 Abra **http://localhost:5173**
 
-## Páginas para testar
+## Páginas
 
 | URL | O que ver |
 |-----|-----------|
-| `/` | Landing page |
-| `/create` | Criar bolão |
-| `/share` | Link compartilhável |
-| `/join` | Convite para participar |
-| `/pick` | Escolher placar |
-| `/live` | Tela ao vivo (demo) |
-| `/admin` | Painel do administrador |
-| `/final` | Tela de vitória |
-| `/apoiar` | Apoiadores |
+| `/` | Home — Criar votação / Minhas votações |
+| `/criar` | Criar votação (placeholder) |
+| `/minhas` | Minhas votações (placeholder) |
 
 ## Variáveis de ambiente
-
-Opcional para ver só o front com mock. Obrigatório quando conectar Supabase/API:
 
 ```powershell
 copy docs\env.example .env
 ```
 
-Edite `.env` com suas chaves.
+Preencha as chaves do Supabase (projeto novo). Veja [supabase/README.md](./supabase/README.md).
+
+Teste a conexão:
+
+```powershell
+npm run test:supabase
+```
 
 ## Build de produção
 

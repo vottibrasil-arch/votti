@@ -1,6 +1,6 @@
-# Palpite Gol — Documentação
+# VOTTI — Documentação
 
-Projeto de bolão em tempo real. O front está pronto com dados de demonstração; o banco Supabase começa vazio e será populado conforme as integrações forem ligadas.
+Plataforma de votações em tempo real.
 
 ## Índice
 
@@ -8,33 +8,34 @@ Projeto de bolão em tempo real. O front está pronto com dados de demonstraçã
 |-----------|-----------|
 | [SETUP.md](./SETUP.md) | Como rodar o projeto localmente |
 | [CHANGELOG.md](./CHANGELOG.md) | Histórico de atualizações |
-| [env.example](./env.example) | Variáveis de ambiente (copie para `.env`) |
-| [supabase/README.md](./supabase/README.md) | Configurar Supabase |
-| [supabase/schema.sql](./supabase/schema.sql) | Schema inicial do banco |
-| [api-jogos/README.md](./api-jogos/README.md) | Configurar API de futebol |
+| [env.example](./env.example) | Variáveis de ambiente |
+| [supabase/README.md](./supabase/README.md) | Configurar Supabase (projeto novo) |
+| [supabase/schema.sql](./supabase/schema.sql) | Schema do banco VOTTI |
 
-## Estrutura do código (após refatoração)
+## Estrutura do código
 
 ```
 src/
-├── lib/bolao/          # Tipos, mock demo, lógica de ranking
-├── lib/api/            # Supabase + API de jogos (server-only)
-├── components/bolao/   # Componentes reutilizáveis do bolão
-├── components/landing/ # Seções da página inicial
-└── routes/             # Páginas (fluxo demo)
+├── components/          # UI (logo, rodapé, ui-kit)
+├── lib/
+│   ├── api/             # Supabase (server + browser)
+│   ├── supabase/        # Tipos do banco
+│   └── votti/           # Sessão do votante, Realtime
+└── routes/
+    ├── index.tsx        # Home
+    ├── criar.tsx        # Criar votação
+    └── minhas.tsx       # Minhas votações
 ```
 
-## Fluxo das páginas (demo atual)
+## Fluxo atual
 
 ```
-/ → /create → /share → /join → /pick → /live → /final
-                              ↘ /admin
-/ → /apoiar (apoiadores no rodapé)
+/ → Criar votação (/criar) ou Minhas votações (/minhas)
 ```
 
-## Próximos passos
+## Configuração Supabase
 
-1. Copiar `docs/env.example` para `.env` na raiz do projeto
-2. Rodar `docs/supabase/schema.sql` no SQL Editor do Supabase
-3. Preencher chaves no `.env`
-4. Substituir `DEMO_BOLAO` por dados reais via `createServerFn`
+1. Crie um projeto novo em [supabase.com](https://supabase.com)
+2. Execute `docs/supabase/schema.sql` e `realtime.sql`
+3. Copie `docs/env.example` → `.env` e preencha as chaves
+4. Teste: `npm run test:supabase`
