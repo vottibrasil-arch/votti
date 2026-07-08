@@ -84,14 +84,18 @@ export const EMPTY_DRAFT: PollDraft = {
   settings: DEFAULT_SETTINGS,
 };
 
+export function getPollCoverUrl(poll: Pick<StoredPoll, "coverUrl" | "logoUrl">): string {
+  return poll.coverUrl.trim() || poll.logoUrl.trim();
+}
+
 export function storedPollToDraft(poll: StoredPoll): PollDraft {
   return {
     title: poll.title,
     description: poll.description,
     category: poll.category,
-    logoUrl: poll.logoUrl,
+    logoUrl: "",
     primaryColor: poll.primaryColor,
-    coverUrl: poll.coverUrl,
+    coverUrl: getPollCoverUrl(poll),
     questions: poll.questions.map((q) => ({
       id: q.id,
       text: q.text,

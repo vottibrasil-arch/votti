@@ -2938,6 +2938,11 @@
   pointer-events: none;
 }
 
+.votti-public-poll--has-cover .votti-public-poll__bg {
+  filter: blur(14px) saturate(1.3);
+  opacity: 0.85;
+}
+
 .votti-public-poll__overlay {
   position: fixed;
   inset: 0;
@@ -3615,6 +3620,17 @@
 
 .votti-vote-hero--minimal .votti-vote-hero__body {
   padding: 1.125rem 1.25rem 1.25rem;
+}
+
+.votti-vote-hero--cover .votti-vote-hero__cover {
+  width: 100%;
+  height: 11.5rem;
+  object-fit: cover;
+  display: block;
+}
+
+.votti-vote-hero--cover .votti-vote-hero__cover--accent {
+  height: 7rem;
 }
 
 .votti-vote-hero--minimal .votti-vote-hero__title {

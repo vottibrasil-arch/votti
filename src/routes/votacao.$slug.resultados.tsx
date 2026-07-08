@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { PollCoverHero } from "@/components/votti/poll-cover-hero";
 import { PollPublicShell } from "@/components/votti/poll-public-shell";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { PollSharePanel } from "@/components/votti/poll-share-panel";
@@ -91,8 +92,7 @@ function ResultadosPage() {
           </div>
         ) : null}
 
-        <div className="votti-vote-hero votti-vote-hero--branded votti-vote-hero--minimal animate-rise">
-          <div className="votti-vote-hero__body">
+        <PollCoverHero poll={poll}>
             <div className="votti-vote-hero__trust">
               <SecurityBadge compact />
               <span className="votti-vote-hero__live">
@@ -102,8 +102,7 @@ function ResultadosPage() {
             </div>
             <h1 className="votti-vote-hero__title">{poll.title}</h1>
             <p className="votti-vote-hero__votes tabular-nums">{formatPollStats(poll)}</p>
-          </div>
-        </div>
+        </PollCoverHero>
 
         <div className="votti-results__stack">
           {poll.questions.map((q) => (

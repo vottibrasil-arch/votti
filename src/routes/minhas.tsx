@@ -36,6 +36,7 @@ import {
   getPollErrorMessage,
 } from "@/lib/votti/poll-store";
 import { formatPollStats } from "@/lib/votti/poll-stats";
+import { getPollCoverUrl } from "@/lib/votti/poll-types";
 import { PollManagePanel } from "@/components/votti/poll-manage-panel";
 import type { StoredPoll } from "@/lib/votti/poll-types";
 
@@ -224,17 +225,17 @@ function PollCard({
 }) {
 
   const url = pollPublicUrl(poll.slug);
-
+  const coverUrl = getPollCoverUrl(poll);
   const date = new Date(poll.createdAt).toLocaleDateString("pt-BR");
 
 
 
   return (
 
-    <article className={`votti-poll-card ${poll.coverUrl ? "votti-poll-card--has-cover" : ""} animate-rise`}>
-      {poll.coverUrl ? (
+    <article className={`votti-poll-card ${coverUrl ? "votti-poll-card--has-cover" : ""} animate-rise`}>
+      {coverUrl ? (
         <>
-          <div className="votti-poll-card__bg" style={{ backgroundImage: `url(${poll.coverUrl})` }} aria-hidden />
+          <div className="votti-poll-card__bg" style={{ backgroundImage: `url(${coverUrl})` }} aria-hidden />
           <div className="votti-poll-card__scrim" aria-hidden />
         </>
       ) : null}

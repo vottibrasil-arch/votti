@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { BarChart3, Check, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { PollCoverHero } from "@/components/votti/poll-cover-hero";
 import { PollPublicShell } from "@/components/votti/poll-public-shell";
 import { SecurityBadge } from "@/components/votti/security-badge";
 import { LiveDot } from "@/components/ui-kit";
@@ -145,19 +146,17 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
   return (
     <PollPublicShell poll={poll}>
       <div className="votti-vote-page flex-1 px-5 pb-10 max-w-lg mx-auto w-full">
-        <div className="votti-vote-hero votti-vote-hero--branded votti-vote-hero--minimal animate-rise">
-          <div className="votti-vote-hero__body">
-            <div className="votti-vote-hero__trust">
-              <SecurityBadge compact />
-              <span className="votti-vote-hero__live">
-                <LiveDot />
-                {liveLabel}
-              </span>
-            </div>
-            <h1 className="votti-vote-hero__title">{poll.title}</h1>
-            {poll.description ? <p className="votti-vote-hero__desc">{poll.description}</p> : null}
+        <PollCoverHero poll={poll}>
+          <div className="votti-vote-hero__trust">
+            <SecurityBadge compact />
+            <span className="votti-vote-hero__live">
+              <LiveDot />
+              {liveLabel}
+            </span>
           </div>
-        </div>
+          <h1 className="votti-vote-hero__title">{poll.title}</h1>
+          {poll.description ? <p className="votti-vote-hero__desc">{poll.description}</p> : null}
+        </PollCoverHero>
 
         {closed ? (
           <div className="votti-vote-closed animate-rise">
@@ -234,4 +233,4 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
     </PollPublicShell>
   );
 }
-
+
