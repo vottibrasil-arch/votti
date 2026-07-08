@@ -7,6 +7,7 @@ type LivePollBarProps = {
   isLeader: boolean;
   primaryColor: string;
   featured?: boolean;
+  stackZ?: number;
 };
 
 /** Tamanho da bolha da foto: cresce com a porcentagem (28px → 64px). */
@@ -17,6 +18,12 @@ export function optionBubbleSize(pct: number, hasVotes: boolean) {
   return Math.round(min + (Math.max(pct, 6) / 100) * (max - min));
 }
 
+/** Camadas do ranking: maior % / mais votos ficam por cima das linhas de baixo. */
+export function optionStackZ(pct: number, votes: number, hasVotes: boolean) {
+  if (!hasVotes) return 1;
+  return votes * 1000 + pct + 10;
+}
+
 export function LivePollBar({
   option,
   pct,
@@ -24,17 +31,22 @@ export function LivePollBar({
   isLeader,
   primaryColor,
   featured = false,
+  stackZ = 1,
 }: LivePollBarProps) {
   const imageUrl = option.imageUrl?.trim();
+  const showTrackBubble = Boolean(imageUrl && hasVotes);
   const bubbleSize = optionBubbleSize(pct, hasVotes);
-  const bubbleLeft = hasVotes ? Math.min(Math.max(pct, 5), 97) : 5;
+  const bubbleLeft = hasVotes ? Math.min(Math.max(pct, 8), 92) : 8;
 
   return (
-    <div className={`live-poll-bar ${imageUrl ? "live-poll-bar--photo" : ""} ${featured ? "live-poll-bar--featured" : ""}`}>
+    <div
+      className={`live-poll-bar ${imageUrl ? "live-poll-bar--photo" : ""} ${featured ? "live-poll-bar--featured" : ""}`}
+      style={{ zIndex: stackZ }}
+    >
       <div className="live-poll-bar__meta">
         <span className="live-poll-bar__label">
           {imageUrl && !hasVotes ? (
-            <img src={imageUrl} alt="" className="live-poll-bar__thumb" width={28} height={28} />
+            <img src={imageUrl} alt="" className="live-poll-bar__thumb" width={24} height={24} />
           ) : null}
           {isLeader ? "🥇 " : ""}
           {option.text}
@@ -51,7 +63,7 @@ export function LivePollBar({
             ...(isLeader ? { background: primaryColor } : {}),
           }}
         />
-        {imageUrl ? (
+        {showTrackBubble ? (
           <img
             src={imageUrl}
             alt=""

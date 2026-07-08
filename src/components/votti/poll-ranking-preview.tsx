@@ -1,5 +1,5 @@
 import { LiveDot } from "@/components/ui-kit";
-import { LivePollBar } from "@/components/votti/live-poll-bar";
+import { LivePollBar, optionStackZ } from "@/components/votti/live-poll-bar";
 import type { PollQuestion } from "@/lib/votti/poll-types";
 
 type PollRankingPreviewProps = {
@@ -67,6 +67,7 @@ export function PollRankingPreview({
               isLeader={isLeader}
               primaryColor={primaryColor}
               featured={featured}
+              stackZ={optionStackZ(pct, opt.votes, hasVotes)}
             />
           );
         })}
