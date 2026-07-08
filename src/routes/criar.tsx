@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AppShell } from "@/components/app/app-shell";
 import { AppTopBar } from "@/components/app/app-top-bar";
@@ -13,12 +13,19 @@ export const Route = createFileRoute("/criar")({
 function CriarPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const isSuccess = useRouterState({
+    select: (state) => state.location.pathname.endsWith("/sucesso"),
+  });
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !isSuccess) {
       navigate({ to: "/login", search: { redirect: "/criar" }, replace: true });
     }
-  }, [loading, user, navigate]);
+  }, [loading, user, navigate, isSuccess]);
+
+  if (isSuccess) {
+    return <Outlet />;
+  }
 
   if (loading || !user) {
     return (
@@ -35,7 +42,9 @@ function CriarPage() {
       <div className="votti-app-page flex-1 px-5 pb-10 max-w-lg mx-auto w-full">
         <AppTopBar back="/" title="Criar votação" />
         <CreateWizard
-          onPublished={(slug) => navigate({ to: "/criar/sucesso", search: { slug }, replace: true })}
+          onPublished={(slug) => {
+            navigate({ to: "/criar/sucesso", search: { slug }, replace: true });
+          }}
         />
       </div>
     </AppShell>

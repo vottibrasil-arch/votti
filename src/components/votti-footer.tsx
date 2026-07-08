@@ -20,7 +20,7 @@ export function VottiFooter() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const adConfig = getFooterAdConfig();
 
-  if (HIDE_FOOTER_ON.has(pathname) || pathname.startsWith("/votacao/")) return null;
+  if (HIDE_FOOTER_ON.has(pathname) || pathname.startsWith("/votacao/") || pathname.startsWith("/v/")) return null;
 
   async function handleShare() {
     const url = window.location.href;

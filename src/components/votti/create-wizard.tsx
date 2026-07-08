@@ -9,13 +9,16 @@ import {
   Rocket,
   Settings2,
   Sparkles,
+  Trophy,
+  Users,
+  Zap,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/use-auth";
 import { PollImageField } from "@/components/votti/poll-image-field";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { SecurityBadge } from "@/components/votti/security-badge";
 import { loadDraft, publishPoll, saveDraft, getPollErrorMessage } from "@/lib/votti/poll-store";
-import { newId, type PollDraft } from "@/lib/votti/poll-types";
+import { newId, validatePublishDraft, type PollDraft } from "@/lib/votti/poll-types";
 
 const STEPS = [
   { label: "Informações", icon: Sparkles },
@@ -60,6 +63,10 @@ export function CreateWizard({ onPublished }: WizardProps) {
   }
 
   const previewQuestion = draft.questions[0];
+  const optionCount = draft.questions.reduce(
+    (sum, q) => sum + q.options.filter((o) => o.text.trim()).length,
+    0,
+  );
 
   return (
     <div className="votti-wizard animate-rise">
@@ -183,7 +190,7 @@ export function CreateWizard({ onPublished }: WizardProps) {
       {step === 2 && (
         <div className="votti-wizard__panel votti-wizard__panel--glass">
           <h2>Personalização</h2>
-          <p className="votti-wizard__hint">Veja como ficará para quem vota — com ranking animado.</p>
+          <p className="votti-wizard__hint">Veja como ficará para quem vota — ranking zerado até o primeiro voto.</p>
           <div className="votti-wizard__preview-stack">
             <div className="votti-preview votti-preview--rich" style={{ borderColor: draft.primaryColor }}>
               {draft.coverUrl ? <img src={draft.coverUrl} alt="" className="votti-preview__cover" /> : <div className="votti-preview__cover votti-preview__cover--empty" style={{ background: `linear-gradient(135deg, ${draft.primaryColor}55, oklch(0.2 0.04 260))` }} />}
@@ -256,23 +263,55 @@ export function CreateWizard({ onPublished }: WizardProps) {
 
       {step === 4 && (
         <div className="votti-wizard__panel votti-wizard__panel--publish">
-          <h2>Tudo pronto para ir ao ar</h2>
-          <p className="votti-wizard__hint">Revise o resumo e publique — link e QR Code saem na hora.</p>
+          <div className="votti-launch">
+            <div className="votti-launch__glow" aria-hidden />
+            <div className="votti-launch__icon" aria-hidden>
+              <Rocket className="size-8" />
+            </div>
+            <p className="votti-launch__kicker">Último passo</p>
+            <h2 className="votti-launch__title">Sua votação vai ao ar agora</h2>
+            <p className="votti-launch__desc">
+              Tudo começa zerado. Compartilhe o link e veja o ranking subir ao vivo.
+            </p>
 
-          <div className="votti-publish-card">
+            <div className="votti-launch__stats">
+              <div className="votti-launch__stat">
+                <HelpCircle className="size-4" />
+                <span className="votti-launch__stat-value tabular-nums">{draft.questions.length}</span>
+                <span className="votti-launch__stat-label">pergunta(s)</span>
+              </div>
+              <div className="votti-launch__stat">
+                <Zap className="size-4" />
+                <span className="votti-launch__stat-value tabular-nums">{optionCount}</span>
+                <span className="votti-launch__stat-label">opções</span>
+              </div>
+              <div className="votti-launch__stat votti-launch__stat--live">
+                <Users className="size-4" />
+                <span className="votti-launch__stat-value tabular-nums">0</span>
+                <span className="votti-launch__stat-label">votos</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="votti-publish-card votti-publish-card--launch">
             {draft.coverUrl ? (
               <img src={draft.coverUrl} alt="" className="votti-publish-card__cover" />
             ) : (
-              <div className="votti-publish-card__cover votti-publish-card__cover--empty" style={{ background: `linear-gradient(135deg, ${draft.primaryColor}, oklch(0.28 0.08 260))` }} />
+              <div
+                className="votti-publish-card__cover votti-publish-card__cover--empty"
+                style={{ background: `linear-gradient(135deg, ${draft.primaryColor}, oklch(0.28 0.08 260))` }}
+              />
             )}
             <div className="votti-publish-card__body">
               <div className="votti-publish-card__meta">
-                {draft.logoUrl ? <img src={draft.logoUrl} alt="" className="votti-publish-card__logo" /> : null}
+                {draft.logoUrl ? <img src={draft.logoUrl} alt="" className="votti-publish-card__logo" /> : (
+                  <div className="votti-publish-card__logo votti-publish-card__logo--empty">
+                    <Trophy className="size-5" />
+                  </div>
+                )}
                 <div>
                   <p className="votti-publish-card__title">{draft.title || "Sem título"}</p>
-                  <p className="votti-publish-card__sub">
-                    {draft.questions.length} pergunta(s) · {draft.category || "Sem categoria"}
-                  </p>
+                  <p className="votti-publish-card__sub">{draft.category || "Votação ao vivo"}</p>
                 </div>
               </div>
               {draft.description ? <p className="votti-publish-card__desc">{draft.description}</p> : null}
@@ -326,11 +365,21 @@ function PublishButton({
   if (!user) return null;
 
   async function handlePublish() {
+    const validationError = validatePublishDraft(draft);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setError("");
     setSubmitting(true);
     try {
       const poll = await publishPoll(draft, { id: user!.id, email: user!.email });
-      onPublished(poll.slug);
+      try {
+        onPublished(poll.slug);
+      } catch {
+        window.location.assign(`/criar/sucesso?slug=${encodeURIComponent(poll.slug)}`);
+      }
     } catch (err) {
       setError(getPollErrorMessage(err));
       setSubmitting(false);
@@ -352,7 +401,10 @@ function PublishButton({
             Publicando…
           </>
         ) : (
-          "PUBLICAR VOTAÇÃO"
+          <>
+            <Rocket className="size-5" />
+            PUBLICAR VOTAÇÃO
+          </>
         )}
       </button>
     </>

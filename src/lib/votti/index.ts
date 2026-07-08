@@ -4,6 +4,7 @@ export {
   getPollBySlugDb,
   listPollsByOwnerDb,
   publishPollDb,
+  castVoteDb,
   getPollErrorMessage,
   isSchemaMissingError,
   SCHEMA_SETUP_HINT,
@@ -17,8 +18,16 @@ export {
   loadDraft,
   pollPublicUrl,
   publishPoll,
+  castVote,
   saveDraft,
 } from "./poll-store";
 export { uploadPollAsset } from "./upload-poll-asset";
-export { getOrCreateVoterToken, hasVoted, clearVoterToken } from "./voter-session";
+export {
+  getOrCreateVoterToken,
+  hasVoted,
+  hasVotedQuestion,
+  markQuestionVoted,
+  clearVoterSession,
+  clearVoterToken,
+} from "./voter-session";
 export { usePollRealtime, type PollRealtimeStatus } from "./use-poll-realtime";

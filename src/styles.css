@@ -2350,6 +2350,148 @@
 
 .votti-wizard__panel--publish {
   gap: 1.125rem;
+  background:
+    radial-gradient(ellipse at 50% 0%, oklch(0.45 0.14 250 / 18%), transparent 55%),
+    linear-gradient(180deg, oklch(0.22 0.04 260 / 92%), oklch(0.18 0.04 260 / 88%));
+}
+
+.votti-launch {
+  position: relative;
+  text-align: center;
+  padding: 0.5rem 0 0.25rem;
+}
+
+.votti-launch__glow {
+  position: absolute;
+  inset: -1rem 10% auto;
+  height: 8rem;
+  background: radial-gradient(circle, oklch(0.55 0.18 145 / 22%), transparent 70%);
+  pointer-events: none;
+}
+
+.votti-launch__icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  margin-bottom: 0.75rem;
+  border-radius: 999px;
+  color: oklch(0.98 0.01 260);
+  background: linear-gradient(135deg, oklch(0.45 0.14 250), oklch(0.62 0.18 145));
+  box-shadow:
+    0 0 0 1px oklch(0.55 0.14 250 / 40%),
+    0 0 48px oklch(0.55 0.18 145 / 30%);
+  animation: launch-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes launch-pulse {
+  0%, 100% { transform: translateY(0) scale(1); box-shadow: 0 0 0 1px oklch(0.55 0.14 250 / 40%), 0 0 48px oklch(0.55 0.18 145 / 25%); }
+  50% { transform: translateY(-4px) scale(1.04); box-shadow: 0 0 0 1px oklch(0.62 0.18 145 / 50%), 0 0 64px oklch(0.62 0.18 145 / 35%); }
+}
+
+.votti-launch__kicker {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: oklch(0.72 0.18 145);
+}
+
+.votti-launch__title {
+  margin: 0.375rem 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: oklch(0.96 0.01 260);
+}
+
+.votti-launch__desc {
+  margin: 0 0 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: oklch(0.68 0.02 260);
+}
+
+.votti-launch__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.votti-launch__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 0.5rem;
+  border-radius: 0.875rem;
+  background: oklch(0.17 0.04 260 / 80%);
+  border: 1px solid oklch(0.32 0.05 260 / 45%);
+  color: oklch(0.62 0.02 260);
+}
+
+.votti-launch__stat--live {
+  border-color: oklch(0.62 0.18 145 / 35%);
+  background: oklch(0.62 0.18 145 / 10%);
+  color: oklch(0.72 0.18 145);
+}
+
+.votti-launch__stat-value {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: oklch(0.95 0.01 260);
+}
+
+.votti-launch__stat--live .votti-launch__stat-value {
+  color: oklch(0.78 0.18 145);
+}
+
+.votti-launch__stat-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.votti-publish-card--launch {
+  border-color: oklch(0.45 0.12 250 / 35%);
+  box-shadow: 0 16px 40px -16px oklch(0.45 0.14 250 / 25%);
+}
+
+.votti-publish-card__logo--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: oklch(0.45 0.14 250);
+  background: oklch(0.22 0.04 260);
+  padding: 0;
+}
+
+.poll-ranking-preview--zero .live-poll-bar__fill--zero {
+  width: 0 !important;
+  min-width: 0;
+}
+
+.poll-ranking-preview--zero .live-poll-bar__track {
+  position: relative;
+}
+
+.poll-ranking-preview--zero .live-poll-bar__track::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, oklch(0.55 0.12 250 / 18%), transparent);
+  animation: zero-bar-shimmer 2.2s ease-in-out infinite;
+}
+
+@keyframes zero-bar-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 .votti-wizard__preview-stack {
@@ -2543,6 +2685,222 @@
   background: linear-gradient(135deg, oklch(0.62 0.18 145 / 25%), oklch(0.45 0.14 250 / 25%));
   border: 1px solid oklch(0.62 0.18 145 / 35%);
   box-shadow: 0 0 40px oklch(0.62 0.18 145 / 20%);
+}
+
+.votti-vote-page {
+  padding-top: 1rem;
+}
+
+.votti-vote-hero {
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid oklch(0.35 0.06 260 / 45%);
+  background: oklch(0.18 0.04 260 / 90%);
+  box-shadow: 0 20px 50px -24px oklch(0 0 0 / 50%);
+  margin-bottom: 1.25rem;
+}
+
+.votti-vote-hero__cover {
+  width: 100%;
+  height: 8rem;
+  object-fit: cover;
+}
+
+.votti-vote-hero__cover--empty {
+  height: 8rem;
+}
+
+.votti-vote-hero__body {
+  padding: 1rem 1.125rem 1.125rem;
+}
+
+.votti-vote-hero__trust {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.875rem;
+}
+
+.votti-vote-hero__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: oklch(0.72 0.18 145);
+}
+
+.votti-vote-hero__meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.votti-vote-hero__logo {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.75rem;
+  object-fit: contain;
+  background: oklch(0.98 0.01 260);
+  padding: 0.25rem;
+  flex-shrink: 0;
+}
+
+.votti-vote-hero__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.votti-vote-hero__desc {
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: oklch(0.72 0.02 260);
+}
+
+.votti-vote-hero__votes {
+  margin: 0.875rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: oklch(0.62 0.18 145);
+}
+
+.votti-vote-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.votti-vote-question {
+  padding: 1.125rem;
+  border-radius: 1.125rem;
+  background: oklch(0.2 0.04 260 / 85%);
+  border: 1px solid oklch(0.35 0.06 260 / 45%);
+  backdrop-filter: blur(12px);
+}
+
+.votti-vote-question__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.votti-vote-question__done {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: oklch(0.72 0.18 145);
+}
+
+.votti-vote-question__title {
+  margin: 0 0 0.875rem;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: oklch(0.95 0.01 260);
+}
+
+.votti-vote-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.votti-vote-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.875rem;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: oklch(0.96 0.01 260);
+  background: linear-gradient(135deg, oklch(0.24 0.05 260), oklch(0.2 0.04 260));
+  border: 1px solid oklch(0.38 0.08 250 / 45%);
+  box-shadow: 0 8px 24px -12px oklch(0 0 0 / 40%);
+  transition: transform 0.15s ease, border-color 0.2s, box-shadow 0.2s, filter 0.2s;
+}
+
+.votti-vote-option:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--vote-accent, oklch(0.45 0.14 250)) 55%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--vote-accent, oklch(0.45 0.14 250)) 30%, transparent),
+    0 12px 32px -12px color-mix(in oklab, var(--vote-accent, oklch(0.45 0.14 250)) 35%, transparent);
+  filter: brightness(1.06);
+}
+
+.votti-vote-option:disabled {
+  opacity: 0.65;
+}
+
+.votti-vote-thanks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  border-radius: 0.875rem;
+  text-align: center;
+  background: oklch(0.62 0.18 145 / 10%);
+  border: 1px solid oklch(0.62 0.18 145 / 25%);
+  color: oklch(0.82 0.02 260);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.votti-vote-closed {
+  text-align: center;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: oklch(0.2 0.04 260 / 80%);
+  border: 1px solid oklch(0.35 0.06 260 / 45%);
+  color: oklch(0.75 0.02 260);
+}
+
+.votti-vote-footer {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.votti-vote-footer__hint {
+  margin: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: oklch(0.55 0.02 260);
+}
+
+.votti-results-hero {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.votti-results-hero .votti-security-badge {
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.votti-results-hero .votti-results__meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
 }
 
 .votti-wizard__progress strong {

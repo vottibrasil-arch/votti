@@ -62,6 +62,19 @@ export function newId(prefix: string) {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+export function validatePublishDraft(draft: PollDraft): string | null {
+  if (!draft.title.trim()) return "Digite um título para a votação.";
+  if (draft.questions.length === 0) return "Adicione ao menos uma pergunta.";
+
+  for (const [i, question] of draft.questions.entries()) {
+    if (!question.text.trim()) return `Preencha a pergunta ${i + 1}.`;
+    const filled = question.options.filter((o) => o.text.trim());
+    if (filled.length < 2) return `A pergunta ${i + 1} precisa de ao menos 2 opções preenchidas.`;
+  }
+
+  return null;
+}
+
 export function slugify(text: string) {
   return (
     text

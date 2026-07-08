@@ -83,7 +83,7 @@ function SucessoPage() {
               <MessageCircle className="size-4" /> WhatsApp
             </button>
             {slug ? (
-              <Link to="/votacao/$slug/resultados" params={{ slug }} className="votti-mega-btn votti-mega-btn--sm">
+              <Link to="/v/$slug" params={{ slug }} className="votti-mega-btn votti-mega-btn--sm">
                 <ExternalLink className="size-4" /> Abrir votação
               </Link>
             ) : null}

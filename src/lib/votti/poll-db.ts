@@ -127,14 +127,28 @@ async function fetchPollBundle(slug: string) {
   return mapPollRow(poll, buildQuestions(questions ?? [], options, results ?? []));
 }
 
+function randomSlug(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let result = "";
+  for (let i = 0; i < 6; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
+}
+
 async function generateSlug(): Promise<string> {
   const supabase = getSupabaseBrowser();
   const { data, error } = await supabase.rpc("generate_poll_slug");
-  if (error) throw error;
-  if (!data || typeof data !== "string") {
-    throw new Error("Não foi possível gerar o slug da votação");
+
+  if (!error && typeof data === "string" && data.length > 0) {
+    return data;
   }
-  return data;
+
+  if (error && !isSchemaMissingError(error)) {
+    throw error;
+  }
+
+  return randomSlug();
 }
 
 export async function getPollBySlugDb(slug: string): Promise<StoredPoll | null> {
@@ -279,6 +293,35 @@ export async function publishPollDb(
   return mapPollRow(poll, builtQuestions, owner.email);
 }
 
+export async function castVoteDb(
+  slug: string,
+  questionId: string,
+  optionId: string,
+  voterToken: string,
+): Promise<void> {
+  const supabase = getSupabaseBrowser();
+
+  const { data: poll, error: pollError } = await supabase
+    .from("polls")
+    .select("id, status")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (pollError) throw pollError;
+  if (!poll || poll.status !== "active") {
+    throw new Error("Votação não encontrada ou encerrada.");
+  }
+
+  const { error } = await supabase.from("votes").insert({
+    poll_id: poll.id,
+    question_id: questionId,
+    option_id: optionId,
+    voter_token: voterToken,
+  });
+
+  if (error) throw error;
+}
+
 export async function deletePollDb(pollId: string, ownerId: string): Promise<void> {
   const supabase = getSupabaseBrowser();
   const { error } = await supabase.from("polls").delete().eq("id", pollId).eq("owner_id", ownerId);
@@ -410,7 +453,11 @@ export function getPollErrorMessage(error: unknown): string {
   if (isSchemaMissingError(error)) return getSchemaSetupHint(error);
 
   if (error && typeof error === "object" && "message" in error) {
-    const msg = String((error as { message: string }).message);
+    const e = error as { message: string; code?: string };
+    if (e.code === "23505") {
+      return "Você já votou nesta pergunta.";
+    }
+    const msg = String(e.message);
     if (/jwt|session|not authenticated|invalid claim/i.test(msg)) {
       return "Sessão expirada. Saia da conta e entre novamente.";
     }
@@ -419,6 +466,9 @@ export function getPollErrorMessage(error: unknown): string {
     }
     if (/violates foreign key|owner_id/i.test(msg)) {
       return "Conta inválida ou sessão expirada. Saia da conta e entre novamente.";
+    }
+    if (/23505|duplicate key|unique constraint|já votou/i.test(msg)) {
+      return "Você já votou nesta pergunta.";
     }
     return msg;
   }

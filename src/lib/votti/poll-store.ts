@@ -6,6 +6,7 @@ import {
   getPollBySlugDb,
   listPollsByOwnerDb,
   publishPollDb,
+  castVoteDb,
 } from "@/lib/votti/poll-db";
 import { EMPTY_DRAFT, type PollDraft, type StoredPoll } from "@/lib/votti/poll-types";
 
@@ -50,6 +51,16 @@ export async function publishPoll(
   const poll = await publishPollDb(draft, owner);
   clearDraft();
   return poll;
+}
+
+export async function castVote(
+  slug: string,
+  questionId: string,
+  optionId: string,
+  voterToken: string,
+): Promise<void> {
+  assertSupabaseConfigured();
+  await castVoteDb(slug, questionId, optionId, voterToken);
 }
 
 export async function listPollsByOwner(ownerId: string): Promise<StoredPoll[]> {
