@@ -1,4 +1,5 @@
-import { Copy, Download, MessageCircle, Monitor, Share2, Smartphone } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Copy, MessageCircle, Monitor, Plus, Share2, Smartphone } from "lucide-react";
 import { useState } from "react";
 import { pollPublicUrl, pollTelaoUrl } from "@/lib/votti/poll-store";
 
@@ -7,10 +8,6 @@ type PollSharePanelProps = {
   title: string;
   compact?: boolean;
 };
-
-function qrImageUrl(url: string, size = 160) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`;
-}
 
 export function PollSharePanel({ slug, title, compact = true }: PollSharePanelProps) {
   const [copied, setCopied] = useState<"vote" | "telao" | null>(null);
@@ -42,17 +39,6 @@ export function PollSharePanel({ slug, title, compact = true }: PollSharePanelPr
     await copy(url, "vote");
   }
 
-  async function downloadQr() {
-    const res = await fetch(qrImageUrl(voteUrl, 400));
-    const blob = await res.blob();
-    const href = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = href;
-    a.download = `votti-${slug}-qrcode.png`;
-    a.click();
-    URL.revokeObjectURL(href);
-  }
-
   return (
     <div className={`votti-share-panel ${compact ? "votti-share-panel--compact" : ""} animate-rise`}>
       <p className="votti-share-panel__label">Compartilhar</p>
@@ -73,14 +59,14 @@ export function PollSharePanel({ slug, title, compact = true }: PollSharePanelPr
         <button type="button" className="votti-share-chip" onClick={() => shareWhatsApp(voteUrl)}>
           <MessageCircle className="size-3.5" /> WhatsApp
         </button>
-        <button type="button" className="votti-share-chip" onClick={() => void downloadQr()}>
-          <Download className="size-3.5" /> Baixar QR
-        </button>
       </div>
 
-      <div className="votti-share-panel__qr-row">
-        <img src={qrImageUrl(voteUrl)} alt="QR Code da votação" width={72} height={72} />
-        <p className="votti-share-panel__url">{voteUrl}</p>
+      <p className="votti-share-panel__url">{voteUrl}</p>
+
+      <div className="votti-share-panel__cta">
+        <Link to="/criar" className="votti-mega-btn votti-mega-btn--sm w-full max-w-none">
+          <Plus className="size-4" /> Criar votação
+        </Link>
       </div>
     </div>
   );
