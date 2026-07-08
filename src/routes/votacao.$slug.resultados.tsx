@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { PollCoverHero } from "@/components/votti/poll-cover-hero";
 import { PollPublicShell } from "@/components/votti/poll-public-shell";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { PollSharePanel } from "@/components/votti/poll-share-panel";
@@ -84,42 +83,42 @@ function ResultadosPage() {
 
   return (
     <PollPublicShell poll={poll}>
-      <div className="votti-vote-page flex-1 px-5 pb-10 max-w-lg mx-auto w-full">
+      <div className="votti-results-page flex-1 px-4 pb-6 max-w-lg mx-auto w-full">
         {justVoted ? (
-          <div className="votti-vote-success-banner animate-rise">
-            <CheckCircle2 className="size-5" />
-            <span>Voto confirmado — ranking atualizado!</span>
+          <div className="votti-vote-success-banner votti-vote-success-banner--compact animate-rise">
+            <CheckCircle2 className="size-4" />
+            <span>Voto confirmado!</span>
           </div>
         ) : null}
 
-        <PollCoverHero poll={poll}>
-            <div className="votti-vote-hero__trust">
-              <SecurityBadge compact />
-              <span className="votti-vote-hero__live">
-                <LiveDot />
-                Ranking {liveLabel}
-              </span>
-            </div>
-            <h1 className="votti-vote-hero__title">{poll.title}</h1>
-            <p className="votti-vote-hero__votes tabular-nums">{formatPollStats(poll)}</p>
-        </PollCoverHero>
+        <header className="votti-results-focus animate-rise">
+          <div className="votti-results-focus__meta">
+            <SecurityBadge compact />
+            <span className="votti-results-focus__live">
+              <LiveDot />
+              {liveLabel}
+            </span>
+          </div>
+          <h1 className="votti-results-focus__title">{poll.title}</h1>
+          <p className="votti-results-focus__stats tabular-nums">{formatPollStats(poll)}</p>
+        </header>
 
-        <div className="votti-results__stack">
+        <div className="votti-results__stack votti-results__stack--focus">
           {poll.questions.map((q) => (
-            <section key={q.id} className="votti-results__block animate-rise">
+            <section key={q.id} className="animate-rise">
               <PollRankingPreview
-                title={poll.title}
                 question={q}
                 primaryColor={poll.primaryColor}
+                featured
+                hideTitle
                 live
               />
             </section>
           ))}
         </div>
 
-        <PollSharePanel slug={slug} title={poll.title} />
+        <PollSharePanel slug={slug} title={poll.title} variant="footer" />
       </div>
     </PollPublicShell>
   );
 }
-

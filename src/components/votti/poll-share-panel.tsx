@@ -1,72 +1,80 @@
 import { Link } from "@tanstack/react-router";
-import { Copy, MessageCircle, Monitor, Plus, Share2, Smartphone } from "lucide-react";
+import { Copy, MessageCircle, Share2 } from "lucide-react";
 import { useState } from "react";
-import { pollPublicUrl, pollTelaoUrl } from "@/lib/votti/poll-store";
+import { pollPublicUrl } from "@/lib/votti/poll-store";
 
 type PollSharePanelProps = {
   slug: string;
   title: string;
-  compact?: boolean;
+  variant?: "default" | "footer";
 };
 
-export function PollSharePanel({ slug, title, compact = true }: PollSharePanelProps) {
-  const [copied, setCopied] = useState<"vote" | "telao" | null>(null);
+export function PollSharePanel({ slug, title, variant = "default" }: PollSharePanelProps) {
+  const [copied, setCopied] = useState(false);
   const voteUrl = pollPublicUrl(slug);
-  const telaoUrl = pollTelaoUrl(slug);
 
-  async function copy(url: string, kind: "vote" | "telao") {
-    await navigator.clipboard.writeText(url);
-    setCopied(kind);
-    setTimeout(() => setCopied(null), 2000);
+  async function copy() {
+    await navigator.clipboard.writeText(voteUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
-  function shareWhatsApp(url: string) {
+  function shareWhatsApp() {
     window.open(
-      `https://wa.me/?text=${encodeURIComponent(`Vote em "${title}": ${url}`)}`,
+      `https://wa.me/?text=${encodeURIComponent(`Vote em "${title}": ${voteUrl}`)}`,
       "_blank",
     );
   }
 
-  async function nativeShare(url: string) {
+  async function nativeShare() {
     if (navigator.share) {
       try {
-        await navigator.share({ title: `VOTTI — ${title}`, url });
+        await navigator.share({ title: `VOTTI — ${title}`, url: voteUrl });
         return;
       } catch {
         /* cancelado */
       }
     }
-    await copy(url, "vote");
+    await copy();
+  }
+
+  if (variant === "footer") {
+    return (
+      <footer className="votti-share-footer animate-rise">
+        <div className="votti-share-footer__actions">
+          <button type="button" className="votti-share-footer__btn" onClick={() => void copy()} title="Copiar link">
+            <Copy className="size-4" />
+            <span>{copied ? "Copiado" : "Copiar"}</span>
+          </button>
+          <button type="button" className="votti-share-footer__btn" onClick={() => shareWhatsApp()} title="WhatsApp">
+            <MessageCircle className="size-4" />
+            <span>WhatsApp</span>
+          </button>
+          <button type="button" className="votti-share-footer__btn" onClick={() => void nativeShare()} title="Compartilhar">
+            <Share2 className="size-4" />
+            <span>Enviar</span>
+          </button>
+        </div>
+        <Link to="/criar" className="votti-share-footer__create">
+          Criar votação
+        </Link>
+      </footer>
+    );
   }
 
   return (
-    <div className={`votti-share-panel ${compact ? "votti-share-panel--compact" : ""} animate-rise`}>
+    <div className="votti-share-panel votti-share-panel--compact animate-rise">
       <p className="votti-share-panel__label">Compartilhar</p>
-
       <div className="votti-share-panel__grid">
-        <a href={voteUrl} target="_blank" rel="noreferrer" className="votti-share-chip">
-          <Smartphone className="size-3.5" /> Link votação
-        </a>
-        <a href={telaoUrl} target="_blank" rel="noreferrer" className="votti-share-chip">
-          <Monitor className="size-3.5" /> Link telão
-        </a>
-        <button type="button" className="votti-share-chip" onClick={() => void copy(voteUrl, "vote")}>
-          <Copy className="size-3.5" /> {copied === "vote" ? "Copiado!" : "Copiar link"}
+        <button type="button" className="votti-share-chip" onClick={() => void copy()}>
+          <Copy className="size-3.5" /> {copied ? "Copiado!" : "Copiar link"}
         </button>
-        <button type="button" className="votti-share-chip" onClick={() => void nativeShare(voteUrl)}>
+        <button type="button" className="votti-share-chip" onClick={() => void nativeShare()}>
           <Share2 className="size-3.5" /> Compartilhar
         </button>
-        <button type="button" className="votti-share-chip" onClick={() => shareWhatsApp(voteUrl)}>
+        <button type="button" className="votti-share-chip" onClick={() => shareWhatsApp()}>
           <MessageCircle className="size-3.5" /> WhatsApp
         </button>
-      </div>
-
-      <p className="votti-share-panel__url">{voteUrl}</p>
-
-      <div className="votti-share-panel__cta">
-        <Link to="/criar" className="votti-mega-btn votti-mega-btn--sm w-full max-w-none">
-          <Plus className="size-4" /> Criar votação
-        </Link>
       </div>
     </div>
   );

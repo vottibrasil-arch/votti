@@ -2,10 +2,12 @@ import { LiveDot } from "@/components/ui-kit";
 import type { PollQuestion } from "@/lib/votti/poll-types";
 
 type PollRankingPreviewProps = {
-  title: string;
+  title?: string;
   question: PollQuestion;
   primaryColor?: string;
   compact?: boolean;
+  featured?: boolean;
+  hideTitle?: boolean;
   live?: boolean;
 };
 
@@ -14,6 +16,8 @@ export function PollRankingPreview({
   question,
   primaryColor = "#4F8FD9",
   compact = false,
+  featured = false,
+  hideTitle = false,
   live = true,
 }: PollRankingPreviewProps) {
   const options = question.options.filter((o) => o.text.trim());
@@ -24,17 +28,33 @@ export function PollRankingPreview({
   const maxVotes = Math.max(...options.map((o) => o.votes), 0);
 
   return (
-    <article className={`poll-ranking-preview ${compact ? "poll-ranking-preview--compact" : ""} ${!hasVotes ? "poll-ranking-preview--zero" : ""}`}>
-      <div className="poll-ranking-preview__head">
-        {live ? <LiveDot /> : null}
-        <h3 className="poll-ranking-preview__title">{title || "Sua votação"}</h3>
-        <span className="poll-ranking-preview__votes tabular-nums">
-          {hasVotes ? `${totalVotes} votos` : "0 votos"}
-        </span>
-      </div>
+    <article
+      className={`poll-ranking-preview ${compact ? "poll-ranking-preview--compact" : ""} ${featured ? "poll-ranking-preview--featured" : ""} ${!hasVotes ? "poll-ranking-preview--zero" : ""}`}
+    >
+      {!featured ? (
+        <div className="poll-ranking-preview__head">
+          {live ? <LiveDot /> : null}
+          {!hideTitle ? (
+            <h3 className="poll-ranking-preview__title">{title || "Sua votação"}</h3>
+          ) : null}
+          <span className="poll-ranking-preview__votes tabular-nums">
+            {hasVotes ? `${totalVotes} votos` : "0 votos"}
+          </span>
+        </div>
+      ) : live ? (
+        <div className="poll-ranking-preview__featured-live">
+          <LiveDot />
+          <span>Ao vivo</span>
+          <span className="poll-ranking-preview__featured-count tabular-nums">
+            {hasVotes ? `${totalVotes} votos` : "0 votos"}
+          </span>
+        </div>
+      ) : null}
+
       <p className="poll-ranking-preview__question">{question.text || "Pergunta principal"}</p>
+
       <div className="poll-ranking-preview__bars">
-        {options.map((opt, index) => {
+        {options.map((opt) => {
           const pct = hasVotes ? Math.round((opt.votes / totalVotes) * 100) : 0;
           const isLeader = hasVotes && opt.votes === maxVotes && maxVotes > 0;
           return (
@@ -61,7 +81,8 @@ export function PollRankingPreview({
           );
         })}
       </div>
-      {live ? (
+
+      {live && !featured ? (
         <p className="poll-ranking-preview__status">
           {hasVotes ? "Ranking ao vivo — atualiza sozinho" : "Aguardando o primeiro voto…"}
         </p>
