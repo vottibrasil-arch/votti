@@ -3,6 +3,7 @@ import { ExternalLink, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app/app-shell";
 import { AppTopBar } from "@/components/app/app-top-bar";
+import { AuthButton } from "@/components/votti/auth/auth-screen";
 import { mapAuthError } from "@/lib/auth/auth-errors";
 import { useAuth } from "@/lib/auth/use-auth";
 import { VOTTI_INSTITUTIONAL_URL } from "@/lib/votti/brand";
@@ -14,7 +15,25 @@ export const Route = createFileRoute("/minha-conta")({
 
 function MinhaContaPage() {
   const navigate = useNavigate();
-  const { user, loading, updatePassword, deleteAccount, signOut } = useAuth();
+  const {
+    user,
+    loading,
+    updateProfileName,
+    updateEmail,
+    updatePassword,
+    deleteAccount,
+    signInWithGoogle,
+    signOut,
+  } = useAuth();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [nameBusy, setNameBusy] = useState(false);
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [nameMsg, setNameMsg] = useState("");
+  const [emailMsg, setEmailMsg] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -25,12 +44,20 @@ function MinhaContaPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [googleBusy, setGoogleBusy] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate({ to: "/login", search: { redirect: "/minha-conta" }, replace: true });
     }
   }, [loading, user, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name);
+      setEmail(user.email);
+    }
+  }, [user]);
 
   if (loading || !user) {
     return (
@@ -40,6 +67,36 @@ function MinhaContaPage() {
         </div>
       </AppShell>
     );
+  }
+
+  async function handleNameSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setNameError("");
+    setNameMsg("");
+    setNameBusy(true);
+    try {
+      await updateProfileName(name);
+      setNameMsg("Nome atualizado.");
+    } catch (err) {
+      setNameError(err instanceof Error ? mapAuthError(err.message) : "Não foi possível alterar o nome.");
+    } finally {
+      setNameBusy(false);
+    }
+  }
+
+  async function handleEmailSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setEmailError("");
+    setEmailMsg("");
+    setEmailBusy(true);
+    try {
+      await updateEmail(email);
+      setEmailMsg("Confirme o novo e-mail pelo link enviado na sua caixa de entrada.");
+    } catch (err) {
+      setEmailError(err instanceof Error ? mapAuthError(err.message) : "Não foi possível alterar o e-mail.");
+    } finally {
+      setEmailBusy(false);
+    }
   }
 
   async function handlePasswordSubmit(e: React.FormEvent) {
@@ -58,6 +115,18 @@ function MinhaContaPage() {
       );
     } finally {
       setPasswordBusy(false);
+    }
+  }
+
+  async function handleGoogleLink() {
+    setGoogleBusy(true);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setEmailError(
+        err instanceof Error ? mapAuthError(err.message) : "Não foi possível conectar com Google.",
+      );
+      setGoogleBusy(false);
     }
   }
 
@@ -87,17 +156,46 @@ function MinhaContaPage() {
 
         <div className="votti-account animate-rise">
           <section className="votti-account__section">
-            <h2 className="votti-account__heading">Conta</h2>
-            <div className="votti-account__fields">
-              <div className="votti-account__field">
-                <span className="votti-account__label">Nome</span>
-                <p className="votti-account__value">{user.name}</p>
-              </div>
-              <div className="votti-account__field">
-                <span className="votti-account__label">E-mail</span>
-                <p className="votti-account__value">{user.email}</p>
-              </div>
-            </div>
+            <h2 className="votti-account__heading">Perfil</h2>
+            <form className="votti-account__form" onSubmit={(e) => void handleNameSubmit(e)}>
+              <label className="votti-field">
+                <span className="votti-field__label">Nome</span>
+                <input
+                  className="votti-field__input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                  required
+                />
+              </label>
+              {nameError ? <p className="votti-auth__error">{nameError}</p> : null}
+              {nameMsg ? <p className="votti-auth__success">{nameMsg}</p> : null}
+              <button type="submit" className="votti-outline-btn w-full" disabled={nameBusy}>
+                {nameBusy ? <Loader2 className="size-4 animate-spin" /> : "Salvar nome"}
+              </button>
+            </form>
+          </section>
+
+          <section className="votti-account__section">
+            <h2 className="votti-account__heading">E-mail</h2>
+            <form className="votti-account__form" onSubmit={(e) => void handleEmailSubmit(e)}>
+              <label className="votti-field">
+                <span className="votti-field__label">E-mail</span>
+                <input
+                  type="email"
+                  className="votti-field__input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                />
+              </label>
+              {emailError ? <p className="votti-auth__error">{emailError}</p> : null}
+              {emailMsg ? <p className="votti-auth__success">{emailMsg}</p> : null}
+              <button type="submit" className="votti-outline-btn w-full" disabled={emailBusy}>
+                {emailBusy ? <Loader2 className="size-4 animate-spin" /> : "Salvar e-mail"}
+              </button>
+            </form>
           </section>
 
           <section className="votti-account__section">
@@ -158,7 +256,15 @@ function MinhaContaPage() {
           </section>
 
           <section className="votti-account__section">
-            <h2 className="votti-account__heading">Conta</h2>
+            <h2 className="votti-account__heading">Google</h2>
+            <AuthButton variant="google" disabled={googleBusy} onClick={() => void handleGoogleLink()}>
+              {googleBusy ? "Conectando…" : "Continuar com Google"}
+            </AuthButton>
+            <p className="votti-account__hint">Use para entrar ou vincular sua conta Google.</p>
+          </section>
+
+          <section className="votti-account__section">
+            <h2 className="votti-account__heading">Zona de perigo</h2>
             {!confirmDelete ? (
               <button
                 type="button"

@@ -17,8 +17,9 @@ import { useAuth } from "@/lib/auth/use-auth";
 import { PollImageField } from "@/components/votti/poll-image-field";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { SecurityBadge } from "@/components/votti/security-badge";
+import { formatPollStats } from "@/lib/votti/poll-stats";
 import { loadDraft, publishPoll, saveDraft, getPollErrorMessage, getPollById, updatePoll, closePoll, reopenPoll } from "@/lib/votti/poll-store";
-import { newId, storedPollToDraft, validatePublishDraft, EMPTY_DRAFT, type PollDraft, type StoredPoll } from "@/lib/votti/poll-types";
+import { newId, storedPollToDraft, validatePublishDraft, EMPTY_DRAFT, THEME_PRESETS, type PollDraft, type StoredPoll } from "@/lib/votti/poll-types";
 
 const STEPS = [
   { label: "Informações", icon: Sparkles },
@@ -283,9 +284,62 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
             ) : null}
           </div>
           <label className="votti-field">
-            <span className="votti-field__label">Cor</span>
+            <span className="votti-field__label">Cor do tema</span>
             <input type="color" className="votti-field__color" value={draft.primaryColor} onChange={(e) => patch({ primaryColor: e.target.value })} />
           </label>
+
+          <div className="votti-theme-presets">
+            <span className="votti-field__label">Temas prontos</span>
+            <div className="votti-theme-presets__grid">
+              {THEME_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className={`votti-theme-preset ${draft.settings.themePreset === preset.id ? "votti-theme-preset--active" : ""}`}
+                  onClick={() =>
+                    patch({
+                      primaryColor: preset.primaryColor,
+                      settings: {
+                        ...draft.settings,
+                        themePreset: preset.id,
+                        backgroundColor: preset.backgroundColor,
+                        buttonColor: preset.buttonColor,
+                      },
+                    })
+                  }
+                >
+                  <span className="votti-theme-preset__swatch" style={{ background: preset.primaryColor }} />
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="votti-wizard__color-row">
+            <label className="votti-field">
+              <span className="votti-field__label">Cor de fundo</span>
+              <input
+                type="color"
+                className="votti-field__color"
+                value={draft.settings.backgroundColor}
+                onChange={(e) =>
+                  patch({ settings: { ...draft.settings, backgroundColor: e.target.value, themePreset: "custom" } })
+                }
+              />
+            </label>
+            <label className="votti-field">
+              <span className="votti-field__label">Cor dos botões</span>
+              <input
+                type="color"
+                className="votti-field__color"
+                value={draft.settings.buttonColor}
+                onChange={(e) =>
+                  patch({ settings: { ...draft.settings, buttonColor: e.target.value, themePreset: "custom" } })
+                }
+              />
+            </label>
+          </div>
+
           <div className="votti-wizard__image-row">
             <PollImageField
               label="Trocar logo"
@@ -295,13 +349,21 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
               ownerId={user?.id}
             />
             <PollImageField
-              label="Trocar capa"
+              label="Imagem de capa"
               variant="cover"
               value={draft.coverUrl}
               onChange={(coverUrl) => patch({ coverUrl })}
               ownerId={user?.id}
             />
           </div>
+          <PollImageField
+            label="Imagem de fundo (tela inteira)"
+            hint="Opcional. Aparece atrás do ranking e da votação."
+            variant="background"
+            value={draft.settings.backgroundUrl}
+            onChange={(backgroundUrl) => patch({ settings: { ...draft.settings, backgroundUrl } })}
+            ownerId={user?.id}
+          />
         </div>
       )}
 
@@ -336,9 +398,7 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
             <div className="votti-wizard__status-box">
               <p className="votti-wizard__hint">
                 Status atual: <strong>{editPoll.status === "active" ? "Ativa" : "Encerrada"}</strong>
-                {editPoll.totalVotes > 0
-                  ? ` · ${editPoll.totalVotes} ${editPoll.totalVotes === 1 ? "pessoa votou" : "pessoas votaram"}`
-                  : ""}
+                {editPoll.registeredVotes > 0 ? ` · ${formatPollStats(editPoll)}` : ""}
               </p>
               <button
                 type="button"
@@ -388,7 +448,7 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
               <div className="votti-launch__stat votti-launch__stat--live">
                 <Users className="size-4" />
                 <span className="votti-launch__stat-value tabular-nums">
-                  {isEditing && editPoll ? editPoll.totalVotes : 0}
+                  {isEditing && editPoll ? editPoll.registeredVotes : 0}
                 </span>
                 <span className="votti-launch__stat-label">votos</span>
               </div>

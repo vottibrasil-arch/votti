@@ -35,6 +35,8 @@ import {
   pollPublicUrl,
   getPollErrorMessage,
 } from "@/lib/votti/poll-store";
+import { formatPollStats } from "@/lib/votti/poll-stats";
+import { PollManagePanel } from "@/components/votti/poll-manage-panel";
 import type { StoredPoll } from "@/lib/votti/poll-types";
 
 
@@ -169,6 +171,10 @@ function MinhasPage() {
 
                 poll={poll}
 
+                ownerId={user.id}
+
+                onRefresh={refreshPolls}
+
                 onDelete={async () => {
 
                   await deletePoll(poll.id, user.id);
@@ -204,21 +210,17 @@ function MinhasPage() {
 
 
 function PollCard({
-
   poll,
-
+  ownerId,
+  onRefresh,
   onDelete,
-
   onDuplicate,
-
 }: {
-
   poll: StoredPoll;
-
+  ownerId: string;
+  onRefresh: () => Promise<void>;
   onDelete: () => Promise<void>;
-
   onDuplicate: () => Promise<void>;
-
 }) {
 
   const url = pollPublicUrl(poll.slug);
@@ -239,18 +241,15 @@ function PollCard({
 
           <h3>{poll.title}</h3>
 
-          <p>{poll.questions.length} perguntas · {poll.totalVotes} {poll.totalVotes === 1 ? "pessoa" : "pessoas"} · {date}</p>
+          <p>{poll.questions.length} perguntas · {formatPollStats(poll)} · {date}</p>
 
         </div>
 
         <span className={`votti-poll-card__status votti-poll-card__status--${poll.status}`}>
-
           {poll.status === "active" ? "Ativa" : "Encerrada"}
-
         </span>
-
       </div>
-
+      <PollManagePanel poll={poll} ownerId={ownerId} onUpdated={onRefresh} />
       <div className="votti-poll-card__actions">
 
         <Link to="/votacao/$slug/resultados" params={{ slug: poll.slug }} className="votti-pill-btn">

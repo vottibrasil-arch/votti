@@ -7,7 +7,7 @@ type PollImageFieldProps = {
   hint?: string;
   value: string;
   onChange: (url: string) => void;
-  variant: "logo" | "cover";
+  variant: "logo" | "cover" | "background";
   ownerId?: string;
 };
 

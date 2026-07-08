@@ -8,23 +8,32 @@ type PollPublicShellProps = {
 
 export function PollPublicShell({ poll, children }: PollPublicShellProps) {
   const accent = poll.primaryColor || "#4F8FD9";
+  const button = poll.settings.buttonColor || accent;
+  const bgColor = poll.settings.backgroundColor || "#0f1729";
+  const bgImage = poll.settings.backgroundUrl || poll.coverUrl;
 
   return (
     <main
       className="votti-public-poll min-h-[100dvh] flex flex-col"
-      style={{ "--poll-accent": accent } as CSSProperties}
+      style={
+        {
+          "--poll-accent": accent,
+          "--poll-button": button,
+          backgroundColor: bgColor,
+        } as CSSProperties
+      }
     >
-      {poll.coverUrl ? (
+      {bgImage ? (
         <div
           className="votti-public-poll__bg"
-          style={{ backgroundImage: `url(${poll.coverUrl})` }}
+          style={{ backgroundImage: `url(${bgImage})` }}
           aria-hidden
         />
       ) : null}
       <div
         className="votti-public-poll__overlay"
         style={{
-          background: `linear-gradient(180deg, color-mix(in oklab, ${accent} 28%, transparent) 0%, oklch(0.14 0.04 260 / 92%) 45%, oklch(0.12 0.04 260 / 98%) 100%)`,
+          background: `linear-gradient(180deg, color-mix(in oklab, ${accent} 28%, transparent) 0%, color-mix(in oklab, ${bgColor} 92%, transparent) 45%, color-mix(in oklab, ${bgColor} 98%, transparent) 100%)`,
         }}
         aria-hidden
       />

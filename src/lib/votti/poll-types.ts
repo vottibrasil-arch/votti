@@ -1,12 +1,19 @@
 export type PollOption = { id: string; text: string; votes: number };
 export type PollQuestion = { id: string; text: string; options: PollOption[] };
 
+export type CloseMode = "until_admin" | "scheduled_date" | "scheduled_datetime";
+
 export type PollSettings = {
   oneVotePerPerson: boolean;
   showResultBeforeVote: boolean;
   showResultAfterVote: boolean;
   autoClose: boolean;
   closeAt: string;
+  closeMode: CloseMode;
+  backgroundColor: string;
+  buttonColor: string;
+  themePreset: string;
+  backgroundUrl: string;
 };
 
 export type PollDraft = {
@@ -27,8 +34,10 @@ export type StoredPoll = PollDraft & {
   ownerEmail: string;
   status: "active" | "closed";
   createdAt: string;
-  /** Participantes únicos que confirmaram voto nesta votação. */
-  totalVotes: number;
+  /** Pessoas únicas que votaram. */
+  participantCount: number;
+  /** Soma de todos os votos em todas as perguntas. */
+  registeredVotes: number;
 };
 
 export type VoteSelection = {
@@ -36,12 +45,25 @@ export type VoteSelection = {
   optionId: string;
 };
 
+export const THEME_PRESETS = [
+  { id: "votti-blue", label: "VOTTI Azul", primaryColor: "#4F8FD9", backgroundColor: "#0f1729", buttonColor: "#4F8FD9" },
+  { id: "forest", label: "Verde vivo", primaryColor: "#22c55e", backgroundColor: "#0a1a12", buttonColor: "#22c55e" },
+  { id: "sunset", label: "Pôr do sol", primaryColor: "#f97316", backgroundColor: "#1a1008", buttonColor: "#fb923c" },
+  { id: "royal", label: "Roxo real", primaryColor: "#a855f7", backgroundColor: "#140f1f", buttonColor: "#c084fc" },
+  { id: "clean", label: "Neutro claro", primaryColor: "#64748b", backgroundColor: "#1e293b", buttonColor: "#94a3b8" },
+] as const;
+
 export const DEFAULT_SETTINGS: PollSettings = {
   oneVotePerPerson: true,
   showResultBeforeVote: false,
   showResultAfterVote: true,
   autoClose: false,
   closeAt: "",
+  closeMode: "until_admin",
+  backgroundColor: "#0f1729",
+  buttonColor: "#4F8FD9",
+  themePreset: "votti-blue",
+  backgroundUrl: "",
 };
 
 export const EMPTY_DRAFT: PollDraft = {

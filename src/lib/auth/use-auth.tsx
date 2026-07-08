@@ -64,6 +64,10 @@ type AuthContextValue = {
 
   signInWithGoogle: () => Promise<void>;
 
+  updateProfileName: (name: string) => Promise<void>;
+
+  updateEmail: (email: string) => Promise<void>;
+
   updatePassword: (newPassword: string) => Promise<void>;
 
   deleteAccount: () => Promise<void>;
@@ -259,6 +263,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
 
+  const updateProfileName = useCallback(
+    async (name: string) => {
+      assertSupabaseConfigured(configured);
+      const trimmed = name.trim();
+      if (!trimmed) throw new Error("Digite um nome válido.");
+      const { error } = await getSupabaseBrowser().auth.updateUser({
+        data: { nome: trimmed, name: trimmed },
+      });
+      if (error) throw error;
+      const { data } = await getSupabaseBrowser().auth.getUser();
+      if (data.user) setUser(mapUser(data.user));
+    },
+    [configured],
+  );
+
+  const updateEmail = useCallback(
+    async (email: string) => {
+      assertSupabaseConfigured(configured);
+      const trimmed = email.trim();
+      if (!trimmed) throw new Error("Digite um e-mail válido.");
+      const { error } = await getSupabaseBrowser().auth.updateUser({ email: trimmed });
+      if (error) throw error;
+    },
+    [configured],
+  );
+
   const updatePassword = useCallback(
 
     async (newPassword: string) => {
@@ -336,12 +366,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signInWithGoogle,
+      updateProfileName,
+      updateEmail,
       updatePassword,
       deleteAccount,
       signOut,
     }),
 
-    [user, loading, configured, signIn, signUp, signInWithGoogle, updatePassword, deleteAccount, signOut],
+    [user, loading, configured, signIn, signUp, signInWithGoogle, updateProfileName, updateEmail, updatePassword, deleteAccount, signOut],
 
   );
 

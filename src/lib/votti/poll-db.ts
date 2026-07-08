@@ -21,7 +21,19 @@ function parseSettings(raw: unknown): PollSettings {
     showResultAfterVote: s.showResultAfterVote ?? DEFAULT_SETTINGS.showResultAfterVote,
     autoClose: s.autoClose ?? DEFAULT_SETTINGS.autoClose,
     closeAt: s.closeAt ?? DEFAULT_SETTINGS.closeAt,
+    closeMode: s.closeMode ?? DEFAULT_SETTINGS.closeMode,
+    backgroundColor: s.backgroundColor ?? DEFAULT_SETTINGS.backgroundColor,
+    buttonColor: s.buttonColor ?? DEFAULT_SETTINGS.buttonColor,
+    themePreset: s.themePreset ?? DEFAULT_SETTINGS.themePreset,
+    backgroundUrl: s.backgroundUrl ?? DEFAULT_SETTINGS.backgroundUrl,
   };
+}
+
+function sumRegisteredVotes(questions: PollQuestion[]): number {
+  return questions.reduce(
+    (sum, q) => sum + q.options.reduce((s, o) => s + o.votes, 0),
+    0,
+  );
 }
 
 function mapStatus(status: Poll["status"]): StoredPoll["status"] {
@@ -76,7 +88,8 @@ function mapPollRow(
     settings: parseSettings(poll.settings),
     status: mapStatus(poll.status),
     createdAt: poll.created_at,
-    totalVotes: participantCount,
+    participantCount,
+    registeredVotes: sumRegisteredVotes(questions),
   };
 }
 
@@ -432,6 +445,52 @@ export async function setPollStatusDb(
     .eq("owner_id", ownerId);
 
   if (error) throw error;
+}
+
+export async function managePollDb(
+  pollId: string,
+  ownerId: string,
+  patch: { status?: StoredPoll["status"]; settings?: Partial<PollSettings> },
+): Promise<StoredPoll> {
+  const supabase = getSupabaseBrowser();
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("polls")
+    .select("*")
+    .eq("id", pollId)
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (!existing) throw new Error("Votação não encontrada.");
+
+  const nextSettings = patch.settings
+    ? { ...parseSettings(existing.settings), ...patch.settings }
+    : parseSettings(existing.settings);
+
+  let status: StoredPoll["status"] = patch.status ?? mapStatus(existing.status);
+
+  if (nextSettings.autoClose && nextSettings.closeAt && status === "active") {
+    const closeAt =
+      nextSettings.closeMode === "scheduled_date"
+        ? new Date(`${nextSettings.closeAt}T23:59:59`)
+        : new Date(nextSettings.closeAt);
+    if (!Number.isNaN(closeAt.getTime()) && closeAt <= new Date()) {
+      status = "closed";
+    }
+  }
+
+  const { error: updateError } = await supabase
+    .from("polls")
+    .update({ status, settings: nextSettings })
+    .eq("id", pollId)
+    .eq("owner_id", ownerId);
+
+  if (updateError) throw updateError;
+
+  const updated = await getPollByIdForOwnerDb(pollId, ownerId);
+  if (!updated) throw new Error("Votação não encontrada.");
+  return updated;
 }
 
 export async function listPollsByOwnerDb(ownerId: string): Promise<StoredPoll[]> {

@@ -11,6 +11,7 @@ import {
   castVoteDb,
   castVotesDb,
   setPollStatusDb,
+  managePollDb,
   updatePollDb,
 } from "@/lib/votti/poll-db";
 import {
@@ -18,7 +19,14 @@ import {
   isPollLockedForVoter,
   lockPollForVoter,
 } from "@/lib/votti/voter-session";
-import { EMPTY_DRAFT, type PollDraft, type StoredPoll, type VoteSelection } from "@/lib/votti/poll-types";
+import {
+  EMPTY_DRAFT,
+  type CloseMode,
+  type PollDraft,
+  type PollSettings,
+  type StoredPoll,
+  type VoteSelection,
+} from "@/lib/votti/poll-types";
 
 const DRAFT_KEY = "votti_poll_draft";
 const LEGACY_POLLS_KEY = "votti_polls";
@@ -132,8 +140,43 @@ export async function closePoll(pollId: string, ownerId: string): Promise<void> 
 }
 
 export async function reopenPoll(pollId: string, ownerId: string): Promise<void> {
+  await activatePoll(pollId, ownerId);
+}
+
+export async function managePoll(
+  pollId: string,
+  ownerId: string,
+  patch: { status?: StoredPoll["status"]; settings?: Partial<PollSettings> },
+): Promise<StoredPoll> {
   assertSupabaseConfigured();
-  await setPollStatusDb(pollId, ownerId, "active");
+  return managePollDb(pollId, ownerId, patch);
+}
+
+export async function activatePoll(pollId: string, ownerId: string): Promise<StoredPoll> {
+  return managePoll(pollId, ownerId, {
+    status: "active",
+    settings: { closeMode: "until_admin", autoClose: false, closeAt: "" },
+  });
+}
+
+export async function deactivatePoll(pollId: string, ownerId: string): Promise<StoredPoll> {
+  return managePoll(pollId, ownerId, { status: "closed" });
+}
+
+export async function schedulePollClose(
+  pollId: string,
+  ownerId: string,
+  closeAt: string,
+  mode: CloseMode,
+): Promise<StoredPoll> {
+  return managePoll(pollId, ownerId, {
+    status: "active",
+    settings: {
+      closeMode: mode,
+      autoClose: true,
+      closeAt,
+    },
+  });
 }
 
 export async function deletePoll(pollId: string, ownerId: string): Promise<void> {

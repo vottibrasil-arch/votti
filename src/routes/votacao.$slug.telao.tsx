@@ -6,6 +6,7 @@ import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 
 import { LiveDot } from "@/components/ui-kit";
 
+import { formatPollStats } from "@/lib/votti/poll-stats";
 import { getPollBySlug, getPollErrorMessage } from "@/lib/votti/poll-store";
 
 import type { StoredPoll } from "@/lib/votti/poll-types";
@@ -162,11 +163,7 @@ function TelaoPage() {
 
           </span>
 
-          <p className="votti-telao__votes tabular-nums">
-
-            {poll.totalVotes} {poll.totalVotes === 1 ? "pessoa votou" : "pessoas votaram"}
-
-          </p>
+          <p className="votti-telao__votes tabular-nums">{formatPollStats(poll)}</p>
 
         </div>
 
