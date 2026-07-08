@@ -91,12 +91,7 @@ function ResultadosPage() {
           </div>
         ) : null}
 
-        <div className="votti-vote-hero votti-vote-hero--branded votti-vote-hero--compact animate-rise">
-          {poll.coverUrl ? (
-            <img src={poll.coverUrl} alt="" className="votti-vote-hero__cover" />
-          ) : (
-            <div className="votti-vote-hero__cover votti-vote-hero__cover--accent" />
-          )}
+        <div className="votti-vote-hero votti-vote-hero--branded votti-vote-hero--minimal animate-rise">
           <div className="votti-vote-hero__body">
             <div className="votti-vote-hero__trust">
               <SecurityBadge compact />
@@ -105,17 +100,8 @@ function ResultadosPage() {
                 Ranking {liveLabel}
               </span>
             </div>
-            <div className="votti-vote-hero__meta">
-              {poll.logoUrl ? (
-                <img src={poll.logoUrl} alt="" className="votti-vote-hero__logo" />
-              ) : (
-                <div className="votti-vote-hero__logo votti-vote-hero__logo--accent" />
-              )}
-              <div>
-                <h1 className="votti-vote-hero__title">{poll.title}</h1>
-                <p className="votti-vote-hero__votes tabular-nums">{formatPollStats(poll)}</p>
-              </div>
-            </div>
+            <h1 className="votti-vote-hero__title">{poll.title}</h1>
+            <p className="votti-vote-hero__votes tabular-nums">{formatPollStats(poll)}</p>
           </div>
         </div>
 

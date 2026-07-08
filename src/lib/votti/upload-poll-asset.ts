@@ -5,7 +5,7 @@ const BUCKET = "poll-assets";
 export async function uploadPollAsset(
   file: File,
   ownerId: string,
-  kind: "logo" | "cover" | "background",
+  kind: "logo" | "cover",
 ): Promise<string> {
   if (!isSupabaseBrowserConfigured()) {
     throw new Error("Supabase não configurado. Não foi possível enviar a imagem.");

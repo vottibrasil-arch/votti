@@ -3589,16 +3589,46 @@
 }
 
 .votti-poll-card {
-  padding: 1.125rem;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
   border-radius: 1.125rem;
   background: oklch(0.2 0.04 260 / 85%);
   border: 1px solid oklch(0.35 0.06 260 / 45%);
+}
+
+.votti-poll-card__bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(10px) saturate(1.1);
+  transform: scale(1.06);
+  pointer-events: none;
+}
+
+.votti-poll-card__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, oklch(0.14 0.04 260 / 72%), oklch(0.18 0.04 260 / 94%));
+  pointer-events: none;
+}
+
+.votti-poll-card__inner {
+  position: relative;
+  z-index: 1;
+  padding: 1.125rem;
 }
 
 .votti-poll-card__head {
   display: flex;
   gap: 0.75rem;
   align-items: flex-start;
+}
+
+.votti-poll-card__title-block {
+  flex: 1;
+  min-width: 0;
 }
 
 .votti-poll-card__head h3 {
@@ -3612,6 +3642,29 @@
   margin: 0.25rem 0 0;
   font-size: 0.75rem;
   color: oklch(0.6 0.02 260);
+}
+
+.votti-vote-hero--minimal .votti-vote-hero__body {
+  padding: 1.125rem 1.25rem 1.25rem;
+}
+
+.votti-vote-hero--minimal .votti-vote-hero__title {
+  margin-top: 0.5rem;
+}
+
+.votti-preview--cover-bg {
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.votti-publish-card--cover-bg {
+  background-size: cover;
+  background-position: center;
+}
+
+.votti-image-box--background {
+  min-height: 6rem;
 }
 
 .votti-poll-card__logo {

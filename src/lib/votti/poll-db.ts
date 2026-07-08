@@ -25,7 +25,6 @@ function parseSettings(raw: unknown): PollSettings {
     backgroundColor: s.backgroundColor ?? DEFAULT_SETTINGS.backgroundColor,
     buttonColor: s.buttonColor ?? DEFAULT_SETTINGS.buttonColor,
     themePreset: s.themePreset ?? DEFAULT_SETTINGS.themePreset,
-    backgroundUrl: s.backgroundUrl ?? DEFAULT_SETTINGS.backgroundUrl,
   };
 }
 
@@ -281,7 +280,7 @@ export async function updatePollDb(
       title: draft.title.trim() || "Votação sem título",
       description: draft.description.trim() || null,
       category: draft.category.trim() || null,
-      logo_url: draft.logoUrl.trim() || null,
+      logo_url: null,
       photo_url: draft.coverUrl.trim() || null,
       primary_color: draft.primaryColor,
       settings: draft.settings,
@@ -577,7 +576,7 @@ export async function publishPollDb(
       title: draft.title.trim() || "Votação sem título",
       description: draft.description.trim() || null,
       category: draft.category.trim() || null,
-      logo_url: draft.logoUrl.trim() || null,
+      logo_url: null,
       photo_url: draft.coverUrl.trim() || null,
       primary_color: draft.primaryColor,
       status: "active",

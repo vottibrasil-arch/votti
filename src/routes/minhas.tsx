@@ -231,13 +231,17 @@ function PollCard({
 
   return (
 
-    <article className="votti-poll-card animate-rise">
-
+    <article className={`votti-poll-card ${poll.coverUrl ? "votti-poll-card--has-cover" : ""} animate-rise`}>
+      {poll.coverUrl ? (
+        <>
+          <div className="votti-poll-card__bg" style={{ backgroundImage: `url(${poll.coverUrl})` }} aria-hidden />
+          <div className="votti-poll-card__scrim" aria-hidden />
+        </>
+      ) : null}
+      <div className="votti-poll-card__inner">
       <div className="votti-poll-card__head">
 
-        {poll.logoUrl ? <img src={poll.logoUrl} alt="" className="votti-poll-card__logo" /> : <span className="votti-poll-card__dot" style={{ background: poll.primaryColor }} />}
-
-        <div>
+        <div className="votti-poll-card__title-block">
 
           <h3>{poll.title}</h3>
 
@@ -294,6 +298,7 @@ function PollCard({
 
         </button>
 
+      </div>
       </div>
 
     </article>

@@ -195,26 +195,10 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
             <span className="votti-field__label">Categoria</span>
             <input className="votti-field__input" value={draft.category} onChange={(e) => patch({ category: e.target.value })} placeholder="Escola, empresa, evento..." />
           </label>
-          <PollImageField
-            label="Logo"
-            hint="Quadradinho — aparece nos cards e na votação."
-            variant="logo"
-            value={draft.logoUrl}
-            onChange={(logoUrl) => patch({ logoUrl })}
-            ownerId={user?.id}
-          />
           <label className="votti-field">
             <span className="votti-field__label">Cor principal</span>
             <input type="color" className="votti-field__color" value={draft.primaryColor} onChange={(e) => patch({ primaryColor: e.target.value })} />
           </label>
-          <PollImageField
-            label="Imagem de capa"
-            hint="Banner no topo da votação (opcional)."
-            variant="cover"
-            value={draft.coverUrl}
-            onChange={(coverUrl) => patch({ coverUrl })}
-            ownerId={user?.id}
-          />
         </div>
       )}
 
@@ -265,12 +249,18 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
       {step === 2 && (
         <div className="votti-wizard__panel votti-wizard__panel--glass">
           <h2>Personalização</h2>
-          <p className="votti-wizard__hint">Capa, logo e cor viram o fundo e os botões que quem vota vai ver.</p>
+          <p className="votti-wizard__hint">Capa, cores e tema — a capa aparece só como fundo da votação.</p>
           <div className="votti-wizard__preview-stack">
-            <div className="votti-preview votti-preview--rich" style={{ borderColor: draft.primaryColor }}>
-              {draft.coverUrl ? <img src={draft.coverUrl} alt="" className="votti-preview__cover" /> : <div className="votti-preview__cover votti-preview__cover--empty" style={{ background: `linear-gradient(135deg, ${draft.primaryColor}55, oklch(0.2 0.04 260))` }} />}
+            <div
+              className="votti-preview votti-preview--rich votti-preview--cover-bg"
+              style={{
+                borderColor: draft.primaryColor,
+                ...(draft.coverUrl
+                  ? { backgroundImage: `linear-gradient(oklch(0.14 0.04 260 / 88%), oklch(0.14 0.04 260 / 92%)), url(${draft.coverUrl})` }
+                  : {}),
+              }}
+            >
               <div className="votti-preview__body">
-                {draft.logoUrl ? <img src={draft.logoUrl} alt="" className="votti-preview__logo" /> : null}
                 <h3 style={{ color: draft.primaryColor }}>{draft.title || "Título da votação"}</h3>
                 <p>{draft.description || "Descrição da votação"}</p>
               </div>
@@ -340,28 +330,12 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
             </label>
           </div>
 
-          <div className="votti-wizard__image-row">
-            <PollImageField
-              label="Trocar logo"
-              variant="logo"
-              value={draft.logoUrl}
-              onChange={(logoUrl) => patch({ logoUrl })}
-              ownerId={user?.id}
-            />
-            <PollImageField
-              label="Imagem de capa"
-              variant="cover"
-              value={draft.coverUrl}
-              onChange={(coverUrl) => patch({ coverUrl })}
-              ownerId={user?.id}
-            />
-          </div>
           <PollImageField
-            label="Imagem de fundo (tela inteira)"
-            hint="Opcional. Aparece atrás do ranking e da votação."
-            variant="background"
-            value={draft.settings.backgroundUrl}
-            onChange={(backgroundUrl) => patch({ settings: { ...draft.settings, backgroundUrl } })}
+            label="Imagem de capa"
+            hint="Opcional. Aparece como fundo atrás da votação e do ranking."
+            variant="cover"
+            value={draft.coverUrl}
+            onChange={(coverUrl) => patch({ coverUrl, logoUrl: "" })}
             ownerId={user?.id}
           />
         </div>
@@ -455,22 +429,21 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
             </div>
           </div>
 
-          <div className="votti-publish-card votti-publish-card--launch">
-            {draft.coverUrl ? (
-              <img src={draft.coverUrl} alt="" className="votti-publish-card__cover" />
-            ) : (
-              <div
-                className="votti-publish-card__cover votti-publish-card__cover--empty"
-                style={{ background: `linear-gradient(135deg, ${draft.primaryColor}, oklch(0.28 0.08 260))` }}
-              />
-            )}
+          <div
+            className={`votti-publish-card votti-publish-card--launch ${draft.coverUrl ? "votti-publish-card--cover-bg" : ""}`}
+            style={
+              draft.coverUrl
+                ? {
+                    backgroundImage: `linear-gradient(oklch(0.16 0.04 260 / 92%), oklch(0.16 0.04 260 / 96%)), url(${draft.coverUrl})`,
+                  }
+                : undefined
+            }
+          >
             <div className="votti-publish-card__body">
               <div className="votti-publish-card__meta">
-                {draft.logoUrl ? <img src={draft.logoUrl} alt="" className="votti-publish-card__logo" /> : (
-                  <div className="votti-publish-card__logo votti-publish-card__logo--empty">
-                    <Trophy className="size-5" />
-                  </div>
-                )}
+                <div className="votti-publish-card__logo votti-publish-card__logo--empty">
+                  <Trophy className="size-5" />
+                </div>
                 <div>
                   <p className="votti-publish-card__title">{draft.title || "Sem título"}</p>
                   <p className="votti-publish-card__sub">{draft.category || "Votação ao vivo"}</p>

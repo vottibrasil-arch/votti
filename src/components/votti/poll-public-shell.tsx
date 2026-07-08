@@ -10,7 +10,7 @@ export function PollPublicShell({ poll, children }: PollPublicShellProps) {
   const accent = poll.primaryColor || "#4F8FD9";
   const button = poll.settings.buttonColor || accent;
   const bgColor = poll.settings.backgroundColor || "#0f1729";
-  const bgImage = poll.settings.backgroundUrl || poll.coverUrl;
+  const coverUrl = poll.coverUrl.trim();
 
   return (
     <main
@@ -23,10 +23,10 @@ export function PollPublicShell({ poll, children }: PollPublicShellProps) {
         } as CSSProperties
       }
     >
-      {bgImage ? (
+      {coverUrl ? (
         <div
           className="votti-public-poll__bg"
-          style={{ backgroundImage: `url(${bgImage})` }}
+          style={{ backgroundImage: `url(${coverUrl})` }}
           aria-hidden
         />
       ) : null}

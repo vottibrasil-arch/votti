@@ -13,7 +13,6 @@ export type PollSettings = {
   backgroundColor: string;
   buttonColor: string;
   themePreset: string;
-  backgroundUrl: string;
 };
 
 export type PollDraft = {
@@ -63,7 +62,6 @@ export const DEFAULT_SETTINGS: PollSettings = {
   backgroundColor: "#0f1729",
   buttonColor: "#4F8FD9",
   themePreset: "votti-blue",
-  backgroundUrl: "",
 };
 
 export const EMPTY_DRAFT: PollDraft = {

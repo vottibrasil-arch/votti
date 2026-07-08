@@ -141,8 +141,6 @@ function TelaoPage() {
 
         <div className="votti-telao__brand">
 
-          {poll.logoUrl ? <img src={poll.logoUrl} alt="" className="votti-telao__logo" /> : null}
-
           <div>
 
             <h1 className="votti-telao__title">{poll.title}</h1>
