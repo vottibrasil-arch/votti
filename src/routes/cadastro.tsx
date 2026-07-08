@@ -18,6 +18,7 @@ import {
 import { isSupabaseBrowserConfigured } from "@/lib/api/supabase-browser";
 import {
   AuthButton,
+  AuthDivider,
   AuthField,
   AuthInput,
   AuthScreen,
@@ -44,7 +45,7 @@ export const Route = createFileRoute("/cadastro")({
 function CadastroPage() {
   const { redirect } = Route.useSearch();
   const navigate = useNavigate();
-  const { user, loading, signUp, configured } = useAuth();
+  const { user, loading, signUp, signInWithGoogle, configured } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,6 +64,26 @@ function CadastroPage() {
   useEffect(() => {
     if (!loading && user) navigateAfterAuth(navigate, redirect);
   }, [loading, user, navigate, redirect]);
+
+  async function handleGoogle() {
+    setError("");
+    setSuccess("");
+    if (!configured) {
+      setError(AUTH_NOT_CONFIGURED_MSG);
+      return;
+    }
+    if (!serverOk) {
+      setError(getWrongSupabaseProjectMessage(serverProjectRef));
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setError(err instanceof Error ? mapAuthError(err.message) : "Erro ao continuar com Google");
+      setSubmitting(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -159,6 +180,12 @@ function CadastroPage() {
         </p>
       }
     >
+      <AuthButton variant="google" onClick={() => void handleGoogle()} disabled={submitting || !serverOk}>
+        Continuar com Google
+      </AuthButton>
+
+      <AuthDivider />
+
       <form className="votti-auth__form" onSubmit={handleSubmit}>
         {!configured ? (
           <p className="votti-auth__notice">

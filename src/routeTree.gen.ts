@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MinhasRouteImport } from './routes/minhas'
+import { Route as MinhaContaRouteImport } from './routes/minha-conta'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CriarRouteImport } from './routes/criar'
 import { Route as ComoFuncionaRouteImport } from './routes/como-funciona'
@@ -18,11 +19,17 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as CriarSucessoRouteImport } from './routes/criar.sucesso'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as VotacaoSlugTelaoRouteImport } from './routes/votacao.$slug.telao'
 import { Route as VotacaoSlugResultadosRouteImport } from './routes/votacao.$slug.resultados'
 
 const MinhasRoute = MinhasRouteImport.update({
   id: '/minhas',
   path: '/minhas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MinhaContaRoute = MinhaContaRouteImport.update({
+  id: '/minha-conta',
+  path: '/minha-conta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -65,6 +72,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VotacaoSlugTelaoRoute = VotacaoSlugTelaoRouteImport.update({
+  id: '/votacao/$slug/telao',
+  path: '/votacao/$slug/telao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VotacaoSlugResultadosRoute = VotacaoSlugResultadosRouteImport.update({
   id: '/votacao/$slug/resultados',
   path: '/votacao/$slug/resultados',
@@ -77,11 +89,13 @@ export interface FileRoutesByFullPath {
   '/como-funciona': typeof ComoFuncionaRoute
   '/criar': typeof CriarRouteWithChildren
   '/login': typeof LoginRoute
+  '/minha-conta': typeof MinhaContaRoute
   '/minhas': typeof MinhasRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
   '/v/$slug': typeof VSlugRoute
   '/votacao/$slug/resultados': typeof VotacaoSlugResultadosRoute
+  '/votacao/$slug/telao': typeof VotacaoSlugTelaoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -89,11 +103,13 @@ export interface FileRoutesByTo {
   '/como-funciona': typeof ComoFuncionaRoute
   '/criar': typeof CriarRouteWithChildren
   '/login': typeof LoginRoute
+  '/minha-conta': typeof MinhaContaRoute
   '/minhas': typeof MinhasRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
   '/v/$slug': typeof VSlugRoute
   '/votacao/$slug/resultados': typeof VotacaoSlugResultadosRoute
+  '/votacao/$slug/telao': typeof VotacaoSlugTelaoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -102,11 +118,13 @@ export interface FileRoutesById {
   '/como-funciona': typeof ComoFuncionaRoute
   '/criar': typeof CriarRouteWithChildren
   '/login': typeof LoginRoute
+  '/minha-conta': typeof MinhaContaRoute
   '/minhas': typeof MinhasRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
   '/v/$slug': typeof VSlugRoute
   '/votacao/$slug/resultados': typeof VotacaoSlugResultadosRoute
+  '/votacao/$slug/telao': typeof VotacaoSlugTelaoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -116,11 +134,13 @@ export interface FileRouteTypes {
     | '/como-funciona'
     | '/criar'
     | '/login'
+    | '/minha-conta'
     | '/minhas'
     | '/auth/callback'
     | '/criar/sucesso'
     | '/v/$slug'
     | '/votacao/$slug/resultados'
+    | '/votacao/$slug/telao'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,11 +148,13 @@ export interface FileRouteTypes {
     | '/como-funciona'
     | '/criar'
     | '/login'
+    | '/minha-conta'
     | '/minhas'
     | '/auth/callback'
     | '/criar/sucesso'
     | '/v/$slug'
     | '/votacao/$slug/resultados'
+    | '/votacao/$slug/telao'
   id:
     | '__root__'
     | '/'
@@ -140,11 +162,13 @@ export interface FileRouteTypes {
     | '/como-funciona'
     | '/criar'
     | '/login'
+    | '/minha-conta'
     | '/minhas'
     | '/auth/callback'
     | '/criar/sucesso'
     | '/v/$slug'
     | '/votacao/$slug/resultados'
+    | '/votacao/$slug/telao'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -153,10 +177,12 @@ export interface RootRouteChildren {
   ComoFuncionaRoute: typeof ComoFuncionaRoute
   CriarRoute: typeof CriarRouteWithChildren
   LoginRoute: typeof LoginRoute
+  MinhaContaRoute: typeof MinhaContaRoute
   MinhasRoute: typeof MinhasRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   VSlugRoute: typeof VSlugRoute
   VotacaoSlugResultadosRoute: typeof VotacaoSlugResultadosRoute
+  VotacaoSlugTelaoRoute: typeof VotacaoSlugTelaoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -166,6 +192,13 @@ declare module '@tanstack/react-router' {
       path: '/minhas'
       fullPath: '/minhas'
       preLoaderRoute: typeof MinhasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/minha-conta': {
+      id: '/minha-conta'
+      path: '/minha-conta'
+      fullPath: '/minha-conta'
+      preLoaderRoute: typeof MinhaContaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -224,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/votacao/$slug/telao': {
+      id: '/votacao/$slug/telao'
+      path: '/votacao/$slug/telao'
+      fullPath: '/votacao/$slug/telao'
+      preLoaderRoute: typeof VotacaoSlugTelaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/votacao/$slug/resultados': {
       id: '/votacao/$slug/resultados'
       path: '/votacao/$slug/resultados'
@@ -250,10 +290,12 @@ const rootRouteChildren: RootRouteChildren = {
   ComoFuncionaRoute: ComoFuncionaRoute,
   CriarRoute: CriarRouteWithChildren,
   LoginRoute: LoginRoute,
+  MinhaContaRoute: MinhaContaRoute,
   MinhasRoute: MinhasRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   VSlugRoute: VSlugRoute,
   VotacaoSlugResultadosRoute: VotacaoSlugResultadosRoute,
+  VotacaoSlugTelaoRoute: VotacaoSlugTelaoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

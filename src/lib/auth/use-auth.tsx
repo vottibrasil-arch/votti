@@ -26,6 +26,8 @@ import {
 
 import type { VottiUser } from "@/lib/auth/types";
 
+import { deleteOwnAccount } from "@/lib/auth/auth-account.server";
+
 
 
 const LEGACY_MOCK_SESSION_KEY = "votti_mock_session";
@@ -61,6 +63,10 @@ type AuthContextValue = {
   signUp: (email: string, password: string, name?: string) => Promise<SignUpResult>;
 
   signInWithGoogle: () => Promise<void>;
+
+  updatePassword: (newPassword: string) => Promise<void>;
+
+  deleteAccount: () => Promise<void>;
 
   signOut: () => Promise<void>;
 
@@ -253,6 +259,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
 
+  const updatePassword = useCallback(
+
+    async (newPassword: string) => {
+
+      assertSupabaseConfigured(configured);
+
+      if (newPassword.length < 6) {
+
+        throw new Error("A senha deve ter pelo menos 6 caracteres");
+
+      }
+
+      const { error } = await getSupabaseBrowser().auth.updateUser({ password: newPassword });
+
+      if (error) throw error;
+
+    },
+
+    [configured],
+
+  );
+
+
+
+  const deleteAccount = useCallback(async () => {
+
+    assertSupabaseConfigured(configured);
+
+    const supabase = getSupabaseBrowser();
+
+    const { data, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !data.session?.access_token) {
+
+      throw new Error("Sessão expirada. Entre novamente.");
+
+    }
+
+    await deleteOwnAccount({ data: { accessToken: data.session.access_token } });
+
+    await supabase.auth.signOut();
+
+    setUser(null);
+
+  }, [configured]);
+
+
+
   const signOut = useCallback(async () => {
 
     clearLegacyMockSession();
@@ -275,9 +329,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
 
-    () => ({ user, loading, configured, signIn, signUp, signInWithGoogle, signOut }),
+    () => ({
+      user,
+      loading,
+      configured,
+      signIn,
+      signUp,
+      signInWithGoogle,
+      updatePassword,
+      deleteAccount,
+      signOut,
+    }),
 
-    [user, loading, configured, signIn, signUp, signInWithGoogle, signOut],
+    [user, loading, configured, signIn, signUp, signInWithGoogle, updatePassword, deleteAccount, signOut],
 
   );
 

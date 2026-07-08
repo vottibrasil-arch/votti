@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Copy, ExternalLink, MessageCircle, PartyPopper } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Monitor, PartyPopper } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app/app-shell";
 import { AppTopBar } from "@/components/app/app-top-bar";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { SecurityBadge } from "@/components/votti/security-badge";
-import { getPollBySlug, pollPublicUrl } from "@/lib/votti/poll-store";
+import { getPollBySlug, pollPublicUrl, pollTelaoUrl } from "@/lib/votti/poll-store";
 import type { StoredPoll } from "@/lib/votti/poll-types";
 
 type SucessoSearch = { slug?: string };
@@ -24,6 +24,7 @@ function SucessoPage() {
   const [copied, setCopied] = useState(false);
   const [poll, setPoll] = useState<StoredPoll | null>(null);
   const url = slug ? pollPublicUrl(slug) : "";
+  const telaoUrl = slug ? pollTelaoUrl(slug) : "";
 
   useEffect(() => {
     if (!slug) return;
@@ -72,6 +73,20 @@ function SucessoPage() {
               height={180}
             />
           </div>
+
+          {slug ? (
+            <div className="votti-success__telao">
+              <p className="votti-wizard__hint">Modo Telão</p>
+              <a
+                href={telaoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="votti-mega-btn votti-mega-btn--sm w-full max-w-none"
+              >
+                <Monitor className="size-4" /> Abrir Telão
+              </a>
+            </div>
+          ) : null}
 
           <p className="votti-success__url">{url}</p>
 

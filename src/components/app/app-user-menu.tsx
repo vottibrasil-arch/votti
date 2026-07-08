@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth/use-auth";
 
@@ -23,9 +23,9 @@ export function AppUserMenu({ className = "" }: AppUserMenuProps) {
 
   return (
     <div className={`votti-app-user ${className}`.trim()}>
-      <span className="votti-app-user__name" title={user.email}>
+      <Link to="/minha-conta" className="votti-app-user__name" title={user.email}>
         {displayName}
-      </span>
+      </Link>
       <button type="button" className="votti-app-user__out" onClick={() => void handleSignOut()}>
         <LogOut className="size-3" aria-hidden />
         Sair

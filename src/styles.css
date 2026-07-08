@@ -1869,6 +1869,12 @@
   font-weight: 600;
   color: oklch(0.88 0.02 260);
   line-height: 1.2;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.votti-app-user__name:hover {
+  color: oklch(0.95 0.01 260);
 }
 
 .votti-app-user__out {
@@ -2506,6 +2512,17 @@
   gap: 0.625rem;
 }
 
+.votti-wizard__status-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 0.875rem;
+  background: oklch(0.18 0.04 260 / 70%);
+  border: 1px solid oklch(0.32 0.05 260 / 45%);
+}
+
 .votti-question-card__head {
   display: flex;
   align-items: center;
@@ -2903,6 +2920,204 @@
   gap: 0.375rem;
 }
 
+/* ── Página pública da votação (fundo personalizado) ── */
+.votti-public-poll {
+  position: relative;
+  overflow: hidden;
+  background: oklch(0.12 0.04 260);
+}
+
+.votti-public-poll__bg {
+  position: fixed;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(28px) saturate(1.2);
+  transform: scale(1.08);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.votti-public-poll__overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.votti-public-poll__glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.votti-public-poll__grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(oklch(0.5 0.06 250 / 6%) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.5 0.06 250 / 6%) 1px, transparent 1px);
+  background-size: 2.5rem 2.5rem;
+  mask-image: linear-gradient(180deg, black 0%, transparent 80%);
+  pointer-events: none;
+}
+
+.votti-public-poll__inner {
+  position: relative;
+  z-index: 1;
+}
+
+.votti-vote-hero--branded {
+  border-color: color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 40%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 25%, transparent),
+    0 24px 60px -20px color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 35%, transparent);
+}
+
+.votti-vote-hero--compact .votti-vote-hero__cover,
+.votti-vote-hero--compact .votti-vote-hero__cover--accent {
+  height: 5.5rem;
+}
+
+.votti-vote-hero__cover--accent {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 75%, white),
+    color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 35%, oklch(0.2 0.06 260))
+  );
+}
+
+.votti-vote-hero__logo--accent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 30%, oklch(0.98 0.01 260)),
+    oklch(0.98 0.01 260)
+  );
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 40%, transparent);
+}
+
+.votti-vote-hero__title {
+  color: oklch(0.98 0.01 260);
+  text-shadow: 0 2px 16px color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 40%, transparent);
+}
+
+.votti-vote-question--branded {
+  border-color: color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 28%, transparent);
+  background: oklch(0.18 0.04 260 / 88%);
+  backdrop-filter: blur(14px);
+}
+
+.votti-vote-option--branded {
+  color: oklch(0.98 0.01 260);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 55%, oklch(0.28 0.08 260)),
+    color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 30%, oklch(0.22 0.06 260))
+  );
+  border: 1px solid color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 50%, transparent);
+  box-shadow:
+    0 8px 28px -10px color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 50%, transparent),
+    0 0 24px color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 20%, transparent);
+}
+
+.votti-vote-option--branded:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.01);
+  filter: brightness(1.1);
+  box-shadow:
+    0 12px 36px -10px color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 60%, transparent),
+    0 0 40px color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 30%, transparent);
+}
+
+.votti-vote-option--selected {
+  outline: 2px solid color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 85%, white);
+  outline-offset: 2px;
+  filter: brightness(1.08);
+}
+
+.votti-vote-footer__hint {
+  margin-top: 0.625rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: oklch(0.68 0.02 260);
+}
+
+.votti-vote-success-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: oklch(0.78 0.18 145);
+  background: oklch(0.62 0.18 145 / 14%);
+  border: 1px solid oklch(0.62 0.18 145 / 30%);
+}
+
+.votti-share-panel {
+  margin-top: 1.25rem;
+  padding: 1.125rem;
+  border-radius: 1.125rem;
+  background: oklch(0.18 0.04 260 / 90%);
+  border: 1px solid oklch(0.35 0.06 260 / 45%);
+  backdrop-filter: blur(12px);
+}
+
+.votti-share-panel__label {
+  margin: 0 0 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: oklch(0.62 0.18 145);
+}
+
+.votti-share-panel__desc {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: oklch(0.72 0.02 260);
+}
+
+.votti-share-panel__url {
+  margin: 0 0 0.875rem;
+  font-size: 0.75rem;
+  word-break: break-all;
+  color: oklch(0.65 0.02 260);
+}
+
+.votti-share-panel__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.votti-share-panel__cta {
+  margin-top: 1.125rem;
+  padding-top: 1.125rem;
+  border-top: 1px solid oklch(0.32 0.05 260 / 50%);
+  text-align: center;
+}
+
+.votti-share-panel__cta-label {
+  margin: 0 0 0.25rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  color: oklch(0.95 0.01 260);
+}
+
+.votti-share-panel__cta-desc {
+  margin: 0 0 0.875rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: oklch(0.65 0.02 260);
+}
+
 .votti-wizard__progress strong {
   display: block;
   margin-top: 0.25rem;
@@ -2975,6 +3190,12 @@
   color: oklch(0.85 0.02 260);
   background: oklch(0.22 0.04 260 / 80%);
   border: 1px solid oklch(0.35 0.06 260 / 45%);
+}
+
+.votti-outline-btn--danger {
+  color: oklch(0.78 0.16 25);
+  border-color: oklch(0.55 0.14 25 / 55%);
+  background: oklch(0.28 0.08 25 / 35%);
 }
 
 .votti-link-btn {
@@ -3159,6 +3380,11 @@
   margin-bottom: 1rem;
 }
 
+.votti-success__telao {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
 .votti-success__url {
   font-size: 0.75rem;
   word-break: break-all;
@@ -3310,4 +3536,195 @@
   height: 100%;
   border-radius: 999px;
   transition: width 0.9s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+.votti-telao {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in oklab, var(--votti-brand, oklch(0.45 0.14 250)) 25%, transparent), transparent),
+    oklch(0.12 0.04 260);
+  color: oklch(0.95 0.01 260);
+}
+
+.votti-telao--loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  color: oklch(0.7 0.02 260);
+}
+
+.votti-telao__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.votti-telao__brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 48rem;
+}
+
+.votti-telao__logo {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 1rem;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.votti-telao__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.votti-telao__desc {
+  margin: 0.375rem 0 0;
+  font-size: clamp(0.9375rem, 2vw, 1.125rem);
+  color: oklch(0.75 0.02 260);
+}
+
+.votti-telao__meta {
+  text-align: right;
+}
+
+.votti-telao__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: oklch(0.72 0.18 145);
+}
+
+.votti-telao__votes {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  font-weight: 800;
+  color: var(--votti-brand, oklch(0.72 0.18 145));
+}
+
+.votti-telao__stack {
+  display: grid;
+  gap: clamp(1rem, 2.5vw, 1.75rem);
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.votti-telao__block .poll-ranking-preview {
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  border-radius: 1.25rem;
+  background: oklch(0.16 0.04 260 / 85%);
+  border: 1px solid oklch(0.32 0.05 260 / 50%);
+}
+
+.votti-telao .poll-ranking-preview__title {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+}
+
+.votti-telao .poll-ranking-preview__question {
+  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+}
+
+.votti-telao .live-poll-bar__label,
+.votti-telao .live-poll-bar__pct {
+  font-size: clamp(0.9375rem, 2vw, 1.125rem);
+}
+
+.votti-telao .live-poll-bar__track {
+  height: clamp(0.75rem, 1.5vw, 1.125rem);
+}
+
+.votti-account {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.votti-account__section {
+  padding: 1.125rem;
+  border-radius: 1.125rem;
+  background: oklch(0.2 0.04 260 / 85%);
+  border: 1px solid oklch(0.35 0.06 260 / 45%);
+}
+
+.votti-account__section--footer {
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0 0;
+}
+
+.votti-account__heading {
+  margin: 0 0 0.875rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: oklch(0.62 0.18 145);
+}
+
+.votti-account__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.votti-account__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.votti-account__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: oklch(0.65 0.02 260);
+}
+
+.votti-account__value {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: oklch(0.92 0.02 260);
+  word-break: break-word;
+}
+
+.votti-account__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.votti-account__form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.votti-account__form-actions .votti-outline-btn,
+.votti-account__form-actions .votti-mega-btn {
+  flex: 1;
+}
+
+.votti-account__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.votti-account__confirm-text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: oklch(0.75 0.02 260);
 }

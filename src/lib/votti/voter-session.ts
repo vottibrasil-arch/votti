@@ -1,21 +1,14 @@
 const TOKEN_PREFIX = "votti-voter:";
-const VOTED_PREFIX = "votti-voted:";
+const LOCKED_PREFIX = "votti-poll-locked:";
+const PENDING_PREFIX = "votti-pending:";
+
+export type PendingSelections = Record<string, string>;
 
 function randomToken() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
-}
-
-function readVotedQuestions(slug: string): string[] {
-  if (typeof localStorage === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(`${VOTED_PREFIX}${slug}`);
-    return raw ? (JSON.parse(raw) as string[]) : [];
-  } catch {
-    return [];
-  }
 }
 
 /** Token anônimo que identifica o participante nesta votação. */
@@ -31,26 +24,69 @@ export function getOrCreateVoterToken(slug: string): string {
   return token;
 }
 
-export function hasVotedQuestion(slug: string, questionId: string): boolean {
-  return readVotedQuestions(slug).includes(questionId);
+export function getPendingSelections(slug: string): PendingSelections {
+  if (typeof localStorage === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(`${PENDING_PREFIX}${slug}`);
+    return raw ? (JSON.parse(raw) as PendingSelections) : {};
+  } catch {
+    return {};
+  }
 }
 
-export function markQuestionVoted(slug: string, questionId: string) {
+export function setPendingSelection(slug: string, questionId: string, optionId: string) {
   if (typeof localStorage === "undefined") return;
-  const list = readVotedQuestions(slug);
-  if (list.includes(questionId)) return;
-  localStorage.setItem(`${VOTED_PREFIX}${slug}`, JSON.stringify([...list, questionId]));
+  const pending = getPendingSelections(slug);
+  localStorage.setItem(
+    `${PENDING_PREFIX}${slug}`,
+    JSON.stringify({ ...pending, [questionId]: optionId }),
+  );
 }
 
-/** True se o participante já votou em ao menos uma pergunta desta votação. */
+export function clearPendingSelections(slug: string) {
+  if (typeof localStorage === "undefined") return;
+  localStorage.removeItem(`${PENDING_PREFIX}${slug}`);
+}
+
+/** Bloqueia nova votação após confirmar. */
+export function lockPollForVoter(slug: string) {
+  if (typeof localStorage === "undefined") return;
+  localStorage.setItem(`${LOCKED_PREFIX}${slug}`, "1");
+}
+
+/** True se o participante já confirmou o voto nesta votação. */
+export function isPollLockedForVoter(slug: string): boolean {
+  if (typeof localStorage === "undefined") return false;
+  return localStorage.getItem(`${LOCKED_PREFIX}${slug}`) === "1";
+}
+
+/** Marca votação como confirmada e limpa rascunho local. */
+export function confirmPollForVoter(slug: string) {
+  lockPollForVoter(slug);
+  clearPendingSelections(slug);
+}
+
+/** @deprecated Use isPollLockedForVoter */
 export function hasVoted(slug: string): boolean {
-  return readVotedQuestions(slug).length > 0;
+  return isPollLockedForVoter(slug);
+}
+
+/** @deprecated Use getPendingSelections */
+export function hasVotedQuestion(slug: string, questionId: string): boolean {
+  return questionId in getPendingSelections(slug);
+}
+
+/** @deprecated Use setPendingSelection + confirmPollForVoter */
+export function markQuestionVoted(slug: string, questionId: string) {
+  void questionId;
+  void slug;
 }
 
 export function clearVoterSession(slug: string) {
   if (typeof localStorage === "undefined") return;
   localStorage.removeItem(`${TOKEN_PREFIX}${slug}`);
-  localStorage.removeItem(`${VOTED_PREFIX}${slug}`);
+  localStorage.removeItem(`${LOCKED_PREFIX}${slug}`);
+  localStorage.removeItem(`${PENDING_PREFIX}${slug}`);
 }
 
 /** @deprecated Use clearVoterSession */

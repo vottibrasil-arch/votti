@@ -239,7 +239,7 @@ function PollCard({
 
           <h3>{poll.title}</h3>
 
-          <p>{poll.questions.length} perguntas · {poll.totalVotes} votos · {date}</p>
+          <p>{poll.questions.length} perguntas · {poll.totalVotes} {poll.totalVotes === 1 ? "pessoa" : "pessoas"} · {date}</p>
 
         </div>
 
@@ -265,7 +265,7 @@ function PollCard({
 
         </a>
 
-        <Link to="/criar" className="votti-pill-btn">
+        <Link to="/criar" search={{ edit: poll.id }} className="votti-pill-btn">
 
           <Pencil className="size-3.5" /> Editar
 

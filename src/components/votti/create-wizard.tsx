@@ -17,8 +17,8 @@ import { useAuth } from "@/lib/auth/use-auth";
 import { PollImageField } from "@/components/votti/poll-image-field";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { SecurityBadge } from "@/components/votti/security-badge";
-import { loadDraft, publishPoll, saveDraft, getPollErrorMessage } from "@/lib/votti/poll-store";
-import { newId, validatePublishDraft, type PollDraft } from "@/lib/votti/poll-types";
+import { loadDraft, publishPoll, saveDraft, getPollErrorMessage, getPollById, updatePoll, closePoll, reopenPoll } from "@/lib/votti/poll-store";
+import { newId, storedPollToDraft, validatePublishDraft, EMPTY_DRAFT, type PollDraft, type StoredPoll } from "@/lib/votti/poll-types";
 
 const STEPS = [
   { label: "Informações", icon: Sparkles },
@@ -30,16 +30,53 @@ const STEPS = [
 
 type WizardProps = {
   onPublished: (slug: string) => void;
+  onSaved?: (slug: string) => void;
+  editPollId?: string;
 };
 
-export function CreateWizard({ onPublished }: WizardProps) {
+export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) {
   const { user } = useAuth();
+  const isEditing = Boolean(editPollId);
   const [step, setStep] = useState(0);
-  const [draft, setDraft] = useState<PollDraft>(() => loadDraft());
+  const [draft, setDraft] = useState<PollDraft>(() => (isEditing ? { ...EMPTY_DRAFT } : loadDraft()));
+  const [editPoll, setEditPoll] = useState<StoredPoll | null>(null);
+  const [loadingEdit, setLoadingEdit] = useState(isEditing);
+  const [loadError, setLoadError] = useState("");
+  const [closeBusy, setCloseBusy] = useState(false);
 
   useEffect(() => {
+    if (!isEditing || !editPollId || !user) return;
+
+    let cancelled = false;
+    setLoadingEdit(true);
+    setLoadError("");
+
+    void getPollById(editPollId, user.id)
+      .then((poll) => {
+        if (cancelled) return;
+        if (!poll) {
+          setLoadError("Votação não encontrada.");
+          return;
+        }
+        setEditPoll(poll);
+        setDraft(storedPollToDraft(poll));
+      })
+      .catch((err) => {
+        if (!cancelled) setLoadError(getPollErrorMessage(err));
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingEdit(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditing, editPollId, user]);
+
+  useEffect(() => {
+    if (isEditing) return;
     saveDraft(draft);
-  }, [draft]);
+  }, [draft, isEditing]);
 
   function patch(partial: Partial<PollDraft>) {
     setDraft((d) => ({ ...d, ...partial }));
@@ -68,11 +105,48 @@ export function CreateWizard({ onPublished }: WizardProps) {
     0,
   );
 
+  async function handleToggleStatus() {
+    if (!editPollId || !user || !editPoll) return;
+    setCloseBusy(true);
+    try {
+      if (editPoll.status === "active") {
+        await closePoll(editPollId, user.id);
+        setEditPoll((p) => (p ? { ...p, status: "closed" } : p));
+      } else {
+        await reopenPoll(editPollId, user.id);
+        setEditPoll((p) => (p ? { ...p, status: "active" } : p));
+      }
+    } catch (err) {
+      setLoadError(getPollErrorMessage(err));
+    } finally {
+      setCloseBusy(false);
+    }
+  }
+
+  if (loadingEdit) {
+    return (
+      <div className="votti-wizard animate-rise flex items-center justify-center py-16">
+        <p className="votti-app-muted">Carregando votação…</p>
+      </div>
+    );
+  }
+
+  if (loadError && isEditing && !editPoll) {
+    return (
+      <div className="votti-wizard animate-rise">
+        <p className="votti-auth__error">{loadError}</p>
+        <Link to="/minhas" className="votti-mega-btn votti-mega-btn--sm mt-4">
+          Voltar para minhas votações
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="votti-wizard animate-rise">
       <div className="votti-wizard__hero">
         <SecurityBadge compact />
-        <p className="votti-wizard__kicker">Criar votação</p>
+        <p className="votti-wizard__kicker">{isEditing ? "Editar votação" : "Criar votação"}</p>
       </div>
 
       <div className="votti-wizard__steps" aria-label="Progresso do assistente">
@@ -190,7 +264,7 @@ export function CreateWizard({ onPublished }: WizardProps) {
       {step === 2 && (
         <div className="votti-wizard__panel votti-wizard__panel--glass">
           <h2>Personalização</h2>
-          <p className="votti-wizard__hint">Veja como ficará para quem vota — ranking zerado até o primeiro voto.</p>
+          <p className="votti-wizard__hint">Capa, logo e cor viram o fundo e os botões que quem vota vai ver.</p>
           <div className="votti-wizard__preview-stack">
             <div className="votti-preview votti-preview--rich" style={{ borderColor: draft.primaryColor }}>
               {draft.coverUrl ? <img src={draft.coverUrl} alt="" className="votti-preview__cover" /> : <div className="votti-preview__cover votti-preview__cover--empty" style={{ background: `linear-gradient(135deg, ${draft.primaryColor}55, oklch(0.2 0.04 260))` }} />}
@@ -258,6 +332,28 @@ export function CreateWizard({ onPublished }: WizardProps) {
               <input type="datetime-local" className="votti-field__input" value={draft.settings.closeAt} onChange={(e) => patch({ settings: { ...draft.settings, closeAt: e.target.value } })} />
             </label>
           ) : null}
+          {isEditing && editPoll ? (
+            <div className="votti-wizard__status-box">
+              <p className="votti-wizard__hint">
+                Status atual: <strong>{editPoll.status === "active" ? "Ativa" : "Encerrada"}</strong>
+                {editPoll.totalVotes > 0
+                  ? ` · ${editPoll.totalVotes} ${editPoll.totalVotes === 1 ? "pessoa votou" : "pessoas votaram"}`
+                  : ""}
+              </p>
+              <button
+                type="button"
+                className={`votti-outline-btn w-full ${editPoll.status === "active" ? "votti-outline-btn--danger" : ""}`}
+                disabled={closeBusy}
+                onClick={() => void handleToggleStatus()}
+              >
+                {closeBusy
+                  ? "Salvando…"
+                  : editPoll.status === "active"
+                    ? "Encerrar votação agora"
+                    : "Reabrir votação"}
+              </button>
+            </div>
+          ) : null}
         </div>
       )}
 
@@ -268,10 +364,14 @@ export function CreateWizard({ onPublished }: WizardProps) {
             <div className="votti-launch__icon" aria-hidden>
               <Rocket className="size-8" />
             </div>
-            <p className="votti-launch__kicker">Último passo</p>
-            <h2 className="votti-launch__title">Sua votação vai ao ar agora</h2>
+            <p className="votti-launch__kicker">{isEditing ? "Salvar alterações" : "Último passo"}</p>
+            <h2 className="votti-launch__title">
+              {isEditing ? "Revise e salve sua votação" : "Sua votação vai ao ar agora"}
+            </h2>
             <p className="votti-launch__desc">
-              Tudo começa zerado. Compartilhe o link e veja o ranking subir ao vivo.
+              {isEditing
+                ? "As mudanças valem na hora. Quem já votou continua vendo o ranking atualizado."
+                : "Tudo começa zerado. Compartilhe o link e veja o ranking subir ao vivo."}
             </p>
 
             <div className="votti-launch__stats">
@@ -287,7 +387,9 @@ export function CreateWizard({ onPublished }: WizardProps) {
               </div>
               <div className="votti-launch__stat votti-launch__stat--live">
                 <Users className="size-4" />
-                <span className="votti-launch__stat-value tabular-nums">0</span>
+                <span className="votti-launch__stat-value tabular-nums">
+                  {isEditing && editPoll ? editPoll.totalVotes : 0}
+                </span>
                 <span className="votti-launch__stat-label">votos</span>
               </div>
             </div>
@@ -327,7 +429,16 @@ export function CreateWizard({ onPublished }: WizardProps) {
             />
           ) : null}
 
-          <PublishButton draft={draft} onPublished={onPublished} />
+          {isEditing && editPollId ? (
+            <SaveButton
+              pollId={editPollId}
+              draft={draft}
+              status={editPoll?.status}
+              onSaved={onSaved ?? onPublished}
+            />
+          ) : (
+            <PublishButton draft={draft} onPublished={onPublished} />
+          )}
         </div>
       )}
 
@@ -337,7 +448,7 @@ export function CreateWizard({ onPublished }: WizardProps) {
             Voltar
           </button>
         ) : (
-          <Link to="/" className="votti-outline-btn">
+          <Link to={isEditing ? "/minhas" : "/"} className="votti-outline-btn">
             Cancelar
           </Link>
         )}
@@ -348,6 +459,66 @@ export function CreateWizard({ onPublished }: WizardProps) {
         ) : null}
       </div>
     </div>
+  );
+}
+
+function SaveButton({
+  pollId,
+  draft,
+  status,
+  onSaved,
+}: {
+  pollId: string;
+  draft: PollDraft;
+  status?: StoredPoll["status"];
+  onSaved: (slug: string) => void;
+}) {
+  const { user } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  if (!user) return null;
+
+  async function handleSave() {
+    const validationError = validatePublishDraft(draft);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setError("");
+    setSubmitting(true);
+    try {
+      const poll = await updatePoll(pollId, user!.id, draft, { status });
+      onSaved(poll.slug);
+    } catch (err) {
+      setError(getPollErrorMessage(err));
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <>
+      {error ? <p className="votti-auth__error">{error}</p> : null}
+      <button
+        type="button"
+        className="votti-mega-btn votti-mega-btn--publish w-full max-w-none mt-4"
+        disabled={submitting}
+        onClick={() => void handleSave()}
+      >
+        {submitting ? (
+          <>
+            <Loader2 className="size-5 animate-spin" />
+            Salvando…
+          </>
+        ) : (
+          <>
+            <Check className="size-5" />
+            SALVAR ALTERAÇÕES
+          </>
+        )}
+      </button>
+    </>
   );
 }
 

@@ -3,6 +3,7 @@ import type { Poll, PollResult } from "@/lib/supabase/database.types";
 import {
   DEFAULT_SETTINGS,
   type PollDraft,
+  type PollOption,
   type PollQuestion,
   type PollSettings,
   type StoredPoll,
@@ -58,12 +59,8 @@ function mapPollRow(
   poll: Poll,
   questions: PollQuestion[],
   ownerEmail = "",
+  participantCount = 0,
 ): StoredPoll {
-  const totalVotes = questions.reduce(
-    (sum, q) => sum + q.options.reduce((s, o) => s + o.votes, 0),
-    0,
-  );
-
   return {
     id: poll.id,
     slug: poll.slug,
@@ -79,8 +76,42 @@ function mapPollRow(
     settings: parseSettings(poll.settings),
     status: mapStatus(poll.status),
     createdAt: poll.created_at,
-    totalVotes,
+    totalVotes: participantCount,
   };
+}
+
+function countParticipants(voterTokens: string[]): number {
+  return new Set(voterTokens).size;
+}
+
+function participantCountByPoll(
+  rows: { poll_id: string; voter_token: string }[],
+): Map<string, number> {
+  const sets = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const set = sets.get(row.poll_id) ?? new Set<string>();
+    set.add(row.voter_token);
+    sets.set(row.poll_id, set);
+  }
+  return new Map([...sets.entries()].map(([pollId, set]) => [pollId, set.size]));
+}
+
+async function fetchParticipantCountForPoll(pollId: string): Promise<number> {
+  const supabase = getSupabaseBrowser();
+  const { data, error } = await supabase.from("votes").select("voter_token").eq("poll_id", pollId);
+  if (error) throw error;
+  return countParticipants((data ?? []).map((row) => row.voter_token));
+}
+
+async function fetchParticipantCountsForPolls(pollIds: string[]): Promise<Map<string, number>> {
+  if (pollIds.length === 0) return new Map();
+  const supabase = getSupabaseBrowser();
+  const { data, error } = await supabase
+    .from("votes")
+    .select("poll_id, voter_token")
+    .in("poll_id", pollIds);
+  if (error) throw error;
+  return participantCountByPoll(data ?? []);
 }
 
 async function fetchPollBundle(slug: string) {
@@ -124,7 +155,8 @@ async function fetchPollBundle(slug: string) {
 
   if (rError && !isSchemaMissingError(rError)) throw rError;
 
-  return mapPollRow(poll, buildQuestions(questions ?? [], options, results ?? []));
+  const participantCount = await fetchParticipantCountForPoll(poll.id);
+  return mapPollRow(poll, buildQuestions(questions ?? [], options, results ?? []), "", participantCount);
 }
 
 function randomSlug(): string {
@@ -153,6 +185,253 @@ async function generateSlug(): Promise<string> {
 
 export async function getPollBySlugDb(slug: string): Promise<StoredPoll | null> {
   return fetchPollBundle(slug);
+}
+
+export async function getPollByIdForOwnerDb(
+  pollId: string,
+  ownerId: string,
+): Promise<StoredPoll | null> {
+  const supabase = getSupabaseBrowser();
+
+  const { data: poll, error: pollError } = await supabase
+    .from("polls")
+    .select("*")
+    .eq("id", pollId)
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+
+  if (pollError) throw pollError;
+  if (!poll) return null;
+
+  const { data: questions, error: qError } = await supabase
+    .from("questions")
+    .select("id, poll_id, text, sort_order")
+    .eq("poll_id", poll.id)
+    .order("sort_order");
+
+  if (qError) throw qError;
+
+  const questionIds = (questions ?? []).map((q) => q.id);
+  let options: DbOption[] = [];
+
+  if (questionIds.length > 0) {
+    const { data: optionRows, error: oError } = await supabase
+      .from("options")
+      .select("id, question_id, text, sort_order")
+      .in("question_id", questionIds)
+      .order("sort_order");
+
+    if (oError) throw oError;
+    options = optionRows ?? [];
+  }
+
+  const { data: results, error: rError } = await supabase
+    .from("poll_results")
+    .select("poll_id, question_id, option_id, option_text, sort_order, vote_count")
+    .eq("poll_id", poll.id);
+
+  if (rError && !isSchemaMissingError(rError)) throw rError;
+
+  const participantCount = await fetchParticipantCountForPoll(poll.id);
+  return mapPollRow(poll, buildQuestions(questions ?? [], options, results ?? []), "", participantCount);
+}
+
+export async function updatePollDb(
+  pollId: string,
+  ownerId: string,
+  draft: PollDraft,
+  opts?: { status?: StoredPoll["status"] },
+): Promise<StoredPoll> {
+  const supabase = getSupabaseBrowser();
+
+  const { data: existing, error: existingError } = await supabase
+    .from("polls")
+    .select("*")
+    .eq("id", pollId)
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+  if (!existing) throw new Error("Votação não encontrada.");
+
+  let status: Poll["status"] = opts?.status ?? existing.status;
+  if (draft.settings.autoClose && draft.settings.closeAt) {
+    const closeAt = new Date(draft.settings.closeAt);
+    if (!Number.isNaN(closeAt.getTime()) && closeAt <= new Date()) {
+      status = "closed";
+    }
+  }
+
+  const { data: poll, error: pollError } = await supabase
+    .from("polls")
+    .update({
+      title: draft.title.trim() || "Votação sem título",
+      description: draft.description.trim() || null,
+      category: draft.category.trim() || null,
+      logo_url: draft.logoUrl.trim() || null,
+      photo_url: draft.coverUrl.trim() || null,
+      primary_color: draft.primaryColor,
+      settings: draft.settings,
+      status,
+    })
+    .eq("id", pollId)
+    .eq("owner_id", ownerId)
+    .select("*")
+    .single();
+
+  if (pollError) throw pollError;
+
+  const { data: dbQuestions, error: qFetchError } = await supabase
+    .from("questions")
+    .select("id, poll_id, text, sort_order")
+    .eq("poll_id", pollId)
+    .order("sort_order");
+
+  if (qFetchError) throw qFetchError;
+
+  const dbQuestionIds = new Set((dbQuestions ?? []).map((q) => q.id));
+
+  const { data: results, error: rError } = await supabase
+    .from("poll_results")
+    .select("poll_id, question_id, option_id, option_text, sort_order, vote_count")
+    .eq("poll_id", pollId);
+
+  if (rError && !isSchemaMissingError(rError)) throw rError;
+
+  const votesByOption = new Map<string, number>();
+  for (const row of results ?? []) {
+    votesByOption.set(row.option_id, Number(row.vote_count));
+  }
+
+  const builtQuestions: PollQuestion[] = [];
+
+  for (const [qi, question] of draft.questions.entries()) {
+    let questionId = question.id;
+    const isExistingQuestion = dbQuestionIds.has(question.id);
+
+    if (isExistingQuestion) {
+      const { error: qUpdateError } = await supabase
+        .from("questions")
+        .update({
+          text: question.text.trim() || `Pergunta ${qi + 1}`,
+          sort_order: qi,
+        })
+        .eq("id", question.id)
+        .eq("poll_id", pollId);
+
+      if (qUpdateError) throw qUpdateError;
+    } else {
+      const { data: newQ, error: qInsertError } = await supabase
+        .from("questions")
+        .insert({
+          poll_id: pollId,
+          text: question.text.trim() || `Pergunta ${qi + 1}`,
+          sort_order: qi,
+        })
+        .select("id")
+        .single();
+
+      if (qInsertError) throw qInsertError;
+      questionId = newQ.id;
+    }
+
+    let dbOptions: DbOption[] = [];
+    if (isExistingQuestion) {
+      const { data: optRows, error: oFetchError } = await supabase
+        .from("options")
+        .select("id, question_id, text, sort_order")
+        .eq("question_id", questionId)
+        .order("sort_order");
+
+      if (oFetchError) throw oFetchError;
+      dbOptions = optRows ?? [];
+    }
+
+    const dbOptionIds = new Set(dbOptions.map((o) => o.id));
+    const builtOptions: PollOption[] = [];
+    const filledOptions = question.options.filter((o) => o.text.trim());
+
+    if (filledOptions.length < 2) {
+      throw new Error(`A pergunta ${qi + 1} precisa de ao menos 2 opções preenchidas.`);
+    }
+
+    for (const [oi, option] of filledOptions.entries()) {
+      const isExistingOption = dbOptionIds.has(option.id);
+
+      if (isExistingOption) {
+        const { error: oUpdateError } = await supabase
+          .from("options")
+          .update({ text: option.text.trim(), sort_order: oi })
+          .eq("id", option.id);
+
+        if (oUpdateError) throw oUpdateError;
+        builtOptions.push({
+          id: option.id,
+          text: option.text.trim(),
+          votes: votesByOption.get(option.id) ?? 0,
+        });
+      } else {
+        const { data: newO, error: oInsertError } = await supabase
+          .from("options")
+          .insert({
+            question_id: questionId,
+            text: option.text.trim(),
+            sort_order: oi,
+          })
+          .select("id, text, sort_order")
+          .single();
+
+        if (oInsertError) throw oInsertError;
+        builtOptions.push({ id: newO.id, text: newO.text, votes: 0 });
+      }
+    }
+
+    for (const dbOpt of dbOptions) {
+      if (!filledOptions.some((o) => o.id === dbOpt.id)) {
+        const voteCount = votesByOption.get(dbOpt.id) ?? 0;
+        if (voteCount === 0) {
+          const { error: delError } = await supabase.from("options").delete().eq("id", dbOpt.id);
+          if (delError) throw delError;
+        }
+      }
+    }
+
+    builtQuestions.push({
+      id: questionId,
+      text: question.text.trim() || `Pergunta ${qi + 1}`,
+      options: builtOptions,
+    });
+  }
+
+  for (const dbQ of dbQuestions ?? []) {
+    if (!draft.questions.some((q) => q.id === dbQ.id)) {
+      const hasVotes = (results ?? []).some(
+        (r) => r.question_id === dbQ.id && Number(r.vote_count) > 0,
+      );
+      if (!hasVotes) {
+        const { error: delError } = await supabase.from("questions").delete().eq("id", dbQ.id);
+        if (delError) throw delError;
+      }
+    }
+  }
+
+  const participantCount = await fetchParticipantCountForPoll(pollId);
+  return mapPollRow(poll, builtQuestions, "", participantCount);
+}
+
+export async function setPollStatusDb(
+  pollId: string,
+  ownerId: string,
+  status: StoredPoll["status"],
+): Promise<void> {
+  const supabase = getSupabaseBrowser();
+  const { error } = await supabase
+    .from("polls")
+    .update({ status })
+    .eq("id", pollId)
+    .eq("owner_id", ownerId);
+
+  if (error) throw error;
 }
 
 export async function listPollsByOwnerDb(ownerId: string): Promise<StoredPoll[]> {
@@ -212,10 +491,14 @@ export async function listPollsByOwnerDb(ownerId: string): Promise<StoredPoll[]>
     resultsByPoll.set(row.poll_id, list);
   }
 
+  const participantCounts = await fetchParticipantCountsForPolls(pollIds);
+
   return polls.map((poll) =>
     mapPollRow(
       poll,
       buildQuestions(questionsByPoll.get(poll.id) ?? [], options, resultsByPoll.get(poll.id) ?? []),
+      "",
+      participantCounts.get(poll.id) ?? 0,
     ),
   );
 }
@@ -290,7 +573,30 @@ export async function publishPollDb(
     });
   }
 
-  return mapPollRow(poll, builtQuestions, owner.email);
+  return mapPollRow(poll, builtQuestions, owner.email, 0);
+}
+
+export async function hasVotedPollDb(slug: string, voterToken: string): Promise<boolean> {
+  const supabase = getSupabaseBrowser();
+
+  const { data: poll, error: pollError } = await supabase
+    .from("polls")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (pollError) throw pollError;
+  if (!poll) return false;
+
+  const { data: votes, error: votesError } = await supabase
+    .from("votes")
+    .select("id")
+    .eq("poll_id", poll.id)
+    .eq("voter_token", voterToken)
+    .limit(1);
+
+  if (votesError) throw votesError;
+  return (votes?.length ?? 0) > 0;
 }
 
 export async function castVoteDb(
@@ -303,13 +609,34 @@ export async function castVoteDb(
 
   const { data: poll, error: pollError } = await supabase
     .from("polls")
-    .select("id, status")
+    .select("id, status, settings")
     .eq("slug", slug)
     .maybeSingle();
 
   if (pollError) throw pollError;
   if (!poll || poll.status !== "active") {
     throw new Error("Votação não encontrada ou encerrada.");
+  }
+
+  const settings = parseSettings(poll.settings);
+  if (settings.oneVotePerPerson) {
+    const alreadyVoted = await hasVotedPollDb(slug, voterToken);
+    if (alreadyVoted) {
+      throw new Error("Você já votou nesta votação.");
+    }
+  } else {
+    const { data: existingVote, error: existingError } = await supabase
+      .from("votes")
+      .select("id")
+      .eq("poll_id", poll.id)
+      .eq("question_id", questionId)
+      .eq("voter_token", voterToken)
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+    if (existingVote) {
+      throw new Error("Você já votou nesta pergunta.");
+    }
   }
 
   const { error } = await supabase.from("votes").insert({
@@ -319,7 +646,73 @@ export async function castVoteDb(
     voter_token: voterToken,
   });
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("Você já votou nesta votação.");
+    }
+    throw error;
+  }
+}
+
+export async function castVotesDb(
+  slug: string,
+  selections: { questionId: string; optionId: string }[],
+  voterToken: string,
+): Promise<void> {
+  if (selections.length === 0) {
+    throw new Error("Selecione uma opção em cada pergunta.");
+  }
+
+  const supabase = getSupabaseBrowser();
+
+  const { data: poll, error: pollError } = await supabase
+    .from("polls")
+    .select("id, status, settings")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (pollError) throw pollError;
+  if (!poll || poll.status !== "active") {
+    throw new Error("Votação não encontrada ou encerrada.");
+  }
+
+  const settings = parseSettings(poll.settings);
+  if (settings.oneVotePerPerson) {
+    const alreadyVoted = await hasVotedPollDb(slug, voterToken);
+    if (alreadyVoted) {
+      throw new Error("Você já votou nesta votação.");
+    }
+  }
+
+  const { data: questions, error: qError } = await supabase
+    .from("questions")
+    .select("id")
+    .eq("poll_id", poll.id);
+
+  if (qError) throw qError;
+
+  const questionIds = new Set((questions ?? []).map((q) => q.id));
+  for (const selection of selections) {
+    if (!questionIds.has(selection.questionId)) {
+      throw new Error("Pergunta inválida.");
+    }
+  }
+
+  const { error } = await supabase.from("votes").insert(
+    selections.map((selection) => ({
+      poll_id: poll.id,
+      question_id: selection.questionId,
+      option_id: selection.optionId,
+      voter_token: voterToken,
+    })),
+  );
+
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("Você já votou nesta votação.");
+    }
+    throw error;
+  }
 }
 
 export async function deletePollDb(pollId: string, ownerId: string): Promise<void> {

@@ -27,7 +27,13 @@ export type StoredPoll = PollDraft & {
   ownerEmail: string;
   status: "active" | "closed";
   createdAt: string;
+  /** Participantes únicos que confirmaram voto nesta votação. */
   totalVotes: number;
+};
+
+export type VoteSelection = {
+  questionId: string;
+  optionId: string;
 };
 
 export const DEFAULT_SETTINGS: PollSettings = {
@@ -57,6 +63,23 @@ export const EMPTY_DRAFT: PollDraft = {
   ],
   settings: DEFAULT_SETTINGS,
 };
+
+export function storedPollToDraft(poll: StoredPoll): PollDraft {
+  return {
+    title: poll.title,
+    description: poll.description,
+    category: poll.category,
+    logoUrl: poll.logoUrl,
+    primaryColor: poll.primaryColor,
+    coverUrl: poll.coverUrl,
+    questions: poll.questions.map((q) => ({
+      id: q.id,
+      text: q.text,
+      options: q.options.map((o) => ({ id: o.id, text: o.text, votes: o.votes })),
+    })),
+    settings: { ...poll.settings },
+  };
+}
 
 export function newId(prefix: string) {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;

@@ -3,12 +3,22 @@ import { AUTH_NOT_CONFIGURED_MSG } from "@/lib/auth/use-auth";
 import {
   deletePollDb,
   duplicatePollDb,
+  getPollByIdForOwnerDb,
   getPollBySlugDb,
+  hasVotedPollDb,
   listPollsByOwnerDb,
   publishPollDb,
   castVoteDb,
+  castVotesDb,
+  setPollStatusDb,
+  updatePollDb,
 } from "@/lib/votti/poll-db";
-import { EMPTY_DRAFT, type PollDraft, type StoredPoll } from "@/lib/votti/poll-types";
+import {
+  getOrCreateVoterToken,
+  isPollLockedForVoter,
+  lockPollForVoter,
+} from "@/lib/votti/voter-session";
+import { EMPTY_DRAFT, type PollDraft, type StoredPoll, type VoteSelection } from "@/lib/votti/poll-types";
 
 const DRAFT_KEY = "votti_poll_draft";
 const LEGACY_POLLS_KEY = "votti_polls";
@@ -63,6 +73,33 @@ export async function castVote(
   await castVoteDb(slug, questionId, optionId, voterToken);
 }
 
+export async function confirmVotes(
+  slug: string,
+  selections: VoteSelection[],
+  voterToken: string,
+): Promise<void> {
+  assertSupabaseConfigured();
+  await castVotesDb(slug, selections, voterToken);
+}
+
+/** Verifica localmente e no servidor se o participante já confirmou voto nesta votação. */
+export async function voterHasCompletedPoll(slug: string): Promise<boolean> {
+  assertSupabaseConfigured();
+
+  if (isPollLockedForVoter(slug)) {
+    return true;
+  }
+
+  const token = getOrCreateVoterToken(slug);
+  const votedOnServer = await hasVotedPollDb(slug, token);
+  if (votedOnServer) {
+    lockPollForVoter(slug);
+    return true;
+  }
+
+  return false;
+}
+
 export async function listPollsByOwner(ownerId: string): Promise<StoredPoll[]> {
   assertSupabaseConfigured();
   clearLegacyLocalPolls();
@@ -72,6 +109,31 @@ export async function listPollsByOwner(ownerId: string): Promise<StoredPoll[]> {
 export async function getPollBySlug(slug: string): Promise<StoredPoll | null> {
   assertSupabaseConfigured();
   return getPollBySlugDb(slug);
+}
+
+export async function getPollById(pollId: string, ownerId: string): Promise<StoredPoll | null> {
+  assertSupabaseConfigured();
+  return getPollByIdForOwnerDb(pollId, ownerId);
+}
+
+export async function updatePoll(
+  pollId: string,
+  ownerId: string,
+  draft: PollDraft,
+  opts?: { status?: StoredPoll["status"] },
+): Promise<StoredPoll> {
+  assertSupabaseConfigured();
+  return updatePollDb(pollId, ownerId, draft, opts);
+}
+
+export async function closePoll(pollId: string, ownerId: string): Promise<void> {
+  assertSupabaseConfigured();
+  await setPollStatusDb(pollId, ownerId, "closed");
+}
+
+export async function reopenPoll(pollId: string, ownerId: string): Promise<void> {
+  assertSupabaseConfigured();
+  await setPollStatusDb(pollId, ownerId, "active");
 }
 
 export async function deletePoll(pollId: string, ownerId: string): Promise<void> {
@@ -90,6 +152,11 @@ export async function duplicatePoll(
 export function pollPublicUrl(slug: string) {
   if (typeof window === "undefined") return `/v/${slug}`;
   return `${window.location.origin}/v/${slug}`;
+}
+
+export function pollTelaoUrl(slug: string) {
+  if (typeof window === "undefined") return `/votacao/${slug}/telao`;
+  return `${window.location.origin}/votacao/${slug}/telao`;
 }
 
 export { SCHEMA_SETUP_HINT, getPollErrorMessage, isSchemaMissingError } from "@/lib/votti/poll-db";
