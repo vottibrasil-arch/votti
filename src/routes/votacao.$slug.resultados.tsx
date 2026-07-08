@@ -8,6 +8,7 @@ import { SecurityBadge } from "@/components/votti/security-badge";
 import { LiveDot } from "@/components/ui-kit";
 import { formatPollStats } from "@/lib/votti/poll-stats";
 import { getPollBySlug, getPollErrorMessage, voterHasCompletedPoll } from "@/lib/votti/poll-store";
+import { getPollCoverUrl } from "@/lib/votti/poll-types";
 import type { StoredPoll } from "@/lib/votti/poll-types";
 import { usePollRealtime } from "@/lib/votti/use-poll-realtime";
 import { isPollLockedForVoter } from "@/lib/votti/voter-session";
@@ -80,9 +81,10 @@ function ResultadosPage() {
 
   const liveLabel =
     status === "connected" ? "ao vivo" : status === "connecting" ? "conectando…" : "atualizando";
+  const coverUrl = getPollCoverUrl(poll);
 
   return (
-    <PollPublicShell poll={poll}>
+    <PollPublicShell poll={poll} coverStyle="minimal">
       <div className="votti-results-page flex-1 px-4 pb-6 max-w-lg mx-auto w-full">
         {justVoted ? (
           <div className="votti-vote-success-banner votti-vote-success-banner--compact animate-rise">
@@ -91,30 +93,44 @@ function ResultadosPage() {
           </div>
         ) : null}
 
-        <header className="votti-results-focus animate-rise">
-          <div className="votti-results-focus__meta">
-            <SecurityBadge compact />
-            <span className="votti-results-focus__live">
-              <LiveDot />
-              {liveLabel}
-            </span>
-          </div>
-          <h1 className="votti-results-focus__title">{poll.title}</h1>
-          <p className="votti-results-focus__stats tabular-nums">{formatPollStats(poll)}</p>
-        </header>
+        <div className={`votti-results-brand ${coverUrl ? "votti-results-brand--has-cover" : ""} animate-rise`}>
+          {coverUrl ? (
+            <div
+              className="votti-results-brand__cover"
+              style={{ backgroundImage: `url(${coverUrl})` }}
+              aria-hidden
+            />
+          ) : null}
+          <div className="votti-results-brand__scrim" aria-hidden />
 
-        <div className="votti-results__stack votti-results__stack--focus">
-          {poll.questions.map((q) => (
-            <section key={q.id} className="animate-rise">
-              <PollRankingPreview
-                question={q}
-                primaryColor={poll.primaryColor}
-                featured
-                hideTitle
-                live
-              />
-            </section>
-          ))}
+          <div className="votti-results-brand__inner">
+            <header className="votti-results-focus">
+              <div className="votti-results-focus__meta">
+                <SecurityBadge compact />
+                <span className="votti-results-focus__live">
+                  <LiveDot />
+                  {liveLabel}
+                </span>
+              </div>
+              <h1 className="votti-results-focus__title">{poll.title}</h1>
+              <p className="votti-results-focus__stats tabular-nums">{formatPollStats(poll)}</p>
+            </header>
+
+            <div className="votti-results__stack votti-results__stack--focus">
+              {poll.questions.map((q) => (
+                <section key={q.id}>
+                  <PollRankingPreview
+                    question={q}
+                    primaryColor={poll.primaryColor}
+                    featured
+                    hideTitle
+                    live
+                    sortByVotes
+                  />
+                </section>
+              ))}
+            </div>
+          </div>
         </div>
 
         <PollSharePanel slug={slug} title={poll.title} variant="footer" />

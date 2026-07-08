@@ -10,6 +10,8 @@ type PollRankingPreviewProps = {
   featured?: boolean;
   hideTitle?: boolean;
   live?: boolean;
+  /** Ordena opções por votos (maior primeiro) no ranking ao vivo. */
+  sortByVotes?: boolean;
 };
 
 export function PollRankingPreview({
@@ -20,6 +22,7 @@ export function PollRankingPreview({
   featured = false,
   hideTitle = false,
   live = true,
+  sortByVotes = false,
 }: PollRankingPreviewProps) {
   const options = question.options.filter((o) => o.text.trim());
   if (options.length === 0) return null;
@@ -27,6 +30,10 @@ export function PollRankingPreview({
   const totalVotes = options.reduce((sum, o) => sum + o.votes, 0);
   const hasVotes = totalVotes > 0;
   const maxVotes = Math.max(...options.map((o) => o.votes), 0);
+
+  const displayOptions = sortByVotes
+    ? [...options].sort((a, b) => b.votes - a.votes || a.text.localeCompare(b.text))
+    : options;
 
   return (
     <article
@@ -55,7 +62,7 @@ export function PollRankingPreview({
       <p className="poll-ranking-preview__question">{question.text || "Pergunta principal"}</p>
 
       <div className="poll-ranking-preview__bars">
-        {options.map((opt) => {
+        {displayOptions.map((opt) => {
           const pct = hasVotes ? Math.round((opt.votes / totalVotes) * 100) : 0;
           const isLeader = hasVotes && opt.votes === maxVotes && maxVotes > 0;
           return (

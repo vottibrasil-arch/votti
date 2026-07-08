@@ -2962,6 +2962,67 @@
   padding-top: 0.75rem;
 }
 
+.votti-results-brand {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.375rem;
+  border: 1px solid color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 28%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--poll-accent, oklch(0.45 0.14 250)) 12%, transparent),
+    0 24px 64px -24px oklch(0 0 0 / 55%);
+  background: oklch(0.16 0.04 260 / 94%);
+}
+
+.votti-results-brand__cover {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.votti-results-brand__scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    oklch(0 0 0 / 28%) 0%,
+    oklch(0.12 0.04 260 / 78%) 22%,
+    oklch(0.14 0.04 260 / 88%) 48%,
+    oklch(0.16 0.04 260 / 94%) 100%
+  );
+}
+
+.votti-results-brand--has-cover .votti-results-brand__scrim {
+  background: linear-gradient(
+    180deg,
+    oklch(0 0 0 / 18%) 0%,
+    oklch(0.12 0.04 260 / 72%) 20%,
+    oklch(0.13 0.04 260 / 84%) 42%,
+    oklch(0.15 0.04 260 / 92%) 100%
+  );
+}
+
+.votti-results-brand__inner {
+  position: relative;
+  z-index: 1;
+  padding: 1.125rem 1.125rem 0.375rem;
+}
+
+.votti-results-brand .votti-results-focus {
+  margin-bottom: 0.875rem;
+}
+
+.votti-results-brand .poll-ranking-preview--featured {
+  padding: 0 0 1.125rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .votti-results-focus {
   margin-bottom: 1rem;
   text-align: center;
@@ -2994,14 +3055,23 @@
   font-weight: 800;
   line-height: 1.1;
   color: oklch(0.98 0.01 260);
-  text-shadow: 0 2px 24px oklch(0 0 0 / 45%);
+  text-shadow:
+    0 2px 16px oklch(0 0 0 / 65%),
+    0 1px 3px oklch(0 0 0 / 45%);
+}
+
+.votti-results-brand--has-cover .votti-results-focus__title {
+  text-shadow:
+    0 2px 20px oklch(0 0 0 / 75%),
+    0 1px 4px oklch(0 0 0 / 55%);
 }
 
 .votti-results-focus__stats {
   margin: 0.5rem 0 0;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: oklch(0.72 0.16 145);
+  color: oklch(0.82 0.16 145);
+  text-shadow: 0 1px 10px oklch(0 0 0 / 55%);
 }
 
 .votti-results__stack--focus {
@@ -3049,6 +3119,7 @@
   font-weight: 700;
   line-height: 1.25;
   color: oklch(0.96 0.01 260);
+  text-shadow: 0 1px 12px oklch(0 0 0 / 65%);
 }
 
 .poll-ranking-preview--featured .poll-ranking-preview__bars {
@@ -3063,6 +3134,13 @@
 .poll-ranking-preview--featured .live-poll-bar__label {
   font-size: 1.0625rem;
   font-weight: 700;
+  text-shadow: 0 1px 12px oklch(0 0 0 / 70%);
+}
+
+.votti-results-brand--has-cover .poll-ranking-preview--featured .live-poll-bar__label {
+  text-shadow:
+    0 1px 14px oklch(0 0 0 / 80%),
+    0 1px 3px oklch(0 0 0 / 55%);
 }
 
 .poll-ranking-preview--featured .live-poll-bar__pct {
@@ -3440,6 +3518,10 @@
   background-size: 2.5rem 2.5rem;
   mask-image: linear-gradient(180deg, black 0%, transparent 80%);
   pointer-events: none;
+}
+
+.votti-public-poll--minimal-cover {
+  background-color: var(--poll-bg, oklch(0.12 0.04 260));
 }
 
 .votti-public-poll__inner {

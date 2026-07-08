@@ -360,7 +360,7 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
 
           <PollImageField
             label="Imagem de capa"
-            hint="Opcional. Aparece como fundo no celular e no ranking. Depois de escolher, você ajusta o enquadramento."
+            hint="Opcional. Bandeira, logo ou banner aparecem atrás do título e dos nomes no ranking. Ajuste o enquadramento ao enviar."
             variant="cover"
             value={draft.coverUrl}
             onChange={(coverUrl) => patch({ coverUrl, logoUrl: "" })}
