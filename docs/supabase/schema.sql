@@ -57,6 +57,7 @@ create table if not exists public.options (
   question_id uuid not null references public.questions(id) on delete cascade,
   text text not null,
   sort_order integer not null default 0,
+  image_url text,
   created_at timestamptz not null default now()
 );
 
