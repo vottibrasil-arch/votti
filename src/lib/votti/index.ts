@@ -21,6 +21,7 @@ export {
   duplicatePoll,
   getPollById,
   getPollBySlug,
+  getPollMetaForVoting,
   listPollsByOwner,
   loadDraft,
   pollPublicUrl,
@@ -51,4 +52,6 @@ export {
   clearVoterSession,
   clearVoterToken,
 } from "./voter-session";
-export { usePollRealtime, type PollRealtimeStatus } from "./use-poll-realtime";
+export { usePollRankingLive, type PollRankingLiveStatus } from "./use-poll-ranking-live";
+export { fetchPollRanking, fetchPollMeta, pollMetaToStoredPoll, refreshPollSnapshot, rankingStateToStoredPoll } from "./ranking/client";
+export type { PollRankingState } from "./ranking/types";

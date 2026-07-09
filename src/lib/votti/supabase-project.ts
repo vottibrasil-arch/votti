@@ -23,7 +23,7 @@ function normalizeSupabaseUrl(rawUrl?: string): string | undefined {
   return rawUrl.trim().replace(/\/rest\/v1\/?$/i, "").replace(/\/$/, "");
 }
 
-/** Sempre aponta para o projeto VOTTI, mesmo se o .env/Lovable tiver URL antiga. */
+/** Sempre aponta para o projeto VOTTI, mesmo se o .env tiver URL de outro projeto. */
 export function resolveVottiSupabaseUrl(rawUrl?: string): string {
   const trimmed = normalizeSupabaseUrl(rawUrl);
   if (trimmed && isVottiSupabaseProject(trimmed)) return trimmed;
@@ -32,7 +32,7 @@ export function resolveVottiSupabaseUrl(rawUrl?: string): string {
 
 /**
  * Garante a publishable key do projeto VOTTI.
- * Evita "Invalid API key" quando Lovable/.env injeta chave de outro projeto.
+ * Evita "Invalid API key" quando o .env injeta chave de outro projeto.
  */
 export function resolveVottiSupabaseAnonKey(rawKey?: string): string {
   const trimmed = rawKey?.trim();
@@ -54,5 +54,5 @@ export function getWrongSupabaseProjectMessage(currentRef?: string): string {
   if (!currentRef) {
     return `Configure o Supabase do VOTTI: ${VOTTI_SUPABASE_URL}`;
   }
-  return `Projeto Supabase errado (${currentRef}). O VOTTI usa apenas ${VOTTI_SUPABASE_PROJECT_REF}. Atualize o .env, remova variáveis antigas do Lovable (se usar) e reinicie o npm run dev.`;
+  return `Projeto Supabase errado (${currentRef}). O VOTTI usa apenas ${VOTTI_SUPABASE_PROJECT_REF}. Atualize o .env com as chaves corretas e reinicie o npm run dev.`;
 }

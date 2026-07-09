@@ -1,7 +1,9 @@
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { useId, useRef, useState } from "react";
+import { RankingOptionAvatar } from "@/components/votti/ranking-option-avatar";
+import { normalizeImageUrl } from "@/lib/votti/persist-image-url";
 import { ImageFocusEditor } from "@/components/votti/image-focus-editor";
-import { cropImageSquare } from "@/lib/votti/crop-image";
+import { cropImageSquare, formatImageProcessError, normalizeImageFile } from "@/lib/votti/crop-image";
 import { uploadPollAsset } from "@/lib/votti/upload-poll-asset";
 
 type OptionImagePickerProps = {
@@ -11,9 +13,10 @@ type OptionImagePickerProps = {
   label?: string;
 };
 
-const ACCEPT = "image/png,image/jpeg,image/webp,image/gif";
+const ACCEPT = "image/*,.heic,.heif";
 
 export function OptionImagePicker({ value, onChange, ownerId, label = "Foto" }: OptionImagePickerProps) {
+  const imageUrl = normalizeImageUrl(value);
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -28,13 +31,14 @@ export function OptionImagePicker({ value, onChange, ownerId, label = "Foto" }: 
   }
 
   async function uploadCropped(file: File) {
+    if (!ownerId) {
+      setError("Entre na conta para salvar a foto.");
+      return;
+    }
+
     setUploading(true);
     try {
-      if (ownerId) {
-        onChange(await uploadPollAsset(file, ownerId, "option"));
-      } else {
-        onChange(URL.createObjectURL(file));
-      }
+      onChange(await uploadPollAsset(file, ownerId, "option"));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao enviar.");
     } finally {
@@ -57,9 +61,10 @@ export function OptionImagePicker({ value, onChange, ownerId, label = "Foto" }: 
       return;
     }
 
+    const normalized = normalizeImageFile(file);
     clearPending();
-    setPendingFile(file);
-    setPendingPreview(URL.createObjectURL(file));
+    setPendingFile(normalized);
+    setPendingPreview(URL.createObjectURL(normalized));
   }
 
   async function confirmFocusWithPosition(focus: { x: number; y: number }) {
@@ -72,7 +77,7 @@ export function OptionImagePicker({ value, onChange, ownerId, label = "Foto" }: 
       clearPending();
       await uploadCropped(cropped);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao ajustar a foto.");
+      setError(formatImageProcessError(err));
       setUploading(false);
     }
   }
@@ -91,14 +96,14 @@ export function OptionImagePicker({ value, onChange, ownerId, label = "Foto" }: 
             onChange={(e) => void handleFile(e.target.files?.[0])}
           />
           {uploading ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : value ? (
-            <img src={value} alt="" className="votti-option-photo__img" />
+            <Loader2 className="size-4 animate-spin" />
+          ) : imageUrl ? (
+            <RankingOptionAvatar src={imageUrl} size={40} className="votti-option-photo__img" />
           ) : (
-            <ImagePlus className="size-3.5 opacity-60" />
+            <ImagePlus className="size-4 opacity-60" />
           )}
         </label>
-        {value && !uploading ? (
+        {imageUrl && !uploading ? (
           <button
             type="button"
             className="votti-option-photo__clear"

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, Settings2 } from "lucide-react";
-import type { CloseMode, StoredPoll } from "@/lib/votti/poll-types";
+import type { StoredPoll } from "@/lib/votti/poll-types";
+import { PollCloseScheduleFields, type CloseScheduleValue } from "@/components/votti/poll-close-schedule-fields";
 import {
   activatePoll,
   deactivatePoll,
@@ -19,8 +20,19 @@ export function PollManagePanel({ poll, ownerId, onUpdated }: PollManagePanelPro
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [scheduleMode, setScheduleMode] = useState<CloseMode>("scheduled_datetime");
-  const [closeAt, setCloseAt] = useState(poll.settings.closeAt || "");
+  const [schedule, setSchedule] = useState<CloseScheduleValue>({
+    closeMode: poll.settings.closeMode,
+    closeAt: poll.settings.closeAt,
+    autoClose: poll.settings.autoClose,
+  });
+
+  useEffect(() => {
+    setSchedule({
+      closeMode: poll.settings.closeMode,
+      closeAt: poll.settings.closeAt,
+      autoClose: poll.settings.autoClose,
+    });
+  }, [poll.settings.closeMode, poll.settings.closeAt, poll.settings.autoClose]);
 
   async function run(action: () => Promise<unknown>) {
     setError("");
@@ -28,13 +40,35 @@ export function PollManagePanel({ poll, ownerId, onUpdated }: PollManagePanelPro
     try {
       await action();
       await onUpdated();
-      setOpen(false);
     } catch (err) {
       setError(getPollErrorMessage(err));
     } finally {
       setBusy(false);
     }
   }
+
+  async function saveSchedule() {
+    if (schedule.autoClose && schedule.closeMode !== "until_admin") {
+      if (!schedule.closeAt.trim()) {
+        setError("Informe a data de encerramento.");
+        return;
+      }
+      await run(() => schedulePollClose(poll.id, ownerId, schedule.closeAt, schedule.closeMode));
+      return;
+    }
+
+    await run(() =>
+      managePoll(poll.id, ownerId, {
+        status: "active",
+        settings: { closeMode: "until_admin", autoClose: false, closeAt: "" },
+      }),
+    );
+  }
+
+  const scheduleDirty =
+    schedule.closeMode !== poll.settings.closeMode ||
+    schedule.closeAt !== poll.settings.closeAt ||
+    schedule.autoClose !== poll.settings.autoClose;
 
   return (
     <div className="votti-poll-manage">
@@ -62,74 +96,22 @@ export function PollManagePanel({ poll, ownerId, onUpdated }: PollManagePanelPro
             >
               🔴 Desativar agora
             </button>
-            <button
-              type="button"
-              className="votti-pill-btn"
-              disabled={busy}
-              onClick={() => {
-                setScheduleMode("scheduled_date");
-                setCloseAt("");
-              }}
-            >
-              📅 Agendar (data)
-            </button>
-            <button
-              type="button"
-              className="votti-pill-btn"
-              disabled={busy}
-              onClick={() => {
-                setScheduleMode("scheduled_datetime");
-                setCloseAt("");
-              }}
-            >
-              ⏰ Agendar (data e hora)
-            </button>
-            <button
-              type="button"
-              className="votti-pill-btn"
-              disabled={busy}
-              onClick={() =>
-                void run(() =>
-                  managePoll(poll.id, ownerId, {
-                    status: "active",
-                    settings: { closeMode: "until_admin", autoClose: false, closeAt: "" },
-                  }),
-                )
-              }
-            >
-              ♾️ Ativa até eu encerrar
-            </button>
           </div>
 
-          {scheduleMode === "scheduled_date" || scheduleMode === "scheduled_datetime" ? (
-            <div className="votti-poll-manage__schedule">
-              <label className="votti-field">
-                <span className="votti-field__label">
-                  {scheduleMode === "scheduled_date" ? "Data de encerramento" : "Data e hora"}
-                </span>
-                <input
-                  type={scheduleMode === "scheduled_date" ? "date" : "datetime-local"}
-                  className="votti-field__input"
-                  value={closeAt}
-                  onChange={(e) => setCloseAt(e.target.value)}
-                />
-              </label>
-              <button
-                type="button"
-                className="votti-mega-btn votti-mega-btn--sm w-full max-w-none"
-                disabled={busy || !closeAt}
-                onClick={() =>
-                  void run(() => schedulePollClose(poll.id, ownerId, closeAt, scheduleMode))
-                }
-              >
-                {busy ? <Loader2 className="size-4 animate-spin" /> : "Salvar agendamento"}
-              </button>
-            </div>
-          ) : null}
+          <PollCloseScheduleFields value={schedule} onChange={setSchedule} className="votti-close-schedule--embedded" />
+
+          <button
+            type="button"
+            className="votti-mega-btn votti-mega-btn--sm w-full max-w-none"
+            disabled={busy || !scheduleDirty || (schedule.autoClose && !schedule.closeAt.trim())}
+            onClick={() => void saveSchedule()}
+          >
+            {busy ? <Loader2 className="size-4 animate-spin" /> : "Salvar encerramento"}
+          </button>
 
           {poll.settings.autoClose && poll.settings.closeAt ? (
             <p className="votti-poll-manage__meta">
-              Encerramento:{" "}
+              Encerramento atual:{" "}
               {new Date(
                 poll.settings.closeMode === "scheduled_date"
                   ? `${poll.settings.closeAt}T23:59:59`

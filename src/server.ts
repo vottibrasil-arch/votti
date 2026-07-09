@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { injectAdSenseVerification } from "./lib/adsense";
+import { handleRankingApi } from "./lib/votti/ranking/api.server";
 
 const DEVICE_APIS_PERMISSION_POLICY = [
   "bluetooth=()",
@@ -81,10 +82,15 @@ function applyDevicePermissionsPolicy(response: Response): Response {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const apiResponse = await handleRankingApi(request);
+      if (apiResponse) {
+        return applyDevicePermissionsPolicy(apiResponse);
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const normalized = await normalizeCatastrophicSsrResponse(response);
-      const withAdSense = await injectAdSenseIntoHtmlResponse(normalized, request);
+      const withAdSense = await injectAdSenseIntoHtmlResponse(normalized);
       return applyDevicePermissionsPolicy(withAdSense);
     } catch (error) {
       console.error(error);

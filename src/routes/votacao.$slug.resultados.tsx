@@ -1,16 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { PollPublicShell } from "@/components/votti/poll-public-shell";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { PollSharePanel } from "@/components/votti/poll-share-panel";
 import { SecurityBadge } from "@/components/votti/security-badge";
+import { VoteSuccessBanner } from "@/components/votti/vote-confirmed-screen";
 import { formatPollStats } from "@/lib/votti/poll-stats";
-import { getPollBySlug, getPollErrorMessage, voterHasCompletedPoll } from "@/lib/votti/poll-store";
+import { getPollMetaForVoting } from "@/lib/votti/poll-store";
+import { rankingStateToStoredPoll } from "@/lib/votti/ranking/client";
 import { getPollCoverUrl } from "@/lib/votti/poll-types";
 import type { StoredPoll } from "@/lib/votti/poll-types";
-import { usePollRealtime } from "@/lib/votti/use-poll-realtime";
-import { isPollLockedForVoter } from "@/lib/votti/voter-session";
+import { usePollRankingLive } from "@/lib/votti/use-poll-ranking-live";
 
 type ResultadosSearch = {
   confirmado?: string;
@@ -27,74 +27,85 @@ export const Route = createFileRoute("/votacao/$slug/resultados")({
 function ResultadosPage() {
   const { slug } = Route.useParams();
   const { confirmado } = Route.useSearch();
-  const [poll, setPoll] = useState<StoredPoll | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [justVoted, setJustVoted] = useState(confirmado === "1");
+  const navigate = useNavigate();
+  const cameFromConfirm = confirmado === "1";
+  const [showSuccessBanner, setShowSuccessBanner] = useState(cameFromConfirm);
 
-  const refreshPoll = useCallback(async () => {
-    try {
-      const data = await getPollBySlug(slug);
-      setPoll(data);
-      setError(data ? "" : "Votação não encontrada.");
-    } catch (err) {
-      setError(getPollErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [slug]);
+  const { state, status, error } = usePollRankingLive({ slug, enabled: true });
+  const poll = useMemo(() => (state ? rankingStateToStoredPoll(state) : null), [state]);
+  const [fallbackPoll, setFallbackPoll] = useState<StoredPoll | null>(null);
 
   useEffect(() => {
-    void refreshPoll();
-  }, [refreshPoll]);
+    if (poll || status === "connecting") return;
+
+    let cancelled = false;
+    void getPollMetaForVoting(slug).then((meta) => {
+      if (!cancelled && meta) setFallbackPoll(meta);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [poll, slug, status]);
+
+  const displayPoll = poll ?? fallbackPoll;
 
   useEffect(() => {
-    if (confirmado === "1" || isPollLockedForVoter(slug)) {
-      setJustVoted(true);
-      return;
-    }
-    void voterHasCompletedPoll(slug).then(setJustVoted);
-  }, [slug, confirmado]);
+    if (!cameFromConfirm) return;
 
-  const { status } = usePollRealtime({
-    pollId: poll?.id,
-    enabled: Boolean(poll?.id),
-    onRefresh: refreshPoll,
-  });
+    navigate({
+      to: "/votacao/$slug/resultados",
+      params: { slug },
+      replace: true,
+    });
 
-  if (loading) {
+    const hideTimer = window.setTimeout(() => setShowSuccessBanner(false), 5000);
+    return () => window.clearTimeout(hideTimer);
+  }, [cameFromConfirm, navigate, slug]);
+
+  useEffect(() => {
+    if (!showSuccessBanner || !displayPoll) return;
+
+    const scrollTimer = window.setTimeout(() => {
+      document.getElementById("ranking")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 220);
+
+    return () => window.clearTimeout(scrollTimer);
+  }, [showSuccessBanner, displayPoll]);
+
+  if (status === "connecting" && !displayPoll) {
     return (
-      <div className="votti-vote-page flex-1 flex items-center justify-center px-5">
-        <p className="votti-app-muted">Carregando ranking…</p>
+      <main className="votti-public-poll votti-public-poll--minimal-cover min-h-[100dvh] flex flex-col">
+        <div className="votti-vote-page flex-1 flex flex-col px-4 pb-6 max-w-lg mx-auto w-full">
+          {showSuccessBanner ? <VoteSuccessBanner className="mt-4" /> : null}
+          <div id="ranking" className="votti-results-loading flex-1 flex items-center justify-center">
+            <p className="votti-app-muted">Carregando ranking ao vivo…</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!displayPoll) {
+    return (
+      <div className="votti-vote-page flex-1 flex items-center justify-center px-5 text-center">
+        <div className="votti-quest max-w-sm w-full">
+          <p className="votti-quest__label">Ops</p>
+          <h1 className="votti-quest__title">Votação não encontrada</h1>
+          <p className="votti-quest__hint">{error || "Este link pode estar errado ou a votação foi encerrada."}</p>
+        </div>
       </div>
     );
   }
 
-  if (!poll) {
-    return (
-      <div className="votti-vote-page flex-1 flex items-center justify-center px-5">
-        <p className="votti-app-muted">{error || "Votação não encontrada."}</p>
-      </div>
-    );
-  }
-
-  const liveConnected = status === "connected";
-  const liveLabel = liveConnected
-    ? "AO VIVO"
-    : status === "connecting"
-      ? "CONECTANDO…"
-      : "ATUALIZANDO…";
-  const coverUrl = getPollCoverUrl(poll);
+  const liveOn = status === "live";
+  const liveLabel = status === "connecting" ? "CONECTANDO…" : "AO VIVO";
+  const coverUrl = getPollCoverUrl(displayPoll);
 
   return (
-    <PollPublicShell poll={poll} coverStyle="minimal">
+    <PollPublicShell poll={displayPoll} coverStyle="minimal">
       <div className="votti-results-page flex-1 px-4 pb-6 max-w-lg mx-auto w-full">
-        {justVoted ? (
-          <div className="votti-vote-success-banner votti-vote-success-banner--compact animate-rise">
-            <CheckCircle2 className="size-4" />
-            <span>Voto confirmado!</span>
-          </div>
-        ) : null}
+        {showSuccessBanner ? <VoteSuccessBanner className="mt-3 mb-1" /> : null}
 
         <div className="votti-results-hero animate-rise">
           {coverUrl ? (
@@ -111,34 +122,34 @@ function ResultadosPage() {
             <div className="votti-results-hero__meta">
               <SecurityBadge compact />
               <span
-                className={`votti-results-hero__live ${liveConnected ? "votti-results-hero__live--on" : "votti-results-hero__live--sync"}`}
+                className={`votti-results-hero__live ${liveOn || status !== "connecting" ? "votti-results-hero__live--on" : "votti-results-hero__live--sync"}`}
               >
                 <span className="votti-results-hero__live-dot" aria-hidden />
                 {liveLabel}
               </span>
             </div>
-            <h1 className="votti-results-hero__title">{poll.title}</h1>
-            <p className="votti-results-hero__stats tabular-nums">{formatPollStats(poll)}</p>
+            <h1 className="votti-results-hero__title">{displayPoll.title}</h1>
+            <p className="votti-results-hero__stats tabular-nums">{formatPollStats(displayPoll)}</p>
           </div>
         </div>
 
-        <div className="votti-results-official animate-rise">
-          {poll.questions.map((q) => (
+        <div id="ranking" className="votti-results-official animate-rise scroll-mt-4">
+          {displayPoll.questions.map((q) => (
             <section key={q.id}>
               <PollRankingPreview
                 question={q}
-                primaryColor={poll.primaryColor}
+                primaryColor={displayPoll.primaryColor}
                 featured
                 hideTitle
                 hideFeaturedLive
-                live={false}
+                live={liveOn}
                 sortByVotes
               />
             </section>
           ))}
         </div>
 
-        <PollSharePanel slug={slug} title={poll.title} variant="footer" />
+        <PollSharePanel slug={slug} title={displayPoll.title} variant="footer" />
       </div>
     </PollPublicShell>
   );

@@ -6,7 +6,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const VOTTI_URL = "https://ppvhlocqetyrsqidijms.supabase.co";
-const VOTTI_PUBLISHABLE_KEY = "sb_publishable_L2YOLHMcq2Sw-20FobWVzw_4xdd4F7S";
+const VOTTI_PROJECT_REF = "ppvhlocqetyrsqidijms";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -25,15 +25,8 @@ function loadEnvFile() {
   }
 }
 
-function resolveUrl(raw) {
-  const trimmed = raw?.trim()?.replace(/\/rest\/v1\/?$/i, "")?.replace(/\/$/, "");
-  if (trimmed?.includes("ppvhlocqetyrsqidijms")) return VOTTI_URL;
-  return VOTTI_URL;
-}
-
-function resolveKey(raw) {
-  const trimmed = raw?.trim();
-  return trimmed === VOTTI_PUBLISHABLE_KEY ? trimmed : VOTTI_PUBLISHABLE_KEY;
+function normalizeUrl(raw) {
+  return raw?.trim()?.replace(/\/rest\/v1\/?$/i, "")?.replace(/\/$/, "");
 }
 
 loadEnvFile();
@@ -42,8 +35,18 @@ const rawUrl = process.env.SUPABASE_URL?.trim() || process.env.VITE_SUPABASE_URL
 const rawKey =
   process.env.VITE_SUPABASE_ANON_KEY?.trim() || process.env.SUPABASE_ANON_KEY?.trim();
 
-const url = resolveUrl(rawUrl);
-const anonKey = resolveKey(rawKey);
+const url = normalizeUrl(rawUrl) || VOTTI_URL;
+const anonKey = rawKey?.trim();
+
+if (!anonKey || anonKey.includes("sua_publishable_key")) {
+  console.error("❌ Defina VITE_SUPABASE_ANON_KEY no .env (copie de docs/env.example).");
+  process.exit(1);
+}
+
+if (!url.includes(VOTTI_PROJECT_REF)) {
+  console.error(`❌ URL Supabase deve ser do projeto VOTTI (${VOTTI_PROJECT_REF}).`);
+  process.exit(1);
+}
 
 const supabase = createClient(url, anonKey);
 
@@ -75,8 +78,5 @@ if (rpcError) {
   process.exit(1);
 }
 
-console.log("✅ Supabase OK — projeto ppvhlocqetyrsqidijms acessível.");
+console.log(`✅ Supabase OK — projeto ${VOTTI_PROJECT_REF} acessível.`);
 console.log(`   URL: ${url}`);
-if (rawKey && rawKey !== VOTTI_PUBLISHABLE_KEY) {
-  console.warn("   ⚠️  VITE_SUPABASE_ANON_KEY no .env foi corrigida para a publishable key do VOTTI.");
-}

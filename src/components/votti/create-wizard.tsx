@@ -15,12 +15,12 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/use-auth";
 import { PollImageField } from "@/components/votti/poll-image-field";
+import { PollCloseScheduleFields } from "@/components/votti/poll-close-schedule-fields";
 import { OptionImagePicker } from "@/components/votti/option-image-picker";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
-import { SecurityBadge } from "@/components/votti/security-badge";
 import { formatPollStats } from "@/lib/votti/poll-stats";
 import { loadDraft, publishPoll, saveDraft, getPollErrorMessage, getPollById, updatePoll, closePoll, reopenPoll } from "@/lib/votti/poll-store";
-import { newId, storedPollToDraft, validatePublishDraft, EMPTY_DRAFT, THEME_PRESETS, type PollDraft, type StoredPoll } from "@/lib/votti/poll-types";
+import { newId, storedPollToDraft, validatePublishDraft, EMPTY_DRAFT, THEME_PRESETS, getPollCoverUrl, type PollDraft, type StoredPoll } from "@/lib/votti/poll-types";
 
 const STEPS = [
   { label: "Informações", icon: Sparkles },
@@ -39,7 +39,7 @@ type WizardProps = {
 export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) {
   const { user } = useAuth();
   const isEditing = Boolean(editPollId);
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(isEditing ? 1 : 0);
   const [draft, setDraft] = useState<PollDraft>(() => (isEditing ? { ...EMPTY_DRAFT } : loadDraft()));
   const [editPoll, setEditPoll] = useState<StoredPoll | null>(null);
   const [loadingEdit, setLoadingEdit] = useState(isEditing);
@@ -106,6 +106,7 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
     (sum, q) => sum + q.options.filter((o) => o.text.trim()).length,
     0,
   );
+  const coverPreview = getPollCoverUrl({ coverUrl: draft.coverUrl, logoUrl: draft.logoUrl });
 
   async function handleToggleStatus() {
     if (!editPollId || !user || !editPoll) return;
@@ -146,11 +147,6 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
 
   return (
     <div className="votti-wizard animate-rise">
-      <div className="votti-wizard__hero">
-        <SecurityBadge compact />
-        <p className="votti-wizard__kicker">{isEditing ? "Editar votação" : "Criar votação"}</p>
-      </div>
-
       <div className="votti-wizard__steps" aria-label="Progresso do assistente">
         {STEPS.map((item, index) => {
           const Icon = item.icon;
@@ -183,32 +179,72 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
       {step === 0 && (
         <div className="votti-wizard__panel votti-wizard__panel--glass">
           <h2>Informações da votação</h2>
-          <p className="votti-wizard__hint">Nome, categoria e identidade visual — leva menos de 1 minuto.</p>
+          {isEditing ? (
+            <p className="votti-wizard__locked-note">
+              Título e descrição não podem ser alterados após publicar. Use os passos seguintes para trocar fotos, capa e cores.
+            </p>
+          ) : (
+            <p className="votti-wizard__hint">Nome, categoria e identidade visual — leva menos de 1 minuto.</p>
+          )}
           <label className="votti-field">
             <span className="votti-field__label">Título</span>
-            <input className="votti-field__input" value={draft.title} onChange={(e) => patch({ title: e.target.value })} placeholder="Ex: Melhor lanche da turma" />
+            <input
+              className="votti-field__input"
+              value={draft.title}
+              onChange={(e) => patch({ title: e.target.value })}
+              placeholder="Ex: Melhor lanche da turma"
+              readOnly={isEditing}
+              aria-readonly={isEditing}
+            />
           </label>
           <label className="votti-field">
             <span className="votti-field__label">Descrição</span>
-            <textarea className="votti-field__textarea" value={draft.description} onChange={(e) => patch({ description: e.target.value })} rows={3} placeholder="Explique rapidamente do que se trata" />
+            <textarea
+              className="votti-field__textarea"
+              value={draft.description}
+              onChange={(e) => patch({ description: e.target.value })}
+              rows={3}
+              placeholder="Explique rapidamente do que se trata"
+              readOnly={isEditing}
+              aria-readonly={isEditing}
+            />
           </label>
           <label className="votti-field">
             <span className="votti-field__label">Categoria</span>
-            <input className="votti-field__input" value={draft.category} onChange={(e) => patch({ category: e.target.value })} placeholder="Escola, empresa, evento..." />
+            <input
+              className="votti-field__input"
+              value={draft.category}
+              onChange={(e) => patch({ category: e.target.value })}
+              placeholder="Escola, empresa, evento..."
+              readOnly={isEditing}
+              aria-readonly={isEditing}
+            />
           </label>
           <label className="votti-field">
             <span className="votti-field__label">Cor principal</span>
-            <input type="color" className="votti-field__color" value={draft.primaryColor} onChange={(e) => patch({ primaryColor: e.target.value })} />
+            <input
+              type="color"
+              className="votti-field__color"
+              value={draft.primaryColor}
+              onChange={(e) => patch({ primaryColor: e.target.value })}
+              disabled={isEditing}
+            />
           </label>
         </div>
       )}
 
       {step === 1 && (
         <div className="votti-wizard__panel votti-wizard__panel--glass">
-          <h2>Perguntas</h2>
-          <p className="votti-wizard__hint">
-            Monte as opções — a fotinha é opcional, pequena e discreta. Depois de escolher, arraste para ajustar o que aparece.
-          </p>
+          <h2>{isEditing ? "Fotos das opções" : "Perguntas"}</h2>
+          {isEditing ? (
+            <p className="votti-wizard__locked-note">
+              Perguntas e nomes das opções estão bloqueados. Você pode trocar apenas a fotinha de cada candidato.
+            </p>
+          ) : (
+            <p className="votti-wizard__hint">
+              Monte as opções — a fotinha é opcional, pequena e discreta. Depois de escolher, arraste para ajustar o que aparece.
+            </p>
+          )}
           {draft.questions.map((q, qi) => (
             <div key={q.id} className="votti-question-card">
               <div className="votti-question-card__head">
@@ -216,11 +252,18 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
               </div>
               <label className="votti-field">
                 <span className="votti-field__label">Título da pergunta</span>
-                <input className="votti-field__input" value={q.text} onChange={(e) => {
-                  const questions = [...draft.questions];
-                  questions[qi] = { ...q, text: e.target.value };
-                  patch({ questions });
-                }} placeholder="O que você quer decidir?" />
+                <input
+                  className="votti-field__input"
+                  value={q.text}
+                  onChange={(e) => {
+                    const questions = [...draft.questions];
+                    questions[qi] = { ...q, text: e.target.value };
+                    patch({ questions });
+                  }}
+                  placeholder="O que você quer decidir?"
+                  readOnly={isEditing}
+                  aria-readonly={isEditing}
+                />
               </label>
               {q.options.map((o, oi) => (
                 <div key={o.id} className="votti-option-row">
@@ -248,43 +291,53 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
                         patch({ questions });
                       }}
                       placeholder={`Opção ${oi + 1}`}
+                      readOnly={isEditing}
+                      aria-readonly={isEditing}
                     />
                   </label>
                 </div>
               ))}
-              <button
-                type="button"
-                className="votti-link-btn"
-                onClick={() => {
-                  const questions = [...draft.questions];
-                  questions[qi] = {
-                    ...q,
-                    options: [...q.options, { id: newId("o"), text: "", votes: 0, imageUrl: "" }],
-                  };
-                  patch({ questions });
-                }}
-              >
-                + Adicionar opção
-              </button>
+              {!isEditing ? (
+                <button
+                  type="button"
+                  className="votti-link-btn"
+                  onClick={() => {
+                    const questions = [...draft.questions];
+                    questions[qi] = {
+                      ...q,
+                      options: [...q.options, { id: newId("o"), text: "", votes: 0, imageUrl: "" }],
+                    };
+                    patch({ questions });
+                  }}
+                >
+                  + Adicionar opção
+                </button>
+              ) : null}
             </div>
           ))}
-          <button type="button" className="votti-outline-btn" onClick={addQuestion}>
-            <Plus className="size-4" /> Adicionar pergunta
-          </button>
+          {!isEditing ? (
+            <button type="button" className="votti-outline-btn" onClick={addQuestion}>
+              <Plus className="size-4" /> Adicionar pergunta
+            </button>
+          ) : null}
         </div>
       )}
 
       {step === 2 && (
         <div className="votti-wizard__panel votti-wizard__panel--glass">
           <h2>Personalização</h2>
-          <p className="votti-wizard__hint">Capa, cores e tema — a capa aparece só como fundo da votação.</p>
+          <p className="votti-wizard__hint">
+            {isEditing
+              ? "Troque a capa, as cores e o tema — o restante da votação permanece igual."
+              : "Capa, cores e tema — a capa aparece só como fundo da votação."}
+          </p>
           <div className="votti-wizard__preview-stack">
             <div
               className="votti-preview votti-preview--rich votti-preview--cover-bg"
               style={{
                 borderColor: draft.primaryColor,
-                ...(draft.coverUrl
-                  ? { backgroundImage: `linear-gradient(oklch(0.14 0.04 260 / 88%), oklch(0.14 0.04 260 / 92%)), url(${draft.coverUrl})` }
+                ...(coverPreview
+                  ? { backgroundImage: `linear-gradient(oklch(0.14 0.04 260 / 88%), oklch(0.14 0.04 260 / 92%)), url(${coverPreview})` }
                   : {}),
               }}
             >
@@ -372,13 +425,31 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
       {step === 3 && (
         <div className="votti-wizard__panel votti-wizard__panel--glass">
           <h2>Configurações</h2>
-          <p className="votti-wizard__hint">Controle quem vota, quando encerra e o que aparece no ranking.</p>
+          <p className="votti-wizard__hint">Defina regras de voto, encerramento e o que aparece no ranking — tudo antes de publicar.</p>
+
+          <PollCloseScheduleFields
+            value={{
+              closeMode: draft.settings.closeMode,
+              closeAt: draft.settings.closeAt,
+              autoClose: draft.settings.autoClose,
+            }}
+            onChange={(schedule) =>
+              patch({
+                settings: {
+                  ...draft.settings,
+                  closeMode: schedule.closeMode,
+                  closeAt: schedule.closeAt,
+                  autoClose: schedule.autoClose,
+                },
+              })
+            }
+          />
+
           <div className="votti-wizard__toggles">
             {[
               ["oneVotePerPerson", "Permitir apenas um voto por pessoa"],
               ["showResultBeforeVote", "Mostrar resultado antes do voto"],
               ["showResultAfterVote", "Mostrar resultado após votar"],
-              ["autoClose", "Encerrar automaticamente"],
             ].map(([key, label]) => (
               <label key={key} className="votti-toggle votti-toggle--card">
                 <input
@@ -390,12 +461,6 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
               </label>
             ))}
           </div>
-          {draft.settings.autoClose ? (
-            <label className="votti-field">
-              <span className="votti-field__label">Data de encerramento</span>
-              <input type="datetime-local" className="votti-field__input" value={draft.settings.closeAt} onChange={(e) => patch({ settings: { ...draft.settings, closeAt: e.target.value } })} />
-            </label>
-          ) : null}
           {isEditing && editPoll ? (
             <div className="votti-wizard__status-box">
               <p className="votti-wizard__hint">
@@ -432,7 +497,7 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
             </h2>
             <p className="votti-launch__desc">
               {isEditing
-                ? "As mudanças valem na hora. Quem já votou continua vendo o ranking atualizado."
+                ? "Só fotos, capa e cores serão atualizadas. Perguntas e nomes das opções ficam bloqueados."
                 : "Tudo começa zerado. Compartilhe o link e veja o ranking subir ao vivo."}
             </p>
 
@@ -458,11 +523,11 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
           </div>
 
           <div
-            className={`votti-publish-card votti-publish-card--launch ${draft.coverUrl ? "votti-publish-card--cover-bg" : ""}`}
+            className={`votti-publish-card votti-publish-card--launch ${coverPreview ? "votti-publish-card--cover-bg" : ""}`}
             style={
-              draft.coverUrl
+              coverPreview
                 ? {
-                    backgroundImage: `linear-gradient(oklch(0.16 0.04 260 / 92%), oklch(0.16 0.04 260 / 96%)), url(${draft.coverUrl})`,
+                    backgroundImage: `linear-gradient(oklch(0.16 0.04 260 / 92%), oklch(0.16 0.04 260 / 96%)), url(${coverPreview})`,
                   }
                 : undefined
             }

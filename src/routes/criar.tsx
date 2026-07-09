@@ -1,9 +1,10 @@
+import { AppPageFrame } from "@/components/app/app-page-frame";
+import { AppPageBar } from "@/components/app/app-top-bar";
+import { CreateWizard } from "@/components/votti/create-wizard";
+import { useAuth } from "@/lib/auth/use-auth";
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AppShell } from "@/components/app/app-shell";
-import { AppTopBar } from "@/components/app/app-top-bar";
-import { CreateWizard } from "@/components/votti/create-wizard";
-import { useAuth } from "@/lib/auth/use-auth";
 
 type CriarSearch = {
   edit?: string;
@@ -38,7 +39,7 @@ function CriarPage() {
 
   if (loading || !user) {
     return (
-      <AppShell feed={false}>
+      <AppShell>
         <div className="votti-app-page flex-1 flex items-center justify-center">
           <p className="votti-app-muted">Carregando…</p>
         </div>
@@ -47,9 +48,9 @@ function CriarPage() {
   }
 
   return (
-    <AppShell feed={false}>
-      <div className="votti-app-page flex-1 px-5 pb-10 max-w-lg mx-auto w-full">
-        <AppTopBar back={isEditing ? "/minhas" : "/"} title={isEditing ? "Editar votação" : "Criar votação"} />
+    <AppShell>
+      <AppPageFrame>
+        <AppPageBar back={isEditing ? "/minhas" : undefined} title={isEditing ? "Editar visual" : "Criar votação"} />
         <CreateWizard
           editPollId={edit}
           onPublished={(slug) => {
@@ -59,7 +60,7 @@ function CriarPage() {
             navigate({ to: "/minhas", replace: true });
           }}
         />
-      </div>
+      </AppPageFrame>
     </AppShell>
   );
 }

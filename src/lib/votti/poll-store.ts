@@ -1,4 +1,10 @@
 import { isSupabaseBrowserConfigured } from "@/lib/api/supabase-browser";
+import {
+  findInvalidDraftImages,
+  resolveDraftImages,
+  sanitizeDraftImages,
+} from "@/lib/votti/persist-image-url";
+import { getPublicAppOrigin } from "@/lib/votti/app-url";
 import { AUTH_NOT_CONFIGURED_MSG } from "@/lib/auth/use-auth";
 import {
   deletePollDb,
@@ -14,13 +20,17 @@ import {
   managePollDb,
   updatePollDb,
 } from "@/lib/votti/poll-db";
+import { fetchPollMeta, pollMetaToStoredPoll, refreshPollSnapshot } from "@/lib/votti/ranking/client";
+import { initializePollRankingFn } from "@/lib/votti/ranking/ranking-actions.server";
 import {
+  confirmPollForVoter,
   getOrCreateVoterToken,
   isPollLockedForVoter,
   lockPollForVoter,
 } from "@/lib/votti/voter-session";
 import {
   EMPTY_DRAFT,
+  mergeVisualEditDraft,
   type CloseMode,
   type PollDraft,
   type PollSettings,
@@ -46,14 +56,14 @@ export function loadDraft(): PollDraft {
   if (typeof window === "undefined") return EMPTY_DRAFT;
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
-    return raw ? ({ ...EMPTY_DRAFT, ...JSON.parse(raw) } as PollDraft) : EMPTY_DRAFT;
+    return raw ? sanitizeDraftImages({ ...EMPTY_DRAFT, ...JSON.parse(raw) } as PollDraft) : EMPTY_DRAFT;
   } catch {
     return EMPTY_DRAFT;
   }
 }
 
 export function saveDraft(draft: PollDraft) {
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(sanitizeDraftImages(draft)));
 }
 
 export function clearDraft() {
@@ -66,8 +76,14 @@ export async function publishPoll(
 ): Promise<StoredPoll> {
   assertSupabaseConfigured();
   clearLegacyLocalPolls();
-  const poll = await publishPollDb(draft, owner);
+
+  const imageError = findInvalidDraftImages(draft);
+  if (imageError) throw new Error(imageError);
+
+  const resolvedDraft = await resolveDraftImages(draft, owner.id);
+  const poll = await publishPollDb(resolvedDraft, owner);
   clearDraft();
+  await initializePollRankingFn({ data: { slug: poll.slug } });
   return poll;
 }
 
@@ -79,6 +95,7 @@ export async function castVote(
 ): Promise<void> {
   assertSupabaseConfigured();
   await castVoteDb(slug, questionId, optionId, voterToken);
+  await refreshPollSnapshot(slug);
 }
 
 export async function confirmVotes(
@@ -88,24 +105,48 @@ export async function confirmVotes(
 ): Promise<void> {
   assertSupabaseConfigured();
   await castVotesDb(slug, selections, voterToken);
+  await refreshPollSnapshot(slug);
 }
 
-/** Verifica localmente e no servidor se o participante já confirmou voto nesta votação. */
+/** Verifica localmente se o participante já confirmou voto nesta votação. */
 export async function voterHasCompletedPoll(slug: string): Promise<boolean> {
-  assertSupabaseConfigured();
+  return isPollLockedForVoter(slug);
+}
 
-  if (isPollLockedForVoter(slug)) {
-    return true;
+export type VoterPollDestination = "vote" | "results";
+
+export function isAlreadyVotedMessage(message: string): boolean {
+  return /já votou/i.test(message);
+}
+
+/** Decide se o participante deve ir para o ranking ou para a tela de voto. */
+export async function resolveVoterPollDestination(slug: string): Promise<VoterPollDestination> {
+  if (isPollLockedForVoter(slug)) return "results";
+  if (!isSupabaseBrowserConfigured()) return "vote";
+
+  try {
+    const token = getOrCreateVoterToken(slug);
+    const voted = await hasVotedPollDb(slug, token);
+    if (voted) {
+      confirmPollForVoter(slug);
+      return "results";
+    }
+  } catch {
+    /* não bloqueia quem ainda não votou */
   }
 
-  const token = getOrCreateVoterToken(slug);
-  const votedOnServer = await hasVotedPollDb(slug, token);
-  if (votedOnServer) {
-    lockPollForVoter(slug);
-    return true;
-  }
+  return "vote";
+}
 
-  return false;
+export function pollResultsPath(slug: string) {
+  return `/votacao/${slug}/resultados`;
+}
+
+/** Metadados da votação para tela de voto — sem contagens (API /meta). */
+export async function getPollMetaForVoting(slug: string): Promise<StoredPoll | null> {
+  const meta = await fetchPollMeta(slug);
+  if (!meta) return null;
+  return pollMetaToStoredPoll(meta);
 }
 
 export async function listPollsByOwner(ownerId: string): Promise<StoredPoll[]> {
@@ -131,7 +172,16 @@ export async function updatePoll(
   opts?: { status?: StoredPoll["status"] },
 ): Promise<StoredPoll> {
   assertSupabaseConfigured();
-  return updatePollDb(pollId, ownerId, draft, opts);
+
+  const imageError = findInvalidDraftImages(draft);
+  if (imageError) throw new Error(imageError);
+
+  const existing = await getPollByIdForOwnerDb(pollId, ownerId);
+  if (!existing) throw new Error("Votação não encontrada.");
+
+  const resolvedDraft = await resolveDraftImages(draft, ownerId);
+  const mergedDraft = mergeVisualEditDraft(existing, resolvedDraft);
+  return updatePollDb(pollId, ownerId, mergedDraft, opts);
 }
 
 export async function closePoll(pollId: string, ownerId: string): Promise<void> {
@@ -193,13 +243,13 @@ export async function duplicatePoll(
 }
 
 export function pollPublicUrl(slug: string) {
-  if (typeof window === "undefined") return `/v/${slug}`;
-  return `${window.location.origin}/v/${slug}`;
+  const origin = getPublicAppOrigin();
+  return `${origin}/v/${slug}`;
 }
 
 export function pollTelaoUrl(slug: string) {
-  if (typeof window === "undefined") return `/votacao/${slug}/telao`;
-  return `${window.location.origin}/votacao/${slug}/telao`;
+  const origin = getPublicAppOrigin();
+  return `${origin}/votacao/${slug}/telao`;
 }
 
 export { SCHEMA_SETUP_HINT, getPollErrorMessage, isSchemaMissingError } from "@/lib/votti/poll-db";

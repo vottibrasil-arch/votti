@@ -1385,49 +1385,100 @@
   position: relative;
 }
 
+.live-poll-bar__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+}
+
 .live-poll-bar--photo .live-poll-bar__meta {
   position: relative;
   z-index: 10;
-  align-items: center;
 }
 
-.live-poll-bar--photo .live-poll-bar__label {
+.live-poll-bar__identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4375rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.live-poll-bar__name-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.live-poll-bar__medal {
+  display: inline;
+  font-size: 0.875rem;
+  line-height: 1;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+.live-poll-bar__label {
+  display: inline;
+  min-width: 0;
+  color: oklch(0.82 0.02 260);
+  font-weight: 500;
+  line-height: inherit;
+  white-space: normal;
+  word-break: break-word;
+  font-size: clamp(0.75rem, 2.6vw, 0.875rem);
+}
+
+.live-poll-bar--lead .live-poll-bar__label {
+  font-weight: 700;
+  color: oklch(0.96 0.01 260);
+}
+
+.live-poll-bar--photo .live-poll-bar__name-wrap {
   position: relative;
   z-index: 2;
-  padding-right: 0.25rem;
   text-shadow: 0 1px 8px oklch(0 0 0 / 55%);
+}
+
+.live-poll-bar__pct {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 0.6875rem;
+  color: oklch(0.65 0.02 260);
+  line-height: 1.15;
+  margin-top: 0.125rem;
 }
 
 .live-poll-bar--photo .live-poll-bar__pct {
   position: relative;
   z-index: 3;
-  flex-shrink: 0;
-  padding: 0.125rem 0.4375rem;
-  border-radius: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.3125rem;
   background: oklch(0.1 0.04 260 / 88%);
   box-shadow: 0 2px 10px oklch(0 0 0 / 35%);
 }
 
-.live-poll-bar__meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 0.375rem;
-  font-size: 0.8125rem;
-}
-
-.live-poll-bar__label {
-  color: oklch(0.82 0.02 260);
-  font-weight: 500;
-}
-
-.live-poll-bar__pct {
-  font-weight: 700;
-  color: oklch(0.65 0.02 260);
-}
-
 .live-poll-bar__pct--lead {
   color: oklch(0.72 0.18 145);
+}
+
+.live-poll-bar__track-zone {
+  position: relative;
+}
+
+.live-poll-bar--photo .live-poll-bar__track-zone {
+  --bubble-size: 28px;
+  margin-left: var(--rank-thumb-size, 26px);
+  padding-top: calc(var(--bubble-size) * 0.5);
+  padding-bottom: calc(var(--bubble-size) * 0.32);
 }
 
 .live-poll-bar__track {
@@ -1440,59 +1491,82 @@
 
 .live-poll-bar--photo .live-poll-bar__track {
   overflow: visible;
-  height: 0.625rem;
-  margin-top: 0.375rem;
-  margin-bottom: 1rem;
   z-index: 1;
 }
 
-.live-poll-bar__label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+.live-poll-bar__thumb {
+  flex-shrink: 0;
+  border: 1.5px solid oklch(0.95 0.01 260 / 85%);
+  box-shadow: 0 1px 6px oklch(0 0 0 / 35%);
 }
 
-.live-poll-bar__thumb {
-  width: 1.125rem;
-  height: 1.125rem;
-  border-radius: 999px;
-  object-fit: cover;
-  flex-shrink: 0;
-  border: 1px solid oklch(0.95 0.01 260 / 85%);
+.live-poll-bar--lead .live-poll-bar__thumb {
+  border-color: oklch(0.78 0.16 145 / 85%);
+  box-shadow: 0 0 0 1px oklch(0.62 0.18 145 / 35%);
 }
 
 .live-poll-bar__bubble {
   position: absolute;
-  top: 0;
+  top: 50%;
   left: 0;
-  transform: translate(-50%, -50%);
+  transform: translate(0, -50%);
   border-radius: 999px;
   object-fit: cover;
-  border: 1.5px solid oklch(0.98 0.01 260);
+  border: 2px solid oklch(0.98 0.01 260);
   box-shadow:
-    0 2px 8px oklch(0 0 0 / 40%),
-    0 0 0 1px oklch(0 0 0 / 12%);
+    0 3px 12px oklch(0 0 0 / 45%),
+    0 0 0 1px oklch(0 0 0 / 15%);
   transition:
     left 0.9s cubic-bezier(0.34, 1.2, 0.64, 1),
+    transform 0.9s cubic-bezier(0.34, 1.2, 0.64, 1),
     width 0.9s cubic-bezier(0.34, 1.2, 0.64, 1),
     height 0.9s cubic-bezier(0.34, 1.2, 0.64, 1);
-  z-index: 2;
+  z-index: 4;
   pointer-events: none;
 }
 
 .live-poll-bar__bubble--lead {
   border-color: oklch(0.85 0.16 145);
   box-shadow:
-    0 4px 18px oklch(0.62 0.18 145 / 45%),
-    0 0 0 2px oklch(0.62 0.18 145 / 35%);
+    0 5px 22px oklch(0.62 0.18 145 / 50%),
+    0 0 0 2px oklch(0.62 0.18 145 / 40%);
+}
+
+.ranking-option-avatar {
+  display: inline-block;
+  border-radius: 999px;
+  object-fit: cover;
+  flex-shrink: 0;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.ranking-option-avatar--fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: oklch(0.22 0.04 260);
+  color: oklch(0.68 0.02 260);
+  border: 2px solid oklch(0.98 0.01 260 / 85%);
+}
+
+.ranking-option-avatar--lead {
+  border-color: oklch(0.85 0.16 145);
+}
+
+.live-poll-bar__bubble.ranking-option-avatar,
+.live-poll-bar__bubble.ranking-option-avatar--fallback {
+  position: absolute;
+  top: 50%;
 }
 
 .live-poll-bar--featured .live-poll-bar__track {
   height: 1rem;
 }
 
-.live-poll-bar--featured.live-poll-bar--photo .live-poll-bar__track {
-  margin-bottom: 1.125rem;
+.live-poll-bar--featured.live-poll-bar--photo .live-poll-bar__track-zone {
+  padding-top: calc(var(--bubble-size, 32px) * 0.58);
+  padding-bottom: calc(var(--bubble-size, 32px) * 0.38);
 }
 
 .votti-option-row {
@@ -1515,8 +1589,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 999px;
   border: 2px dashed oklch(0.38 0.06 260 / 55%);
   background: oklch(0.17 0.04 260 / 80%);
@@ -1528,6 +1602,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border: none;
 }
 
 .votti-option-photo__clear {
@@ -1648,7 +1723,37 @@
 
 .votti-focus-editor__slider input[type="range"] {
   width: 100%;
+  min-height: 2.25rem;
   accent-color: var(--poll-button, var(--primary));
+  touch-action: pan-x;
+  cursor: pointer;
+}
+
+@media (max-width: 639px) {
+  .votti-focus-editor {
+    padding: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .votti-focus-editor__panel {
+    width: 100%;
+    max-height: min(92dvh, 40rem);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .votti-focus-editor__viewport--circle {
+    width: min(72vw, 14rem);
+    height: min(72vw, 14rem);
+  }
+
+  .votti-focus-editor__slider input[type="range"] {
+    min-height: 2.75rem;
+  }
+
+  .votti-focus-editor__btn {
+    min-height: 2.75rem;
+  }
 }
 
 .votti-focus-editor__actions {
@@ -1678,18 +1783,38 @@
 }
 
 .votti-vote-option--with-photo {
-  justify-content: flex-start;
-  gap: 0.625rem;
-  text-align: left;
+  --vote-photo-size: 2.5rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 0.75rem;
+  padding-left: calc(var(--vote-photo-size) + 1rem);
+  padding-right: calc(var(--vote-photo-size) + 1rem);
+  min-height: 3.75rem;
 }
 
 .votti-vote-option__photo {
-  width: 1.375rem;
-  height: 1.375rem;
-  border-radius: 999px;
-  object-fit: cover;
+  position: absolute;
+  left: 0.1875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--vote-photo-size) !important;
+  height: var(--vote-photo-size) !important;
   flex-shrink: 0;
   border: 2px solid oklch(0.98 0.01 260 / 70%);
+  box-shadow: 0 2px 8px oklch(0 0 0 / 35%);
+}
+
+.votti-vote-option__label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+  line-height: 1.25;
 }
 
 .live-poll-bar__fill {
@@ -2073,6 +2198,7 @@
   overflow-x: clip;
   color: oklch(0.96 0.01 260);
   background: oklch(0.14 0.045 260);
+  min-height: 100dvh;
 }
 
 .votti-app__inner {
@@ -2082,6 +2208,205 @@
 
 .votti-app-page {
   padding-top: 1rem;
+}
+
+.votti-app-page__top {
+  width: 100%;
+  padding-inline: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.votti-app-page__top-inner {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.votti-app-page__body {
+  flex: 1;
+  width: 100%;
+  max-width: 32rem;
+  margin-inline: auto;
+}
+
+.votti-app-page__body--md {
+  max-width: 28rem;
+}
+
+.votti-app-page--account .votti-app-page__body {
+  padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* ═══ Cabeçalho autenticado ═══ */
+.votti-app-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .votti-app-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .votti-app-header__logo {
+    flex-shrink: 0;
+  }
+
+  .votti-app-header__nav {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .votti-app-header__link {
+    white-space: nowrap;
+    font-size: 0.8125rem;
+    padding-inline: 1rem;
+  }
+
+  .votti-app-header__user {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .votti-app-user__name {
+    max-width: 11rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .votti-app-header {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+  }
+
+  .votti-app-header__logo {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .votti-app-header__user {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .votti-app-header__nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: stretch;
+  }
+}
+
+.votti-app-header__nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.votti-app-header__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0 0.875rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: oklch(0.82 0.02 260);
+  background: oklch(0.22 0.04 260 / 70%);
+  border: 1px solid oklch(0.35 0.06 260 / 45%);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+@media (max-width: 639px) {
+  .votti-app-header__link {
+    flex: 1;
+  }
+}
+
+.votti-app-header__link:hover {
+  color: oklch(0.96 0.01 260);
+  background: oklch(0.28 0.05 260);
+}
+
+.votti-app-header__link--active {
+  color: oklch(0.98 0.01 260);
+  background: var(--gradient-primary);
+  border-color: transparent;
+  box-shadow: 0 4px 16px oklch(0.32 0.12 260 / 35%);
+}
+
+.votti-app-pagebar {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.votti-app-pagebar--solo {
+  grid-template-columns: 1fr;
+}
+
+.votti-app-pagebar--solo .votti-app-pagebar__title {
+  text-align: center;
+}
+
+.votti-app-pagebar__back {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  background: oklch(0.22 0.04 260 / 80%);
+  border: 1px solid oklch(0.35 0.06 260 / 45%);
+  color: oklch(0.88 0.02 260);
+  transition: background 0.2s, transform 0.15s;
+}
+
+.votti-app-pagebar__back:hover {
+  background: oklch(0.28 0.05 260);
+}
+
+.votti-app-pagebar__title {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: oklch(0.72 0.08 250);
+}
+
+.votti-nav__links--guest {
+  margin-left: auto;
+}
+
+@media (min-width: 768px) {
+  .votti-nav__links--guest {
+    margin-left: 0;
+  }
+}
+
+.votti-landing--guest .votti-hero--guest {
+  padding-top: 0.5rem;
+}
+
+.votti-landing--auth .votti-hero {
+  padding-top: 0.25rem;
+}
+
+.votti-hero__actions--solo .votti-mega-btn {
+  min-width: min(100%, 16rem);
 }
 
 .votti-app-muted {
@@ -2132,11 +2457,10 @@
 
 .votti-app-user {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-self: end;
-  gap: 0.125rem;
-  max-width: 6.5rem;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  max-width: 100%;
 }
 
 .votti-app-user--empty {
@@ -2145,36 +2469,95 @@
 }
 
 .votti-app-user__name {
-  max-width: 100%;
+  max-width: 6.5rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: oklch(0.88 0.02 260);
   line-height: 1.2;
-  text-decoration: none;
-  transition: color 0.2s;
+  cursor: default;
+  user-select: none;
 }
 
-.votti-app-user__name:hover {
-  color: oklch(0.95 0.01 260);
+.votti-app-user__menu {
+  position: relative;
 }
 
-.votti-app-user__out {
+.votti-app-user__trigger {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: oklch(0.58 0.06 250);
-  transition: color 0.2s;
+  padding: 0.375rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: oklch(0.88 0.02 260);
+  background: oklch(0.24 0.04 260 / 85%);
+  border: 1px solid oklch(0.35 0.06 260 / 45%);
+  transition: background 0.2s, color 0.2s;
 }
 
-.votti-app-user__out:hover {
-  color: oklch(0.92 0.02 260);
+.votti-app-user__trigger:hover {
+  background: oklch(0.3 0.05 260);
+}
+
+.votti-app-user__chevron {
+  transition: transform 0.2s;
+}
+
+.votti-app-user__chevron--open {
+  transform: rotate(180deg);
+}
+
+.votti-app-user__dropdown {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  right: 0;
+  z-index: 40;
+  min-width: 11.5rem;
+  padding: 0.375rem;
+  border-radius: 0.875rem;
+  background: oklch(0.18 0.04 260 / 96%);
+  border: 1px solid oklch(0.35 0.06 260 / 55%);
+  box-shadow: 0 16px 40px oklch(0 0 0 / 35%);
+  backdrop-filter: blur(12px);
+}
+
+.votti-app-user__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: oklch(0.88 0.02 260);
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+
+.votti-app-user__item:hover {
+  background: oklch(0.26 0.05 260);
+  color: oklch(0.98 0.01 260);
+}
+
+.votti-app-user__item--danger {
+  color: oklch(0.72 0.16 25);
+}
+
+.votti-app-user__item--danger:hover {
+  color: oklch(0.88 0.14 25);
+  background: oklch(0.28 0.06 25 / 35%);
+}
+
+.votti-app-user__divider {
+  height: 1px;
+  margin: 0.25rem 0.375rem;
+  background: oklch(0.35 0.06 260 / 45%);
 }
 
 .votti-nav__user {
@@ -2629,6 +3012,29 @@
   color: oklch(0.58 0.02 260);
 }
 
+.votti-wizard__locked-note {
+  margin: -0.25rem 0 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.625rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: oklch(0.78 0.12 85);
+  background: oklch(0.72 0.14 85 / 12%);
+  border: 1px solid oklch(0.72 0.14 85 / 28%);
+}
+
+.votti-field__input[readonly],
+.votti-field__textarea[readonly] {
+  opacity: 0.72;
+  cursor: default;
+  background: oklch(0.18 0.04 260 / 65%);
+}
+
+.votti-field__color:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .votti-wizard__panel--glass {
   background:
     linear-gradient(180deg, oklch(0.22 0.04 260 / 92%), oklch(0.18 0.04 260 / 88%));
@@ -2805,6 +3211,39 @@
   border-radius: 0.875rem;
   background: oklch(0.18 0.04 260 / 70%);
   border: 1px solid oklch(0.32 0.05 260 / 45%);
+}
+
+.votti-close-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 0.875rem;
+  background: oklch(0.18 0.04 260 / 70%);
+  border: 1px solid oklch(0.32 0.05 260 / 45%);
+}
+
+.votti-close-schedule--embedded {
+  margin-bottom: 0;
+  padding: 0.75rem 0 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.votti-close-schedule__hint,
+.votti-close-schedule__meta {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: oklch(0.68 0.02 260);
+}
+
+.votti-close-schedule__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
 }
 
 .votti-question-card__head {
@@ -3187,17 +3626,25 @@
 }
 
 .poll-ranking-preview--featured .poll-ranking-preview__bars {
-  gap: 0.875rem;
+  gap: 1.125rem;
 }
 
 .poll-ranking-preview--featured .live-poll-bar__meta {
-  font-size: 1.0625rem;
-  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  margin-bottom: 0.375rem;
+  align-items: flex-start;
+  gap: 0.4375rem;
 }
 
+.poll-ranking-preview--featured .live-poll-bar__medal {
+  font-size: 0.9375rem;
+}
+
+.poll-ranking-preview--featured .live-poll-bar__name-wrap,
 .poll-ranking-preview--featured .live-poll-bar__label {
-  font-size: 1.0625rem;
+  font-size: clamp(0.8125rem, 3vw, 0.9375rem);
   font-weight: 700;
+  line-height: 1.28;
 }
 
 .votti-results-official .poll-ranking-preview--official .live-poll-bar__label {
@@ -3205,8 +3652,9 @@
 }
 
 .poll-ranking-preview--featured .live-poll-bar__pct {
-  font-size: 1rem;
+  font-size: 0.75rem;
   font-weight: 800;
+  padding: 0.125rem 0.3125rem;
 }
 
 .poll-ranking-preview--featured .live-poll-bar__track {
@@ -3682,6 +4130,114 @@
   border: 1px solid oklch(0.62 0.18 145 / 30%);
 }
 
+.votti-vote-confirmed {
+  position: relative;
+  min-height: min(72dvh, 36rem);
+}
+
+.votti-vote-success-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, oklch(0.24 0.06 145 / 90%), oklch(0.2 0.05 260 / 92%));
+  border: 1px solid oklch(0.62 0.18 145 / 45%);
+  box-shadow:
+    0 0 32px oklch(0.62 0.18 145 / 18%),
+    0 12px 32px -16px oklch(0 0 0 / 40%);
+}
+
+.votti-vote-success-banner__icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  color: oklch(0.82 0.18 145);
+  background: oklch(0.62 0.18 145 / 22%);
+  border: 1px solid oklch(0.62 0.18 145 / 35%);
+}
+
+.votti-vote-success-banner__copy {
+  min-width: 0;
+  text-align: left;
+}
+
+.votti-vote-success-banner__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: oklch(0.96 0.01 260);
+}
+
+.votti-vote-success-banner__hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: oklch(0.72 0.04 260);
+}
+
+.votti-results-loading {
+  min-height: 12rem;
+}
+
+.votti-vote-confirmed::before {
+  content: "";
+  position: absolute;
+  inset: -2rem -1rem auto;
+  height: 14rem;
+  background: radial-gradient(circle at 50% 0%, oklch(0.62 0.18 145 / 22%), transparent 72%);
+  pointer-events: none;
+}
+
+.votti-vote-confirmed__trust {
+  margin-bottom: 1.5rem;
+}
+
+.votti-vote-confirmed__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 6.5rem;
+  height: 6.5rem;
+  margin: 0 auto 1.25rem;
+  border-radius: 999px;
+  color: oklch(0.78 0.18 145);
+  background: linear-gradient(135deg, oklch(0.62 0.18 145 / 28%), oklch(0.45 0.14 250 / 22%));
+  border: 1px solid oklch(0.62 0.18 145 / 40%);
+  box-shadow:
+    0 0 60px oklch(0.62 0.18 145 / 24%),
+    0 20px 50px -24px oklch(0 0 0 / 45%);
+}
+
+.votti-vote-confirmed__label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: oklch(0.72 0.18 145);
+}
+
+.votti-vote-confirmed__title {
+  margin: 0.625rem 0 0.875rem;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 8vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: oklch(0.96 0.01 260);
+}
+
+.votti-vote-confirmed__subtitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: oklch(0.68 0.02 260);
+}
+
 .votti-share-panel {
   margin-top: 1.25rem;
   padding: 1.125rem;
@@ -3868,14 +4424,16 @@
 
 .live-poll-bar__meta {
   font-size: 0.9375rem;
+  align-items: flex-start;
 }
 
 .live-poll-bar__label {
   font-weight: 600;
+  font-size: clamp(0.8125rem, 2.4vw, 0.9375rem);
 }
 
 .live-poll-bar__pct {
-  font-size: 0.9375rem;
+  font-size: 0.75rem;
 }
 
 .live-poll-bar__track {
@@ -4307,6 +4865,50 @@
   margin-top: 1rem;
 }
 
+.votti-poll-card__toolbar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.875rem;
+}
+
+@media (min-width: 480px) {
+  .votti-poll-card__toolbar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.votti-poll-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 2.375rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: oklch(0.86 0.02 260);
+  background: oklch(0.24 0.04 260 / 85%);
+  border: 1px solid oklch(0.35 0.06 260 / 45%);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.votti-poll-card__btn:hover {
+  background: oklch(0.3 0.05 260);
+  color: oklch(0.98 0.01 260);
+}
+
+.votti-poll-card__btn--danger {
+  color: oklch(0.72 0.16 25);
+  border-color: oklch(0.55 0.14 25 / 35%);
+}
+
+.votti-poll-card__btn--danger:hover {
+  color: oklch(0.88 0.14 25);
+  background: oklch(0.28 0.06 25 / 30%);
+}
+
 .votti-pill-btn {
   display: inline-flex;
   align-items: center;
@@ -4494,6 +5096,9 @@
 }
 
 .votti-account__section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   padding: 1.125rem;
   border-radius: 1.125rem;
   background: oklch(0.2 0.04 260 / 85%);
@@ -4501,9 +5106,32 @@
 }
 
 .votti-account__section--footer {
-  background: transparent;
-  border: none;
-  padding: 0.25rem 0 0;
+  padding: 1.125rem;
+  background: oklch(0.2 0.04 260 / 85%);
+  border: 1px solid oklch(0.35 0.06 260 / 45%);
+}
+
+.votti-account__divider {
+  height: 1px;
+  margin: 0.125rem 0;
+  background: oklch(0.35 0.06 260 / 45%);
+}
+
+.votti-account__block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.votti-account__subheading {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: oklch(0.78 0.02 260);
+}
+
+.votti-account__subheading--danger {
+  color: oklch(0.72 0.14 25);
 }
 
 .votti-account__heading {

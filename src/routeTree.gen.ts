@@ -16,9 +16,11 @@ import { Route as CriarRouteImport } from './routes/criar'
 import { Route as ComoFuncionaRouteImport } from './routes/como-funciona'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VotacaoSlugRouteImport } from './routes/votacao.$slug'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as CriarSucessoRouteImport } from './routes/criar.sucesso'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as VotacaoSlugIndexRouteImport } from './routes/votacao.$slug.index'
 import { Route as VotacaoSlugTelaoRouteImport } from './routes/votacao.$slug.telao'
 import { Route as VotacaoSlugResultadosRouteImport } from './routes/votacao.$slug.resultados'
 
@@ -57,6 +59,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VotacaoSlugRoute = VotacaoSlugRouteImport.update({
+  id: '/votacao/$slug',
+  path: '/votacao/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VSlugRoute = VSlugRouteImport.update({
   id: '/v/$slug',
   path: '/v/$slug',
@@ -72,15 +79,20 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VotacaoSlugIndexRoute = VotacaoSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => VotacaoSlugRoute,
+} as any)
 const VotacaoSlugTelaoRoute = VotacaoSlugTelaoRouteImport.update({
-  id: '/votacao/$slug/telao',
-  path: '/votacao/$slug/telao',
-  getParentRoute: () => rootRouteImport,
+  id: '/telao',
+  path: '/telao',
+  getParentRoute: () => VotacaoSlugRoute,
 } as any)
 const VotacaoSlugResultadosRoute = VotacaoSlugResultadosRouteImport.update({
-  id: '/votacao/$slug/resultados',
-  path: '/votacao/$slug/resultados',
-  getParentRoute: () => rootRouteImport,
+  id: '/resultados',
+  path: '/resultados',
+  getParentRoute: () => VotacaoSlugRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -94,8 +106,10 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
   '/v/$slug': typeof VSlugRoute
+  '/votacao/$slug': typeof VotacaoSlugRouteWithChildren
   '/votacao/$slug/resultados': typeof VotacaoSlugResultadosRoute
   '/votacao/$slug/telao': typeof VotacaoSlugTelaoRoute
+  '/votacao/$slug/': typeof VotacaoSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,6 +124,7 @@ export interface FileRoutesByTo {
   '/v/$slug': typeof VSlugRoute
   '/votacao/$slug/resultados': typeof VotacaoSlugResultadosRoute
   '/votacao/$slug/telao': typeof VotacaoSlugTelaoRoute
+  '/votacao/$slug': typeof VotacaoSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -123,8 +138,10 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
   '/v/$slug': typeof VSlugRoute
+  '/votacao/$slug': typeof VotacaoSlugRouteWithChildren
   '/votacao/$slug/resultados': typeof VotacaoSlugResultadosRoute
   '/votacao/$slug/telao': typeof VotacaoSlugTelaoRoute
+  '/votacao/$slug/': typeof VotacaoSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -139,8 +156,10 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/criar/sucesso'
     | '/v/$slug'
+    | '/votacao/$slug'
     | '/votacao/$slug/resultados'
     | '/votacao/$slug/telao'
+    | '/votacao/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +174,7 @@ export interface FileRouteTypes {
     | '/v/$slug'
     | '/votacao/$slug/resultados'
     | '/votacao/$slug/telao'
+    | '/votacao/$slug'
   id:
     | '__root__'
     | '/'
@@ -167,8 +187,10 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/criar/sucesso'
     | '/v/$slug'
+    | '/votacao/$slug'
     | '/votacao/$slug/resultados'
     | '/votacao/$slug/telao'
+    | '/votacao/$slug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -181,8 +203,7 @@ export interface RootRouteChildren {
   MinhasRoute: typeof MinhasRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   VSlugRoute: typeof VSlugRoute
-  VotacaoSlugResultadosRoute: typeof VotacaoSlugResultadosRoute
-  VotacaoSlugTelaoRoute: typeof VotacaoSlugTelaoRoute
+  VotacaoSlugRoute: typeof VotacaoSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -236,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/votacao/$slug': {
+      id: '/votacao/$slug'
+      path: '/votacao/$slug'
+      fullPath: '/votacao/$slug'
+      preLoaderRoute: typeof VotacaoSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/v/$slug': {
       id: '/v/$slug'
       path: '/v/$slug'
@@ -257,19 +285,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/votacao/$slug/': {
+      id: '/votacao/$slug/'
+      path: '/'
+      fullPath: '/votacao/$slug/'
+      preLoaderRoute: typeof VotacaoSlugIndexRouteImport
+      parentRoute: typeof VotacaoSlugRoute
+    }
     '/votacao/$slug/telao': {
       id: '/votacao/$slug/telao'
-      path: '/votacao/$slug/telao'
+      path: '/telao'
       fullPath: '/votacao/$slug/telao'
       preLoaderRoute: typeof VotacaoSlugTelaoRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof VotacaoSlugRoute
     }
     '/votacao/$slug/resultados': {
       id: '/votacao/$slug/resultados'
-      path: '/votacao/$slug/resultados'
+      path: '/resultados'
       fullPath: '/votacao/$slug/resultados'
       preLoaderRoute: typeof VotacaoSlugResultadosRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof VotacaoSlugRoute
     }
   }
 }
@@ -284,6 +319,22 @@ const CriarRouteChildren: CriarRouteChildren = {
 
 const CriarRouteWithChildren = CriarRoute._addFileChildren(CriarRouteChildren)
 
+interface VotacaoSlugRouteChildren {
+  VotacaoSlugResultadosRoute: typeof VotacaoSlugResultadosRoute
+  VotacaoSlugTelaoRoute: typeof VotacaoSlugTelaoRoute
+  VotacaoSlugIndexRoute: typeof VotacaoSlugIndexRoute
+}
+
+const VotacaoSlugRouteChildren: VotacaoSlugRouteChildren = {
+  VotacaoSlugResultadosRoute: VotacaoSlugResultadosRoute,
+  VotacaoSlugTelaoRoute: VotacaoSlugTelaoRoute,
+  VotacaoSlugIndexRoute: VotacaoSlugIndexRoute,
+}
+
+const VotacaoSlugRouteWithChildren = VotacaoSlugRoute._addFileChildren(
+  VotacaoSlugRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CadastroRoute: CadastroRoute,
@@ -294,8 +345,7 @@ const rootRouteChildren: RootRouteChildren = {
   MinhasRoute: MinhasRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   VSlugRoute: VSlugRoute,
-  VotacaoSlugResultadosRoute: VotacaoSlugResultadosRoute,
-  VotacaoSlugTelaoRoute: VotacaoSlugTelaoRoute,
+  VotacaoSlugRoute: VotacaoSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

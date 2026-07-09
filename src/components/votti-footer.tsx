@@ -13,6 +13,7 @@ const HIDE_FOOTER_ON = new Set([
   "/criar",
   "/criar/sucesso",
   "/minhas",
+  "/minha-conta",
   "/auth/callback",
 ]);
 

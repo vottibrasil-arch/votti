@@ -351,16 +351,10 @@ create policy "options_delete_own" on public.options
     where q.id = question_id and p.owner_id = auth.uid()
   ));
 
--- ── votes ───────────────────────────────────────────────────────────────────
+-- votes: INSERT público; leitura só para organizador autenticado
 drop policy if exists "votes_select_public" on public.votes;
 drop policy if exists "votes_insert_public" on public.votes;
 drop policy if exists "votes_select_own" on public.votes;
-
-create policy "votes_select_public" on public.votes
-  for select to anon, authenticated
-  using (exists (
-    select 1 from public.polls p where p.id = poll_id and p.status = 'active'
-  ));
 
 create policy "votes_insert_public" on public.votes
   for insert to anon, authenticated
@@ -374,8 +368,9 @@ create policy "votes_select_own" on public.votes
     select 1 from public.polls p where p.id = poll_id and p.owner_id = auth.uid()
   ));
 
--- ── view poll_results ───────────────────────────────────────────────────────
-grant select on public.poll_results to anon, authenticated;
+-- poll_results: sem acesso anônimo (ranking via GET /ranking/{slug})
+revoke select on public.poll_results from anon;
+grant select on public.poll_results to authenticated;
 
 
 -- =============================================================================
@@ -427,6 +422,8 @@ begin
 exception
   when duplicate_object then null;
 end $$;
+
+alter table public.votes replica identity full;
 
 
 -- =============================================================================

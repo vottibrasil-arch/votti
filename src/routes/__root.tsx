@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { ADSENSE_CLIENT, ADSENSE_SCRIPT_SRC } from "../lib/adsense";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { reportAppError } from "../lib/votti-error-reporting";
 import { AuthProvider } from "../lib/auth/use-auth";
 import { VottiFooter } from "../components/votti-footer";
 
@@ -38,7 +38,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    reportAppError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
   return (

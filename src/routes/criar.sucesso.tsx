@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Copy, ExternalLink, MessageCircle, Monitor, PartyPopper } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app/app-shell";
-import { AppTopBar } from "@/components/app/app-top-bar";
+import { AppPageFrame } from "@/components/app/app-page-frame";
+import { AppPageBar } from "@/components/app/app-top-bar";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { SecurityBadge } from "@/components/votti/security-badge";
 import { getPollBySlug, pollPublicUrl, pollTelaoUrl } from "@/lib/votti/poll-store";
@@ -47,9 +48,9 @@ function SucessoPage() {
   }
 
   return (
-    <AppShell feed={false}>
-      <div className="votti-app-page flex-1 px-5 pb-10 max-w-md mx-auto w-full text-center">
-        <AppTopBar back="/minhas" trust={false} />
+    <AppShell>
+      <AppPageFrame contentClassName="votti-app-page__body--md text-center">
+        <AppPageBar back="/minhas" title="Publicada" />
         <div className="votti-success animate-rise">
           <div className="votti-success__trust">
             <SecurityBadge compact />
@@ -115,7 +116,7 @@ function SucessoPage() {
             </div>
           ) : null}
         </div>
-      </div>
+      </AppPageFrame>
     </AppShell>
   );
 }

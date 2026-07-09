@@ -1,3 +1,5 @@
+import { findInvalidDraftImages, normalizeImageUrl } from "@/lib/votti/persist-image-url";
+
 export type PollOption = { id: string; text: string; votes: number; imageUrl?: string };
 export type PollQuestion = { id: string; text: string; options: PollOption[] };
 
@@ -85,7 +87,11 @@ export const EMPTY_DRAFT: PollDraft = {
 };
 
 export function getPollCoverUrl(poll: Pick<StoredPoll, "coverUrl" | "logoUrl">): string {
-  return poll.coverUrl.trim() || poll.logoUrl.trim();
+  return normalizeImageUrl(poll.coverUrl) || normalizeImageUrl(poll.logoUrl);
+}
+
+export function getOptionImageUrl(option: Pick<PollOption, "imageUrl">): string {
+  return normalizeImageUrl(option.imageUrl);
 }
 
 export function storedPollToDraft(poll: StoredPoll): PollDraft {
@@ -114,7 +120,11 @@ export function newId(prefix: string) {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+
 export function validatePublishDraft(draft: PollDraft): string | null {
+  const imageError = findInvalidDraftImages(draft);
+  if (imageError) return imageError;
+
   if (!draft.title.trim()) return "Digite um título para a votação.";
   if (draft.questions.length === 0) return "Adicione ao menos uma pergunta.";
 
@@ -124,7 +134,58 @@ export function validatePublishDraft(draft: PollDraft): string | null {
     if (filled.length < 2) return `A pergunta ${i + 1} precisa de ao menos 2 opções preenchidas.`;
   }
 
+  if (draft.settings.autoClose && draft.settings.closeMode !== "until_admin" && !draft.settings.closeAt.trim()) {
+    return "Informe a data de encerramento da votação.";
+  }
+
   return null;
+}
+
+/** Em edição, só permite mudanças visuais — preserva textos e estrutura de perguntas/opções. */
+export function mergeVisualEditDraft(existing: StoredPoll, draft: PollDraft): PollDraft {
+  if (draft.questions.length !== existing.questions.length) {
+    throw new Error("Não é possível adicionar ou remover perguntas em uma votação publicada.");
+  }
+
+  const questions = existing.questions.map((existingQ, qi) => {
+    const draftQ = draft.questions[qi];
+    if (!draftQ || draftQ.id !== existingQ.id) {
+      throw new Error("Não é possível alterar a estrutura das perguntas.");
+    }
+    if (draftQ.text.trim() !== existingQ.text.trim()) {
+      throw new Error("Não é possível alterar o texto das perguntas.");
+    }
+    if (draftQ.options.length !== existingQ.options.length) {
+      throw new Error("Não é possível adicionar ou remover opções.");
+    }
+
+    const options = existingQ.options.map((existingO, oi) => {
+      const draftO = draftQ.options[oi];
+      if (!draftO || draftO.id !== existingO.id) {
+        throw new Error("Não é possível alterar a estrutura das opções.");
+      }
+      if (draftO.text.trim() !== existingO.text.trim()) {
+        throw new Error("Não é possível alterar o nome das opções.");
+      }
+      return {
+        ...existingO,
+        imageUrl: draftO.imageUrl ?? "",
+      };
+    });
+
+    return { ...existingQ, options };
+  });
+
+  return {
+    title: existing.title,
+    description: existing.description,
+    category: existing.category,
+    logoUrl: "",
+    primaryColor: draft.primaryColor,
+    coverUrl: draft.coverUrl,
+    questions,
+    settings: { ...draft.settings },
+  };
 }
 
 export function slugify(text: string) {

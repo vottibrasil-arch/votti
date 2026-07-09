@@ -1,7 +1,8 @@
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { ImageFocusEditor } from "@/components/votti/image-focus-editor";
-import { cropImageCover } from "@/lib/votti/crop-image";
+import { cropImageCover, formatImageProcessError, normalizeImageFile } from "@/lib/votti/crop-image";
+import { normalizeImageUrl } from "@/lib/votti/persist-image-url";
 import { uploadPollAsset } from "@/lib/votti/upload-poll-asset";
 
 type PollImageFieldProps = {
@@ -13,7 +14,7 @@ type PollImageFieldProps = {
   ownerId?: string;
 };
 
-const ACCEPT = "image/png,image/jpeg,image/webp,image/gif";
+const ACCEPT = "image/*,.heic,.heif";
 
 export function PollImageField({
   label,
@@ -31,7 +32,7 @@ export function PollImageField({
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState("");
 
-  const displayUrl = preview || value;
+  const displayUrl = normalizeImageUrl(preview) || normalizeImageUrl(value);
 
   function clearPending() {
     if (pendingPreview) URL.revokeObjectURL(pendingPreview);
@@ -40,16 +41,17 @@ export function PollImageField({
   }
 
   async function uploadFile(file: File) {
+    if (!ownerId) {
+      setError("Entre na conta para salvar a imagem.");
+      return;
+    }
+
     setUploading(true);
     try {
-      if (ownerId) {
-        const publicUrl = await uploadPollAsset(file, ownerId, variant);
-        onChange(publicUrl);
-        if (preview) URL.revokeObjectURL(preview);
-        setPreview(null);
-      } else {
-        onChange(URL.createObjectURL(file));
-      }
+      const publicUrl = await uploadPollAsset(file, ownerId, variant);
+      onChange(publicUrl);
+      if (preview) URL.revokeObjectURL(preview);
+      setPreview(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível enviar a imagem.");
     } finally {
@@ -72,15 +74,17 @@ export function PollImageField({
     }
 
     if (variant === "cover") {
+      const normalized = normalizeImageFile(file);
       clearPending();
-      setPendingFile(file);
-      setPendingPreview(URL.createObjectURL(file));
+      setPendingFile(normalized);
+      setPendingPreview(URL.createObjectURL(normalized));
       return;
     }
 
-    const localUrl = URL.createObjectURL(file);
+    const normalized = normalizeImageFile(file);
+    const localUrl = URL.createObjectURL(normalized);
     setPreview(localUrl);
-    await uploadFile(file);
+    await uploadFile(normalized);
   }
 
   async function confirmCoverFocus(focus: { x: number; y: number }) {
@@ -93,7 +97,7 @@ export function PollImageField({
       clearPending();
       await uploadFile(cropped);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível ajustar a capa.");
+      setError(formatImageProcessError(err));
       setUploading(false);
     } finally {
       if (inputRef.current) inputRef.current.value = "";
@@ -136,7 +140,17 @@ export function PollImageField({
             </span>
           ) : displayUrl ? (
             <>
-              <img src={displayUrl} alt="" className="votti-image-box__preview" />
+              <img
+                src={displayUrl}
+                alt=""
+                className="votti-image-box__preview"
+                onError={() => {
+                  if (preview) URL.revokeObjectURL(preview);
+                  setPreview(null);
+                  onChange("");
+                  setError("Não foi possível carregar a imagem. Envie novamente.");
+                }}
+              />
               <span className="votti-image-box__overlay">Trocar imagem</span>
             </>
           ) : (

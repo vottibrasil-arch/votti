@@ -1,18 +1,20 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { BarChart3, Check, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { PollCoverHero } from "@/components/votti/poll-cover-hero";
 import { PollPublicShell } from "@/components/votti/poll-public-shell";
+import { RankingOptionAvatar } from "@/components/votti/ranking-option-avatar";
 import { SecurityBadge } from "@/components/votti/security-badge";
 import { LiveDot } from "@/components/ui-kit";
 import {
   confirmVotes,
-  getPollBySlug,
+  getPollMetaForVoting,
   getPollErrorMessage,
-  voterHasCompletedPoll,
+  isAlreadyVotedMessage,
+  resolveVoterPollDestination,
 } from "@/lib/votti/poll-store";
 import type { PollQuestion, StoredPoll } from "@/lib/votti/poll-types";
-import { usePollRealtime } from "@/lib/votti/use-poll-realtime";
+import { getOptionImageUrl } from "@/lib/votti/poll-types";
 import {
   confirmPollForVoter,
   getOrCreateVoterToken,
@@ -25,10 +27,15 @@ type PollVoteScreenProps = {
   slug: string;
 };
 
+type VoteGate = "checking" | "redirect" | "ready";
+
 export function PollVoteScreen({ slug }: PollVoteScreenProps) {
   const navigate = useNavigate();
+  const [gate, setGate] = useState<VoteGate>(() =>
+    isPollLockedForVoter(slug) ? "redirect" : "checking",
+  );
   const [poll, setPoll] = useState<StoredPoll | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [voteError, setVoteError] = useState("");
@@ -36,9 +43,35 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
     getPendingSelections(slug),
   );
 
+  const goToResults = useCallback(() => {
+    navigate({ to: "/votacao/$slug/resultados", params: { slug }, replace: true });
+  }, [navigate, slug]);
+
+  useEffect(() => {
+    if (gate !== "checking") return;
+
+    let cancelled = false;
+
+    void resolveVoterPollDestination(slug).then((dest) => {
+      if (cancelled) return;
+
+      if (dest === "results") {
+        setGate("redirect");
+        return;
+      }
+
+      setGate("ready");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gate, slug]);
+
   const refreshPoll = useCallback(async () => {
+    setLoading(true);
     try {
-      const data = await getPollBySlug(slug);
+      const data = await getPollMetaForVoting(slug);
       setPoll(data);
       setError(data ? "" : "Votação não encontrada.");
     } catch (err) {
@@ -49,30 +82,9 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
   }, [slug]);
 
   useEffect(() => {
+    if (gate !== "ready") return;
     void refreshPoll();
-  }, [refreshPoll]);
-
-  useEffect(() => {
-    if (!poll || poll.status !== "active") return;
-
-    let cancelled = false;
-
-    void voterHasCompletedPoll(slug).then((completed) => {
-      if (!cancelled && completed) {
-        navigate({ to: "/votacao/$slug/resultados", params: { slug }, replace: true });
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [poll, slug, navigate]);
-
-  const { status } = usePollRealtime({
-    pollId: poll?.id,
-    enabled: Boolean(poll?.id),
-    onRefresh: refreshPoll,
-  });
+  }, [gate, refreshPoll]);
 
   function handleSelect(question: PollQuestion, optionId: string) {
     if (!poll || poll.status !== "active" || isPollLockedForVoter(slug)) return;
@@ -102,6 +114,7 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
       }));
       await confirmVotes(slug, payload, token);
       confirmPollForVoter(slug);
+      setConfirming(false);
       navigate({
         to: "/votacao/$slug/resultados",
         params: { slug },
@@ -109,12 +122,22 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
         replace: true,
       });
     } catch (err) {
-      setVoteError(getPollErrorMessage(err));
+      const message = getPollErrorMessage(err);
+      if (isAlreadyVotedMessage(message)) {
+        confirmPollForVoter(slug);
+        goToResults();
+        return;
+      }
+      setVoteError(message);
       setConfirming(false);
     }
   }
 
-  if (loading) {
+  if (gate === "redirect") {
+    return <Navigate to="/votacao/$slug/resultados" params={{ slug }} replace />;
+  }
+
+  if (gate !== "ready" || loading) {
     return (
       <div className="votti-vote-page flex-1 flex items-center justify-center px-5">
         <p className="votti-app-muted">Carregando votação…</p>
@@ -137,8 +160,6 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
     );
   }
 
-  const liveLabel =
-    status === "connected" ? "ao vivo" : status === "connecting" ? "conectando…" : "atualizando";
   const closed = poll.status === "closed";
   const activeQuestions = poll.questions.filter((q) => q.options.some((o) => o.text.trim()));
   const allAnswered = activeQuestions.every((q) => Boolean(selections[q.id]));
@@ -151,7 +172,7 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
             <SecurityBadge compact />
             <span className="votti-vote-hero__live">
               <LiveDot />
-              {liveLabel}
+              ao vivo
             </span>
           </div>
           <h1 className="votti-vote-hero__title">{poll.title}</h1>
@@ -184,19 +205,26 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
                       .filter((o) => o.text.trim())
                       .map((option) => {
                         const selected = selections[question.id] === option.id;
+                        const optionImage = getOptionImageUrl(option);
                         return (
                           <button
                             key={option.id}
                             type="button"
-                            className={`votti-vote-option votti-vote-option--branded ${selected ? "votti-vote-option--selected" : ""} ${option.imageUrl ? "votti-vote-option--with-photo" : ""}`}
+                            className={`votti-vote-option votti-vote-option--branded ${selected ? "votti-vote-option--selected" : ""} ${optionImage ? "votti-vote-option--with-photo" : ""}`}
                             disabled={confirming}
                             onClick={() => handleSelect(question, option.id)}
                           >
-                            {option.imageUrl ? (
-                              <img src={option.imageUrl} alt="" className="votti-vote-option__photo" />
+                            {optionImage ? (
+                              <RankingOptionAvatar
+                                src={optionImage}
+                                size={40}
+                                className="votti-vote-option__photo"
+                              />
                             ) : null}
-                            {selected ? <Check className="size-4 shrink-0" /> : null}
-                            <span>{option.text}</span>
+                            <span className="votti-vote-option__label">
+                              {selected ? <Check className="size-4 shrink-0" aria-hidden /> : null}
+                              <span>{option.text}</span>
+                            </span>
                           </button>
                         );
                       })}
@@ -236,4 +264,3 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
     </PollPublicShell>
   );
 }
-

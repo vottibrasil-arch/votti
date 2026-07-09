@@ -8,7 +8,7 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { fileURLToPath } from "node:url";
 
 export default defineConfig({
-  // Habilita build de deploy fora do Lovable (Vercel)
+  // Deploy em produção (Vercel)
   nitro: { preset: "vercel" },
   vite: {
     resolve: {

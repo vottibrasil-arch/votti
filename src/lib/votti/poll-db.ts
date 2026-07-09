@@ -2,12 +2,14 @@ import { getSupabaseBrowser } from "@/lib/api/supabase-browser";
 import type { Poll, PollResult } from "@/lib/supabase/database.types";
 import {
   DEFAULT_SETTINGS,
+  getOptionImageUrl,
   type PollDraft,
   type PollOption,
   type PollQuestion,
   type PollSettings,
   type StoredPoll,
 } from "@/lib/votti/poll-types";
+import { normalizeImageUrl } from "@/lib/votti/persist-image-url";
 
 type DbQuestion = { id: string; poll_id: string; text: string; sort_order: number };
 type DbOption = {
@@ -84,8 +86,10 @@ function optionWritePayload(text: string, sortOrder: number, imageUrl?: string):
   if (optionImageColumnAvailable === false) return payload;
 
   const url = imageUrl?.trim();
-  if (optionImageColumnAvailable === true || url) {
-    payload.image_url = url || null;
+  if (url && !url.startsWith("blob:")) {
+    payload.image_url = url;
+  } else if (optionImageColumnAvailable === true) {
+    payload.image_url = null;
   }
 
   return payload;
@@ -200,7 +204,7 @@ function mapDbOption(o: DbOption, votes = 0): PollOption {
     id: o.id,
     text: o.text,
     votes,
-    imageUrl: o.image_url?.trim() ?? "",
+    imageUrl: getOptionImageUrl({ imageUrl: o.image_url ?? "" }),
   };
 }
 
@@ -273,8 +277,8 @@ function mapPollRow(
     title: poll.title,
     description: poll.description ?? "",
     category: poll.category ?? "",
-    logoUrl: poll.logo_url ?? "",
-    coverUrl: (poll.photo_url ?? "").trim() || (poll.logo_url ?? "").trim(),
+    logoUrl: normalizeImageUrl(poll.logo_url),
+    coverUrl: normalizeImageUrl(poll.photo_url) || normalizeImageUrl(poll.logo_url),
     primaryColor: poll.primary_color ?? "#4F8FD9",
     questions,
     settings: parseSettings(poll.settings),

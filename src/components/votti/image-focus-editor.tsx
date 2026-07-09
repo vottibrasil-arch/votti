@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ImageFocus } from "@/lib/votti/crop-image";
 
 type ImageFocusEditorProps = {
@@ -9,6 +9,10 @@ type ImageFocusEditorProps = {
   onCancel: () => void;
 };
 
+function moveSensitivity() {
+  return window.matchMedia("(pointer: coarse)").matches ? 0.0075 : 0.0035;
+}
+
 export function ImageFocusEditor({
   previewUrl,
   variant,
@@ -17,6 +21,7 @@ export function ImageFocusEditor({
   onCancel,
 }: ImageFocusEditorProps) {
   const [focus, setFocus] = useState<ImageFocus>({ x: 0.5, y: 0.5 });
+  const viewportRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   const lastPoint = useRef({ x: 0, y: 0 });
 
@@ -24,30 +29,80 @@ export function ImageFocusEditor({
     setFocus({ x: 0.5, y: 0.5 });
   }, [previewUrl]);
 
-  function moveFocus(dx: number, dy: number) {
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
+  const applyMove = useCallback((dx: number, dy: number) => {
+    const step = moveSensitivity();
     setFocus((current) => ({
-      x: Math.min(1, Math.max(0, current.x - dx * 0.0035)),
-      y: Math.min(1, Math.max(0, current.y - dy * 0.0035)),
+      x: Math.min(1, Math.max(0, current.x - dx * step)),
+      y: Math.min(1, Math.max(0, current.y - dy * step)),
     }));
-  }
+  }, []);
+
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+
+    function onTouchStart(event: TouchEvent) {
+      if (event.touches.length !== 1) return;
+      dragging.current = true;
+      lastPoint.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    }
+
+    function onTouchMove(event: TouchEvent) {
+      if (!dragging.current || event.touches.length !== 1) return;
+      event.preventDefault();
+      const touch = event.touches[0];
+      const dx = touch.clientX - lastPoint.current.x;
+      const dy = touch.clientY - lastPoint.current.y;
+      lastPoint.current = { x: touch.clientX, y: touch.clientY };
+      applyMove(dx, dy);
+    }
+
+    function endTouch() {
+      dragging.current = false;
+    }
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", endTouch);
+    el.addEventListener("touchcancel", endTouch);
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", endTouch);
+      el.removeEventListener("touchcancel", endTouch);
+    };
+  }, [applyMove, previewUrl]);
 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === "touch") return;
     dragging.current = true;
     lastPoint.current = { x: event.clientX, y: event.clientY };
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
-    if (!dragging.current) return;
+    if (event.pointerType === "touch" || !dragging.current) return;
     const dx = event.clientX - lastPoint.current.x;
     const dy = event.clientY - lastPoint.current.y;
     lastPoint.current = { x: event.clientX, y: event.clientY };
-    moveFocus(dx, dy);
+    applyMove(dx, dy);
   }
 
   function onPointerUp(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === "touch") return;
     dragging.current = false;
-    event.currentTarget.releasePointerCapture(event.pointerId);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
   }
 
   return (
@@ -55,9 +110,12 @@ export function ImageFocusEditor({
       <div className="votti-focus-editor__backdrop" onClick={onCancel} aria-hidden />
       <div className="votti-focus-editor__panel animate-rise">
         <h3 className="votti-focus-editor__title">{title}</h3>
-        <p className="votti-focus-editor__hint">Arraste a foto para escolher o que aparece.</p>
+        <p className="votti-focus-editor__hint">
+          Arraste com o dedo ou use os controles para escolher o que aparece.
+        </p>
 
         <div
+          ref={viewportRef}
           className={`votti-focus-editor__viewport votti-focus-editor__viewport--${variant}`}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
