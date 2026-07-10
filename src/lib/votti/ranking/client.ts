@@ -66,11 +66,7 @@ export function pollMetaToStoredPoll(meta: PollMetaResponse): StoredPoll {
   };
 }
 
-export async function fetchPollRanking(slug: string): Promise<PollRankingState | null> {
-  const res = await fetch(`/ranking/${encodeURIComponent(slug)}`, {
-    cache: "no-store",
-    headers: { accept: "application/json" },
-  });
+async function readPollRankingResponse(res: Response): Promise<PollRankingState | null> {
   if (res.status === 404) return null;
   if (!res.ok) throw new Error("Falha ao carregar ranking.");
 
@@ -82,15 +78,34 @@ export async function fetchPollRanking(slug: string): Promise<PollRankingState |
   return (await res.json()) as PollRankingState;
 }
 
-/** Atualiza snapshot após voto confirmado (substitui webhook). */
-export async function refreshPollSnapshot(slug: string): Promise<void> {
+export async function fetchPollRanking(slug: string): Promise<PollRankingState | null> {
+  const rankingUrl = `/ranking/${encodeURIComponent(slug)}`;
+  const headers = { accept: "application/json" };
+
+  let data = await readPollRankingResponse(
+    await fetch(rankingUrl, { cache: "no-store", headers }),
+  );
+
+  if (!data) {
+    await refreshPollSnapshot(slug);
+    data = await readPollRankingResponse(
+      await fetch(rankingUrl, { cache: "no-store", headers }),
+    );
+  }
+
+  return data;
+}
+
+/** Atualiza snapshot após voto confirmado. */
+export async function refreshPollSnapshot(slug: string): Promise<boolean> {
   try {
-    await fetch(`/api/polls/${encodeURIComponent(slug)}/refresh-snapshot`, {
+    const res = await fetch(`/api/polls/${encodeURIComponent(slug)}/refresh-snapshot`, {
       method: "POST",
       cache: "no-store",
     });
+    return res.ok;
   } catch {
-    /* best-effort — telão atualiza no próximo poll */
+    return false;
   }
 }
 

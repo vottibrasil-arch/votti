@@ -33,7 +33,10 @@ function parseRankingSlug(pathname: string): string | null {
 
 async function handleGetRanking(slug: string): Promise<Response> {
   try {
-    const snapshot = await getStoredSnapshot(slug);
+    let snapshot = await getStoredSnapshot(slug);
+    if (!snapshot) {
+      snapshot = await refreshRankingSnapshot(slug);
+    }
     if (!snapshot) {
       return jsonResponse({ error: "Votação não encontrada." }, 404);
     }

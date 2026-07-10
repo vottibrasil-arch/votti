@@ -9,6 +9,8 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "test:supabase": "node scripts/test-supabase.mjs",
+    "seed:ranking": "node scripts/seed-ranking-snapshot.mjs",
+    "seed:ranking:all": "node scripts/seed-all-ranking-snapshots.mjs",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

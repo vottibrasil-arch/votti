@@ -6,10 +6,8 @@ import { PollSharePanel } from "@/components/votti/poll-share-panel";
 import { SecurityBadge } from "@/components/votti/security-badge";
 import { VoteSuccessBanner } from "@/components/votti/vote-confirmed-screen";
 import { formatPollStats } from "@/lib/votti/poll-stats";
-import { getPollMetaForVoting } from "@/lib/votti/poll-store";
 import { rankingStateToStoredPoll } from "@/lib/votti/ranking/client";
 import { getPollCoverUrl } from "@/lib/votti/poll-types";
-import type { StoredPoll } from "@/lib/votti/poll-types";
 import { usePollRankingLive } from "@/lib/votti/use-poll-ranking-live";
 
 type ResultadosSearch = {
@@ -33,22 +31,7 @@ function ResultadosPage() {
 
   const { state, status, error } = usePollRankingLive({ slug, enabled: true });
   const poll = useMemo(() => (state ? rankingStateToStoredPoll(state) : null), [state]);
-  const [fallbackPoll, setFallbackPoll] = useState<StoredPoll | null>(null);
-
-  useEffect(() => {
-    if (poll || status === "connecting") return;
-
-    let cancelled = false;
-    void getPollMetaForVoting(slug).then((meta) => {
-      if (!cancelled && meta) setFallbackPoll(meta);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [poll, slug, status]);
-
-  const displayPoll = poll ?? fallbackPoll;
+  const displayPoll = poll;
 
   useEffect(() => {
     if (!cameFromConfirm) return;
@@ -87,12 +70,19 @@ function ResultadosPage() {
   }
 
   if (!displayPoll) {
+    const syncing = status === "error" && !error.includes("não encontrada");
     return (
       <div className="votti-vote-page flex-1 flex items-center justify-center px-5 text-center">
         <div className="votti-quest max-w-sm w-full">
-          <p className="votti-quest__label">Ops</p>
-          <h1 className="votti-quest__title">Votação não encontrada</h1>
-          <p className="votti-quest__hint">{error || "Este link pode estar errado ou a votação foi encerrada."}</p>
+          <p className="votti-quest__label">{syncing ? "Ranking" : "Ops"}</p>
+          <h1 className="votti-quest__title">
+            {syncing ? "Sincronizando ranking…" : "Votação não encontrada"}
+          </h1>
+          <p className="votti-quest__hint">
+            {syncing
+              ? "Os votos estão no sistema; o snapshot público ainda está sendo gerado. Atualize em alguns segundos."
+              : error || "Este link pode estar errado ou a votação foi encerrada."}
+          </p>
         </div>
       </div>
     );
