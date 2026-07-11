@@ -1,9 +1,10 @@
-import { getSupabaseAdmin } from "@/lib/api/supabase.server";
+import { getSupabaseAdmin, getSupabaseAnonServer } from "@/lib/api/supabase.server";
 import { buildSnapshotFromPollResults } from "@/lib/votti/ranking/build-snapshot.server";
 import type { PollRankingState } from "@/lib/votti/ranking/types";
 
+/** Leitura pública — usa anon key (não exige service role no Vercel). */
 export async function getStoredSnapshot(slug: string): Promise<PollRankingState | null> {
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseAnonServer();
   const { data, error } = await supabase
     .from("ranking_snapshots")
     .select("payload")
@@ -29,7 +30,7 @@ export async function upsertRankingSnapshot(slug: string, payload: PollRankingSt
   if (error) throw error;
 }
 
-/** SELECT poll_results (via feed) → UPSERT ranking_snapshots */
+/** SELECT poll_ranking_feed → UPSERT ranking_snapshots (exige service role). */
 export async function refreshRankingSnapshot(slug: string): Promise<PollRankingState | null> {
   const payload = await buildSnapshotFromPollResults(slug);
   if (!payload) return null;
@@ -37,7 +38,7 @@ export async function refreshRankingSnapshot(slug: string): Promise<PollRankingS
   return payload;
 }
 
-/** Snapshot inicial zerado ao publicar enquete. */
+/** Snapshot inicial ao publicar enquete. */
 export async function createInitialRankingSnapshot(slug: string): Promise<PollRankingState | null> {
   return refreshRankingSnapshot(slug);
 }

@@ -1,4 +1,5 @@
 import { buildPollMetaFromDb } from "@/lib/votti/ranking/poll-meta.server";
+import { assertSupabaseAdminConfigured } from "@/lib/config.server";
 import {
   getStoredSnapshot,
   refreshRankingSnapshot,
@@ -31,11 +32,21 @@ function parseRankingSlug(pathname: string): string | null {
   return slug || null;
 }
 
+async function tryRefreshSnapshot(slug: string): Promise<PollRankingState | null> {
+  try {
+    assertSupabaseAdminConfigured();
+    return await refreshRankingSnapshot(slug);
+  } catch (err) {
+    console.warn("[votti-ranking] refresh on miss skipped (service role?)", slug, err);
+    return null;
+  }
+}
+
 async function handleGetRanking(slug: string): Promise<Response> {
   try {
     let snapshot = await getStoredSnapshot(slug);
     if (!snapshot) {
-      snapshot = await refreshRankingSnapshot(slug);
+      snapshot = await tryRefreshSnapshot(slug);
     }
     if (!snapshot) {
       return jsonResponse({ error: "Votação não encontrada." }, 404);
@@ -75,12 +86,16 @@ async function handleGetMeta(slug: string): Promise<Response> {
 
 async function handleRefreshSnapshot(slug: string): Promise<Response> {
   try {
+    assertSupabaseAdminConfigured();
     const snapshot = await refreshRankingSnapshot(slug);
     if (!snapshot) return jsonResponse({ error: "Votação não encontrada." }, 404);
     return jsonResponse({ ok: true, slug, updatedAt: snapshot.updatedAt });
   } catch (err) {
     console.error("[votti-ranking] refresh-snapshot failed", slug, err);
-    return jsonResponse({ error: "Falha ao atualizar snapshot." }, 500);
+    return jsonResponse(
+      { error: "Configure SUPABASE_SERVICE_ROLE_KEY no Vercel para atualizar o ranking após votos." },
+      503,
+    );
   }
 }
 

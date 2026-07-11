@@ -40,7 +40,13 @@ join public.questions q on q.poll_id = p.id
 join public.options o on o.question_id = q.id
 left join public.poll_results pr on pr.poll_id = p.id and pr.option_id = o.id;
 
-revoke all on public.ranking_snapshots from anon, authenticated;
+grant select on public.ranking_snapshots to anon, authenticated;
+
+drop policy if exists "ranking_snapshots_public_read" on public.ranking_snapshots;
+create policy "ranking_snapshots_public_read" on public.ranking_snapshots
+  for select to anon, authenticated
+  using (true);
+
 revoke all on public.poll_ranking_feed from anon, authenticated;
 
 -- Remove snapshot quando a enquete é excluída
