@@ -1,19 +1,41 @@
-import { getSupabaseAdmin, getSupabaseAnonServer } from "@/lib/api/supabase.server";
+import {
+  getSupabaseAdmin,
+  getSupabaseAnonServer,
+} from "@/lib/api/supabase.server";
+import { getSupabaseAdminEnvStatus } from "@/lib/supabase-env";
 import { buildSnapshotFromPollResults } from "@/lib/votti/ranking/build-snapshot.server";
 import type { PollRankingState } from "@/lib/votti/ranking/types";
 
-/** Leitura pública — usa anon key (não exige service role no Vercel). */
-export async function getStoredSnapshot(slug: string): Promise<PollRankingState | null> {
-  const supabase = getSupabaseAnonServer();
-  const { data, error } = await supabase
-    .from("ranking_snapshots")
-    .select("payload")
-    .eq("slug", slug.trim())
-    .maybeSingle();
+async function readSnapshotRow(slug: string) {
+  const key = slug.trim();
+  const attempts = [];
 
-  if (error) throw error;
-  if (!data?.payload) return null;
-  return data.payload as PollRankingState;
+  if (getSupabaseAdminEnvStatus().ok) {
+    attempts.push(getSupabaseAdmin());
+  }
+  attempts.push(getSupabaseAnonServer());
+
+  let lastError: unknown;
+  for (const supabase of attempts) {
+    const { data, error } = await supabase
+      .from("ranking_snapshots")
+      .select("payload")
+      .eq("slug", key)
+      .maybeSingle();
+
+    if (!error && data?.payload) {
+      return data.payload as PollRankingState;
+    }
+    if (error) lastError = error;
+  }
+
+  if (lastError) throw lastError;
+  return null;
+}
+
+/** Leitura do snapshot — service role primeiro, depois anon (se SQL público aplicado). */
+export async function getStoredSnapshot(slug: string): Promise<PollRankingState | null> {
+  return readSnapshotRow(slug);
 }
 
 export async function upsertRankingSnapshot(slug: string, payload: PollRankingState): Promise<void> {

@@ -1,44 +1,25 @@
-# Corrigir ranking publico (votti-jet / votti.app)
+# Variáveis Vercel — votti-jet (OBRIGATÓRIO)
 
-## Passo 1 — SQL no Supabase (obrigatorio, 1 vez)
+Adicione **todas** em Production + Preview, depois **Redeploy**:
 
-Cole no **SQL Editor** e execute:
+| Variável | Valor |
+|----------|--------|
+| `SUPABASE_URL` | `https://ppvhlocqetyrsqidijms.supabase.co` |
+| `SUPABASE_ANON_KEY` | publishable key (Supabase → API) |
+| `SUPABASE_SERVICE_ROLE_KEY` | service_role key (Supabase → API) |
+| `VITE_SUPABASE_URL` | `https://ppvhlocqetyrsqidijms.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | mesma publishable key |
+| `VITE_APP_URL` | `https://votti-jet.vercel.app` |
 
-```sql
-grant select on public.ranking_snapshots to anon, authenticated;
+## Pode remover (versão antiga Redis)
 
-drop policy if exists "ranking_snapshots_public_read" on public.ranking_snapshots;
-create policy "ranking_snapshots_public_read" on public.ranking_snapshots
-  for select to anon, authenticated
-  using (true);
-```
+- `VOTTI_WEBHOOK_SECRET` — não é usado na versão 3
 
-Arquivo: `docs/supabase/migration-ranking-public-read.sql`
+## Depois de salvar variáveis
 
-## Passo 2 — Variaveis no Vercel (Production)
+1. **Deployments → ⋯ → Redeploy** (obrigatório — env só vale após redeploy)
+2. Teste: `https://votti-jet.vercel.app/ranking/UGD284`
 
-Minimo para **ler** ranking:
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
+## SQL opcional (melhora leitura sem service role)
 
-Para **atualizar** apos cada voto (refresh-snapshot):
-- `SUPABASE_SERVICE_ROLE_KEY` (tambem necessario)
-
-## Passo 3 — Redeploy
-
-Deployments → ultimo deploy → **Redeploy**
-
-## Passo 4 — Sincronizar snapshots (se necessario)
-
-```powershell
-npm run seed:ranking:all
-```
-
-## Testar
-
-```
-https://votti-jet.vercel.app/ranking/UGD284
-https://votti-jet.vercel.app/votacao/UGD284/resultados
-```
-
-Eleicao Tocantins = slug **UGD284** (5 votos).
+`docs/supabase/migration-ranking-public-read.sql`
