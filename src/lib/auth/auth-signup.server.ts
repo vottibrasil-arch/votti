@@ -90,23 +90,38 @@ export const lookupAuthEmail = createServerFn({ method: "POST" })
       };
     }
 
-    const user = await findAuthUserByEmail(data.email);
-    if (!user) {
+    try {
+      const user = await findAuthUserByEmail(data.email);
+      if (!user) {
+        return {
+          available: true,
+          adminConfigured: true,
+          projectRef: info.projectRef,
+          envMismatch: info.envMismatch,
+          vottiProject: info.vottiProject,
+        };
+      }
+
       return {
-        available: true,
+        available: false,
         adminConfigured: true,
+        confirmed: Boolean(user.email_confirmed_at),
         projectRef: info.projectRef,
         envMismatch: info.envMismatch,
         vottiProject: info.vottiProject,
       };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.toLowerCase().includes("invalid api key")) {
+        console.warn("[auth] lookupAuthEmail: service role inválida — cadastro segue sem pré-checagem");
+        return {
+          available: true,
+          adminConfigured: false,
+          projectRef: info.projectRef,
+          envMismatch: info.envMismatch,
+          vottiProject: info.vottiProject,
+        };
+      }
+      throw err;
     }
-
-    return {
-      available: false,
-      adminConfigured: true,
-      confirmed: Boolean(user.email_confirmed_at),
-      projectRef: info.projectRef,
-      envMismatch: info.envMismatch,
-      vottiProject: info.vottiProject,
-    };
   });

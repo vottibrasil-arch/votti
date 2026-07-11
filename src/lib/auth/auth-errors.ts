@@ -52,7 +52,7 @@ export function mapAuthError(message: string): string {
   }
 
   if (normalized.includes("invalid api key")) {
-    return "Chave Supabase inválida para este projeto. Confira VITE_SUPABASE_ANON_KEY no .env (publishable key de ppvhlocqetyrsqidijms) e reinicie o npm run dev.";
+    return "Chave Supabase inválida. No Vercel, confira SUPABASE_SERVICE_ROLE_KEY e VITE_SUPABASE_ANON_KEY (publishable key do projeto ppvhlocqetyrsqidijms) e faça Redeploy.";
   }
 
   return message;
