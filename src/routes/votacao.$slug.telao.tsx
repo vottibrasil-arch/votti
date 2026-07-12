@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, type CSSProperties } from "react";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
+import { PublicLegalFooter } from "@/components/votti/legal/public-legal-footer";
 import { LiveDot } from "@/components/ui-kit";
 import { formatPollStats } from "@/lib/votti/poll-stats";
+import { pollPublicUrl } from "@/lib/votti/poll-store";
 import { rankingStateToStoredPoll } from "@/lib/votti/ranking/client";
 import { usePollRankingLive } from "@/lib/votti/use-poll-ranking-live";
 
@@ -79,6 +81,8 @@ function TelaoPage() {
           </section>
         ))}
       </div>
+
+      <PublicLegalFooter pollUrl={pollPublicUrl(slug)} compact className="votti-telao__legal" />
     </div>
   );
 }

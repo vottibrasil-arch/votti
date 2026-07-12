@@ -14,6 +14,9 @@ import { ADSENSE_CLIENT, ADSENSE_SCRIPT_SRC } from "../lib/adsense";
 import { reportAppError } from "../lib/votti-error-reporting";
 import { AuthProvider } from "../lib/auth/use-auth";
 import { VottiFooter } from "../components/votti-footer";
+import { LegalModalsProvider } from "../lib/votti/use-legal-modals";
+import { LegalModalsRoot } from "../components/votti/legal/legal-modals-root";
+import { PublicLegalFooter } from "../components/votti/legal/public-legal-footer";
 
 function NotFoundComponent() {
   return (
@@ -28,6 +31,7 @@ function NotFoundComponent() {
           <Link to="/" className="votti-mega-btn votti-mega-btn--sm mt-6">
             VOLTAR AO INÍCIO
           </Link>
+          <PublicLegalFooter className="mt-8" />
         </div>
       </div>
     </main>
@@ -137,8 +141,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Outlet />
-        <VottiFooter />
+        <LegalModalsProvider>
+          <Outlet />
+          <VottiFooter />
+          <LegalModalsRoot />
+        </LegalModalsProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PollPublicShell } from "@/components/votti/poll-public-shell";
+import { PublicLegalFooter } from "@/components/votti/legal/public-legal-footer";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { PollSharePanel } from "@/components/votti/poll-share-panel";
 import { SecurityBadge } from "@/components/votti/security-badge";
 import { VoteSuccessBanner } from "@/components/votti/vote-confirmed-screen";
 import { formatPollStats } from "@/lib/votti/poll-stats";
+import { pollPublicUrl } from "@/lib/votti/poll-store";
 import { rankingStateToStoredPoll } from "@/lib/votti/ranking/client";
 import { getPollCoverUrl } from "@/lib/votti/poll-types";
 import { usePollRankingLive } from "@/lib/votti/use-poll-ranking-live";
@@ -65,6 +67,7 @@ function ResultadosPage() {
             <p className="votti-app-muted">Carregando ranking ao vivo…</p>
           </div>
         </div>
+        <PublicLegalFooter pollUrl={pollPublicUrl(slug)} />
       </main>
     );
   }
@@ -72,19 +75,22 @@ function ResultadosPage() {
   if (!displayPoll) {
     const syncing = status === "error" && !error.includes("não encontrada");
     return (
-      <div className="votti-vote-page flex-1 flex items-center justify-center px-5 text-center">
-        <div className="votti-quest max-w-sm w-full">
-          <p className="votti-quest__label">{syncing ? "Ranking" : "Ops"}</p>
-          <h1 className="votti-quest__title">
-            {syncing ? "Sincronizando ranking…" : "Votação não encontrada"}
-          </h1>
-          <p className="votti-quest__hint">
-            {syncing
-              ? "Os votos estão no sistema; o snapshot público ainda está sendo gerado. Atualize em alguns segundos."
-              : error || "Este link pode estar errado ou a votação foi encerrada."}
-          </p>
+      <main className="votti-public-poll votti-public-poll--minimal-cover min-h-[100dvh] flex flex-col">
+        <div className="votti-vote-page flex-1 flex items-center justify-center px-5 text-center">
+          <div className="votti-quest max-w-sm w-full">
+            <p className="votti-quest__label">{syncing ? "Ranking" : "Ops"}</p>
+            <h1 className="votti-quest__title">
+              {syncing ? "Sincronizando ranking…" : "Votação não encontrada"}
+            </h1>
+            <p className="votti-quest__hint">
+              {syncing
+                ? "Os votos estão no sistema; o snapshot público ainda está sendo gerado. Atualize em alguns segundos."
+                : error || "Este link pode estar errado ou a votação foi encerrada."}
+            </p>
+          </div>
         </div>
-      </div>
+        <PublicLegalFooter pollUrl={pollPublicUrl(slug)} />
+      </main>
     );
   }
 

@@ -2917,11 +2917,31 @@
   background: oklch(0.35 0.06 260 / 50%);
 }
 
-.votti-auth__legal {
+.votti-auth__legal-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
   margin: 1rem 0 0;
+  padding: 0.75rem 0.875rem;
+  border-radius: 0.875rem;
+  background: oklch(0.2 0.04 260 / 55%);
+  border: 1px solid oklch(0.35 0.06 260 / 40%);
+  text-align: left;
+  cursor: pointer;
+}
+
+.votti-auth__legal-checkbox {
+  margin-top: 0.125rem;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  accent-color: oklch(0.52 0.16 250);
+  cursor: pointer;
+}
+
+.votti-auth__legal-check-text {
   font-size: 0.75rem;
   line-height: 1.55;
-  text-align: center;
   color: oklch(0.62 0.04 260);
 }
 
@@ -3028,8 +3048,113 @@
 }
 
 .votti-legal-modal__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 0.75rem 1rem 1rem;
   border-top: 1px solid oklch(0.32 0.05 260 / 45%);
+}
+
+.votti-legal-modal__updated {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  color: oklch(0.58 0.03 260);
+}
+
+.votti-legal-modal__list,
+.votti-legal-modal__steps {
+  margin: 0 0 0.75rem;
+  padding-left: 1.125rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: oklch(0.72 0.03 260);
+}
+
+.votti-legal-modal__list li + li,
+.votti-legal-modal__steps li + li {
+  margin-top: 0.25rem;
+}
+
+.votti-legal-modal__email {
+  display: inline-block;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: oklch(0.78 0.14 250);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.votti-legal-modal__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: oklch(0.98 0.01 260);
+  text-decoration: none;
+  background: oklch(0.52 0.16 250);
+}
+
+.votti-legal-modal__action:hover {
+  background: oklch(0.56 0.17 250);
+  color: oklch(0.98 0.01 260);
+}
+
+.votti-legal-footer {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1rem 1.5rem;
+  text-align: center;
+  border-top: 1px solid oklch(0.35 0.06 260 / 28%);
+}
+
+.votti-legal-footer--compact {
+  margin-top: 1rem;
+  padding: 0.875rem 0.75rem 1rem;
+}
+
+.votti-legal-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 0.875rem;
+}
+
+.votti-legal-footer__link {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: oklch(0.62 0.04 260);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.votti-legal-footer__link:hover {
+  color: oklch(0.82 0.12 250);
+}
+
+.votti-legal-footer__copy {
+  margin: 0.75rem 0 0;
+  font-size: 0.625rem;
+  color: oklch(0.5 0.02 260);
+}
+
+.votti-telao__legal {
+  margin-top: auto;
+  border-top-color: oklch(1 0 0 / 12%);
+}
+
+.votti-telao__legal .votti-legal-footer__link,
+.votti-telao__legal .votti-legal-footer__copy {
+  color: oklch(0.72 0.02 260);
 }
 
 .votti-legal-modal__ok {

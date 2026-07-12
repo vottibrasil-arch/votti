@@ -1,5 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
+import { PublicLegalFooter } from "@/components/votti/legal/public-legal-footer";
 import { getPollCoverUrl } from "@/lib/votti/poll-types";
+import { pollPublicUrl } from "@/lib/votti/poll-store";
 import type { StoredPoll } from "@/lib/votti/poll-types";
 
 type PollPublicShellProps = {
@@ -54,7 +56,10 @@ export function PollPublicShell({ poll, children, coverStyle = "page" }: PollPub
         aria-hidden
       />
       <div className="votti-public-poll__grid" aria-hidden />
-      <div className="votti-public-poll__inner flex-1 flex flex-col">{children}</div>
+      <div className="votti-public-poll__inner flex-1 flex flex-col">
+        {children}
+        <PublicLegalFooter pollUrl={pollPublicUrl(poll.slug)} className="mt-auto" />
+      </div>
     </main>
   );
 }

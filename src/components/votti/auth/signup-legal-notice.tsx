@@ -1,32 +1,48 @@
-import { useState } from "react";
-import { VOTTI_PRIVACY_POLICY, VOTTI_TERMS_OF_USE } from "@/lib/votti/legal-content";
-import { LegalModal } from "@/components/votti/auth/legal-modal";
+import { useLegalModals } from "@/lib/votti/use-legal-modals";
 
-type LegalView = "terms" | "privacy" | null;
+type SignupLegalNoticeProps = {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+};
 
-export function SignupLegalNotice() {
-  const [view, setView] = useState<LegalView>(null);
+export function SignupLegalNotice({ checked, onCheckedChange }: SignupLegalNoticeProps) {
+  const { open } = useLegalModals();
 
   return (
-    <>
-      <p className="votti-auth__legal">
+    <label className="votti-auth__legal-check">
+      <input
+        type="checkbox"
+        className="votti-auth__legal-checkbox"
+        checked={checked}
+        onChange={(e) => onCheckedChange(e.target.checked)}
+      />
+      <span className="votti-auth__legal-check-text">
         Ao criar sua conta, você declara que leu e concorda com os{" "}
-        <button type="button" className="votti-auth__legal-link" onClick={() => setView("terms")}>
+        <button
+          type="button"
+          className="votti-auth__legal-link"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            open("terms");
+          }}
+        >
           Termos de Uso
         </button>{" "}
         e a{" "}
-        <button type="button" className="votti-auth__legal-link" onClick={() => setView("privacy")}>
+        <button
+          type="button"
+          className="votti-auth__legal-link"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            open("privacy");
+          }}
+        >
           Política de Privacidade
         </button>{" "}
         do VOTTI.
-      </p>
-
-      {view === "terms" ? (
-        <LegalModal legal={VOTTI_TERMS_OF_USE} onClose={() => setView(null)} />
-      ) : null}
-      {view === "privacy" ? (
-        <LegalModal legal={VOTTI_PRIVACY_POLICY} onClose={() => setView(null)} />
-      ) : null}
-    </>
+      </span>
+    </label>
   );
 }

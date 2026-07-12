@@ -53,6 +53,7 @@ function CadastroPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [serverProjectRef, setServerProjectRef] = useState<string | undefined>();
   const serverOk = !serverProjectRef || serverProjectRef === VOTTI_SUPABASE_PROJECT_REF;
 
@@ -75,6 +76,10 @@ function CadastroPage() {
     }
     if (!serverOk) {
       setError(getWrongSupabaseProjectMessage(serverProjectRef));
+      return;
+    }
+    if (!termsAccepted) {
+      setError("Marque a caixa de concordância com os Termos de Uso e a Política de Privacidade.");
       return;
     }
     setSubmitting(true);
@@ -100,6 +105,10 @@ function CadastroPage() {
     }
     if (password.length < 6) {
       setError("A senha deve ter pelo menos 6 caracteres");
+      return;
+    }
+    if (!termsAccepted) {
+      setError("Marque a caixa de concordância com os Termos de Uso e a Política de Privacidade.");
       return;
     }
     setSubmitting(true);
@@ -181,7 +190,7 @@ function CadastroPage() {
         </p>
       }
     >
-      <AuthButton variant="google" onClick={() => void handleGoogle()} disabled={submitting || !serverOk}>
+      <AuthButton variant="google" onClick={() => void handleGoogle()} disabled={submitting || !serverOk || !termsAccepted}>
         Continuar com Google
       </AuthButton>
 
@@ -221,12 +230,12 @@ function CadastroPage() {
         </AuthField>
         {error ? <p className="votti-auth__error">{error}</p> : null}
         {success ? <p className="votti-auth__success">{success}</p> : null}
-        <AuthButton type="submit" disabled={submitting || !serverOk}>
+        <AuthButton type="submit" disabled={submitting || !serverOk || !termsAccepted}>
           {submitting ? "Criando…" : "Criar conta"}
         </AuthButton>
       </form>
 
-      <SignupLegalNotice />
+      <SignupLegalNotice checked={termsAccepted} onCheckedChange={setTermsAccepted} />
     </AuthScreen>
   );
 }

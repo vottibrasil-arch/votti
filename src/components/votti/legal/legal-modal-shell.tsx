@@ -1,13 +1,14 @@
-import { useEffect, useId } from "react";
+import { useEffect, useId, type ReactNode } from "react";
 import { X } from "lucide-react";
-import type { LegalDocument } from "@/lib/votti/legal-content";
 
-type LegalModalProps = {
-  legal: LegalDocument;
+type LegalModalShellProps = {
+  title: string;
+  children: ReactNode;
   onClose: () => void;
+  footer?: ReactNode;
 };
 
-export function LegalModal({ legal, onClose }: LegalModalProps) {
+export function LegalModalShell({ title, children, onClose, footer }: LegalModalShellProps) {
   const titleId = useId();
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export function LegalModal({ legal, onClose }: LegalModalProps) {
       >
         <header className="votti-legal-modal__head">
           <h2 id={titleId} className="votti-legal-modal__title">
-            {legal.title}
+            {title}
           </h2>
           <button
             type="button"
@@ -48,22 +49,10 @@ export function LegalModal({ legal, onClose }: LegalModalProps) {
           </button>
         </header>
 
-        <div className="votti-legal-modal__body">
-          {legal.sections.map((section, index) => (
-            <section key={index} className="votti-legal-modal__section">
-              {section.heading ? (
-                <h3 className="votti-legal-modal__heading">{section.heading}</h3>
-              ) : null}
-              {section.paragraphs.map((paragraph, pIndex) => (
-                <p key={pIndex} className="votti-legal-modal__text">
-                  {paragraph}
-                </p>
-              ))}
-            </section>
-          ))}
-        </div>
+        <div className="votti-legal-modal__body">{children}</div>
 
         <footer className="votti-legal-modal__foot">
+          {footer}
           <button type="button" className="votti-legal-modal__ok" onClick={onClose}>
             Fechar
           </button>

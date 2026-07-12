@@ -1,5 +1,6 @@
 import { Logo } from "@/components/logo";
 import { LandingAuthLink } from "@/components/landing/landing-auth-link";
+import { PublicLegalFooter } from "@/components/votti/legal/public-legal-footer";
 
 /** Cabeçalho da landing para visitantes — só logo e âncoras, sem painel do usuário. */
 export function LandingGuestHeader() {
@@ -33,7 +34,7 @@ export function LandingFooter({ guest = false }: { guest?: boolean }) {
           </LandingAuthLink>
         ) : null}
       </div>
-      <p className="votti-footer__copy">© {new Date().getFullYear()} VOTTI</p>
+      <PublicLegalFooter />
     </footer>
   );
 }
