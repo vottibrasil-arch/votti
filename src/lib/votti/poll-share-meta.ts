@@ -43,12 +43,11 @@ export function buildPollShareWhatsAppText(opts: {
 }): string {
   const title = opts.title.trim() || "Votação VOTTII";
   const description = opts.description.trim();
-  const action = opts.kind === "results" ? "Veja o ranking ao vivo" : "Vote agora";
   const lines = [`🗳️ *${title}*`];
 
   if (description) lines.push(description);
   lines.push("🇧🇷 Mais seguro do Brasil — VOTTII");
-  lines.push(`${action}: ${opts.url}`);
+  lines.push(opts.url.trim());
 
   return lines.join("\n\n");
 }
