@@ -13,31 +13,47 @@ type PollSharePanelProps = {
 type ShareAction = {
   key: string;
   name: string;
-  hint: string;
   icon: ReactNode;
   tone: "copy" | "whatsapp" | "share";
   onClick: () => void;
 };
 
-type ShareWideCardProps = {
+type ShareDockLinkProps = {
   name: string;
-  hint: string;
   icon: ReactNode;
-  tone: "create" | "telao" | "open";
   href?: string;
   to?: LinkProps["to"];
   params?: LinkProps["params"];
 };
 
-function ShareWideCard({ name, hint, icon, tone, href, to, params }: ShareWideCardProps) {
-  const className = `votti-share-card votti-share-card--wide votti-share-card--${tone}`;
+function ShareDockCard({ children }: { children: ReactNode }) {
+  return <div className="votti-share-dock__card">{children}</div>;
+}
+
+function ShareDockActions({ actions }: { actions: ShareAction[] }) {
+  return (
+    <div className="votti-share-dock__actions">
+      {actions.map((action) => (
+        <button
+          key={action.key}
+          type="button"
+          className={`votti-share-dock__btn votti-share-dock__btn--${action.tone}`}
+          onClick={action.onClick}
+        >
+          <span className="votti-share-dock__btn-icon">{action.icon}</span>
+          <span className="votti-share-dock__btn-label">{action.name}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ShareDockLink({ name, icon, href, to, params }: ShareDockLinkProps) {
+  const className = "votti-share-dock__link";
   const content = (
     <>
-      <span className="votti-share-card__icon-wrap">{icon}</span>
-      <span className="votti-share-card__body">
-        <span className="votti-share-card__name">{name}</span>
-        <span className="votti-share-card__hint">{hint}</span>
-      </span>
+      <span className="votti-share-dock__link-icon">{icon}</span>
+      <span className="votti-share-dock__link-label">{name}</span>
     </>
   );
 
@@ -58,25 +74,6 @@ function ShareWideCard({ name, hint, icon, tone, href, to, params }: ShareWideCa
   }
 
   return null;
-}
-
-function ShareActionGrid({ actions }: { actions: ShareAction[] }) {
-  return (
-    <div className="votti-share-footer__grid">
-      {actions.map((action) => (
-        <button
-          key={action.key}
-          type="button"
-          className={`votti-share-card votti-share-card--${action.tone}`}
-          onClick={action.onClick}
-        >
-          <span className="votti-share-card__icon-wrap">{action.icon}</span>
-          <span className="votti-share-card__name">{action.name}</span>
-          <span className="votti-share-card__hint">{action.hint}</span>
-        </button>
-      ))}
-    </div>
-  );
 }
 
 export function PollSharePanel({
@@ -116,25 +113,22 @@ export function PollSharePanel({
   const actions: ShareAction[] = [
     {
       key: "copy",
-      name: copied ? "Copiado!" : "Copiar",
-      hint: "link",
-      icon: <Copy className="size-5" aria-hidden />,
+      name: copied ? "Copiado" : "Copiar",
+      icon: <Copy className="size-3.5" aria-hidden />,
       tone: "copy",
       onClick: () => void copy(),
     },
     {
       key: "whatsapp",
       name: "WhatsApp",
-      hint: "enviar",
-      icon: <MessageCircle className="size-5" aria-hidden />,
+      icon: <MessageCircle className="size-3.5" aria-hidden />,
       tone: "whatsapp",
       onClick: shareWhatsApp,
     },
     {
       key: "share",
       name: "Enviar",
-      hint: "compartilhar",
-      icon: <Share2 className="size-5" aria-hidden />,
+      icon: <Share2 className="size-3.5" aria-hidden />,
       tone: "share",
       onClick: () => void nativeShare(),
     },
@@ -142,66 +136,60 @@ export function PollSharePanel({
 
   if (variant === "footer") {
     return (
-      <footer className="votti-share-footer animate-rise">
-        <div className="votti-share-footer__intro">
-          <p className="votti-share-footer__eyebrow">Compartilhe</p>
-          <p className="votti-share-footer__subtitle">
-            Espalhe o link e veja o ranking subir ao vivo.
-          </p>
-        </div>
-
-        <ShareActionGrid actions={actions} />
-
-        <ShareWideCard
-          to="/criar"
-          name="Criar votação"
-          hint="em menos de 1 minuto"
-          icon={<Plus className="size-5" aria-hidden />}
-          tone="create"
-        />
+      <footer className="votti-share-dock animate-rise">
+        <ShareDockCard>
+          <div className="votti-share-dock__head">
+            <span className="votti-share-dock__label">Compartilhe</span>
+            <span className="votti-share-dock__hint">espalhe o link ao vivo</span>
+          </div>
+          <ShareDockActions actions={actions} />
+          <ShareDockLink
+            to="/criar"
+            name="Criar votação"
+            icon={<Plus className="size-3.5" aria-hidden />}
+          />
+        </ShareDockCard>
       </footer>
     );
   }
 
   if (variant === "success") {
     return (
-      <section className="votti-share-footer votti-share-footer--embedded animate-rise">
-        <div className="votti-share-footer__intro">
-          <p className="votti-share-footer__eyebrow">Compartilhe</p>
-          <p className="votti-share-footer__subtitle">
-            Espalhe o link — o ranking atualiza ao vivo conforme os votos chegam.
-          </p>
-        </div>
-
-        <ShareActionGrid actions={actions} />
-
-        <div className="votti-share-footer__wide-list">
-          {telaoUrl ? (
-            <ShareWideCard
-              href={telaoUrl}
-              name="Abrir Telão"
-              hint="modo tela cheia para eventos"
-              icon={<Monitor className="size-5" aria-hidden />}
-              tone="telao"
+      <section className="votti-share-dock votti-share-dock--embedded animate-rise">
+        <ShareDockCard>
+          <div className="votti-share-dock__head">
+            <span className="votti-share-dock__label">Compartilhe</span>
+            <span className="votti-share-dock__hint">ranking ao vivo</span>
+          </div>
+          <ShareDockActions actions={actions} />
+          <div className="votti-share-dock__links">
+            {telaoUrl ? (
+              <ShareDockLink
+                href={telaoUrl}
+                name="Telão"
+                icon={<Monitor className="size-3.5" aria-hidden />}
+              />
+            ) : null}
+            <ShareDockLink
+              to="/v/$slug"
+              params={{ slug }}
+              name="Abrir votação"
+              icon={<ExternalLink className="size-3.5" aria-hidden />}
             />
-          ) : null}
-          <ShareWideCard
-            to="/v/$slug"
-            params={{ slug }}
-            name="Abrir votação"
-            hint="ver como o participante vê"
-            icon={<ExternalLink className="size-5" aria-hidden />}
-            tone="open"
-          />
-        </div>
+          </div>
+        </ShareDockCard>
       </section>
     );
   }
 
   return (
-    <div className="votti-share-panel votti-share-panel--compact animate-rise">
-      <p className="votti-share-panel__label">Compartilhar</p>
-      <ShareActionGrid actions={actions} />
+    <div className="votti-share-dock votti-share-dock--embedded animate-rise">
+      <ShareDockCard>
+        <div className="votti-share-dock__head">
+          <span className="votti-share-dock__label">Compartilhar</span>
+        </div>
+        <ShareDockActions actions={actions} />
+      </ShareDockCard>
     </div>
   );
 }
