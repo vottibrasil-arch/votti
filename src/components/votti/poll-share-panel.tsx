@@ -137,7 +137,7 @@ export function PollSharePanel({
   const footerActions: ShareAction[] = [
     {
       key: "telao",
-      name: copiedTelao ? "Copiado" : "Ver telão",
+      name: copiedTelao ? "Copiado" : "Link do telão",
       icon: <Monitor className="size-3.5" aria-hidden />,
       tone: "copy",
       onClick: () => void copyTelaoLink(),
