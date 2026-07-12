@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { VOTTII_DISPLAY_NAME } from "@/lib/votti/brand";
+import { VOTTII_DISPLAY_NAME, VOTTI_LOGO_PATH } from "@/lib/votti/brand";
 
 /** Altura máxima — melhor para logo vertical (ícone + nome + slogan). */
 const HEIGHT = {
@@ -20,7 +20,7 @@ type LogoProps = {
 export function Logo({ size = "md", to, className = "" }: LogoProps) {
   const img = (
     <img
-      src="/logo-full.png"
+      src={VOTTI_LOGO_PATH}
       alt={`${VOTTII_DISPLAY_NAME} — Vote. Compartilhe. Acompanhe ao vivo.`}
       className={`${HEIGHT[size]} w-auto object-contain object-center logo-img`}
       draggable={false}

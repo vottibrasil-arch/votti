@@ -982,11 +982,6 @@
   transform-origin: top center;
 }
 
-/* Logo com fundo branco sobre gradiente da landing */
-.landing-page .logo-img {
-  mix-blend-mode: multiply;
-}
-
 /* ═══ VOTTI LANDING — gamificada, ao vivo ═══ */
 .votti-landing {
   position: relative;

@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { ADSENSE_CLIENT, ADSENSE_SCRIPT_SRC } from "../lib/adsense";
 import { reportAppError } from "../lib/votti-error-reporting";
 import { getServerPublicOrigin } from "../lib/votti/app-url";
+import { VOTTI_LOGO_PATH } from "../lib/votti/brand";
 import { DEFAULT_OG_LOGO_PATH } from "../lib/votti/poll-share-meta";
 import { AuthProvider } from "../lib/auth/use-auth";
 import { VottiFooter } from "../components/votti-footer";
@@ -117,8 +118,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-      { rel: "icon", href: "/logo-full.png", type: "image/png", sizes: "512x512" },
-      { rel: "apple-touch-icon", href: "/logo-full.png" },
+      { rel: "icon", href: VOTTI_LOGO_PATH, type: "image/png", sizes: "512x512" },
+      { rel: "apple-touch-icon", href: VOTTI_LOGO_PATH },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "preconnect", href: "https://pagead2.googlesyndication.com" },
