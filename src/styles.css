@@ -1041,21 +1041,285 @@
     drop-shadow(0 0 48px oklch(0.45 0.14 250 / 18%));
 }
 
+.votti-logo {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: oklch(0.98 0.01 260);
+}
+
+.votti-logo__icon {
+  width: auto;
+  filter:
+    drop-shadow(0 8px 24px oklch(0 0 0 / 40%))
+    drop-shadow(0 0 20px oklch(0.52 0.16 250 / 35%));
+}
+
+.votti-logo__text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.votti-wordmark {
+  display: inline-flex;
+  align-items: flex-end;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.votti-wordmark__prefix {
+  color: oklch(0.98 0.01 260);
+  text-transform: uppercase;
+}
+
+.votti-wordmark__suffix {
+  display: inline-flex;
+  align-items: flex-end;
+  margin-left: 0.02em;
+}
+
+.votti-wordmark__i {
+  position: relative;
+  display: inline-block;
+  color: oklch(0.98 0.01 260);
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.votti-wordmark__dot {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 0.125rem;
+  background: linear-gradient(135deg, oklch(0.72 0.2 145), oklch(0.82 0.18 130));
+  box-shadow: 0 0 8px oklch(0.72 0.2 145 / 55%);
+}
+
+.votti-logo__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  width: min(100%, 14rem);
+  margin-top: 0.5rem;
+}
+
+.votti-logo__divider-line {
+  flex: 1;
+  height: 2px;
+  border-radius: 999px;
+}
+
+.votti-logo__divider-line--blue {
+  background: linear-gradient(90deg, transparent, oklch(0.55 0.14 250));
+}
+
+.votti-logo__divider-line--green {
+  background: linear-gradient(90deg, oklch(0.62 0.18 145), transparent);
+}
+
+.votti-logo__divider-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 999px;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.votti-logo__divider-dot--blue {
+  color: oklch(0.55 0.14 250);
+  background: currentColor;
+}
+
+.votti-logo__divider-dot--cyan {
+  color: oklch(0.72 0.12 200);
+  background: currentColor;
+}
+
+.votti-logo__divider-dot--green {
+  color: oklch(0.72 0.2 145);
+  background: currentColor;
+}
+
+.votti-logo__tagline {
+  margin: 0.45rem 0 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.votti-logo__tagline-blue {
+  color: oklch(0.62 0.14 250);
+}
+
+.votti-logo__tagline-white {
+  color: oklch(0.98 0.01 260);
+}
+
+.votti-logo__tagline-green {
+  color: oklch(0.72 0.2 145);
+}
+
+.votti-logo--xs,
+.votti-logo--sm {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.votti-logo--xs .votti-logo__text,
+.votti-logo--sm .votti-logo__text {
+  align-items: flex-start;
+}
+
+.votti-logo--xs .votti-logo__icon,
+.votti-logo--sm .votti-logo__icon {
+  flex-shrink: 0;
+}
+
+.votti-logo--xs .votti-wordmark {
+  font-size: 1rem;
+}
+
+.votti-logo--xs .votti-wordmark__i {
+  font-size: 0.78em;
+}
+
+.votti-logo--xs .votti-wordmark__dot {
+  top: -0.1rem;
+  width: 0.22rem;
+  height: 0.22rem;
+}
+
+.votti-logo--xs .votti-logo__icon {
+  height: 1.75rem;
+}
+
+.votti-logo--sm .votti-logo__icon {
+  height: 2rem;
+}
+
+.votti-logo--sm .votti-wordmark {
+  font-size: 1.125rem;
+}
+
+.votti-logo--sm .votti-wordmark__i {
+  font-size: 0.8em;
+}
+
+.votti-logo--sm .votti-wordmark__dot {
+  top: -0.12rem;
+  width: 0.25rem;
+  height: 0.25rem;
+}
+
+.votti-logo--md .votti-logo__icon {
+  height: 2.75rem;
+}
+
+.votti-logo--md .votti-wordmark {
+  font-size: 1.5rem;
+}
+
+.votti-logo--md .votti-wordmark__i {
+  font-size: 0.82em;
+}
+
+.votti-logo--md .votti-wordmark__dot {
+  top: -0.14rem;
+  width: 0.3rem;
+  height: 0.3rem;
+}
+
+.votti-logo--lg .votti-logo__icon {
+  height: 3.5rem;
+}
+
+.votti-logo--lg .votti-wordmark {
+  font-size: 2rem;
+}
+
+.votti-logo--lg .votti-wordmark__i {
+  font-size: 0.84em;
+}
+
+.votti-logo--lg .votti-wordmark__dot {
+  top: -0.18rem;
+  width: 0.38rem;
+  height: 0.38rem;
+}
+
+.votti-logo--lg .votti-logo__tagline {
+  font-size: 0.8125rem;
+}
+
+.votti-logo--xl .votti-logo__icon {
+  height: 4.25rem;
+}
+
+.votti-logo--xl .votti-wordmark {
+  font-size: 2.5rem;
+}
+
+.votti-logo--xl .votti-wordmark__i {
+  font-size: 0.86em;
+}
+
+.votti-logo--xl .votti-wordmark__dot {
+  top: -0.2rem;
+  width: 0.42rem;
+  height: 0.42rem;
+}
+
+.votti-logo--xl .votti-logo__tagline {
+  font-size: 0.875rem;
+}
+
+.votti-logo--hero .votti-logo__icon {
+  height: clamp(4.5rem, 16vw, 6.5rem);
+}
+
+.votti-logo--hero .votti-wordmark {
+  font-size: clamp(2.75rem, 9vw, 4.25rem);
+}
+
+.votti-logo--hero .votti-wordmark__i {
+  font-size: 0.88em;
+}
+
+.votti-logo--hero .votti-wordmark__dot {
+  top: -0.24rem;
+  width: clamp(0.42rem, 1.4vw, 0.62rem);
+  height: clamp(0.42rem, 1.4vw, 0.62rem);
+}
+
+.votti-logo--hero .votti-logo__tagline {
+  font-size: clamp(0.8125rem, 2.4vw, 1.0625rem);
+}
+
+.votti-logo--hero .votti-logo__divider {
+  width: min(100%, 18rem);
+  margin-top: 0.75rem;
+}
+
 .votti-hero__logo {
   justify-content: center;
   margin-inline: auto;
 }
 
-.votti-hero__logo .logo-img {
-  height: auto;
-  max-height: clamp(9rem, 34svh, 17rem);
-  width: auto;
-  max-width: min(100%, 20rem);
+.votti-nav__logo .votti-logo--sm,
+.votti-nav__logo .votti-logo--xs {
+  transform: scale(0.92);
+  transform-origin: left center;
 }
 
-.votti-nav__logo .logo-img {
-  height: 2.625rem;
-  width: auto;
+.votti-app-header__logo .votti-logo--sm {
+  transform-origin: left center;
 }
 
 .app-shell .logo-img {
