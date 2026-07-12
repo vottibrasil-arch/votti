@@ -5,7 +5,3 @@ export const VOTTI_INSTITUTIONAL_URL =
 
 /** Nome da marca exibido ao usuário (domínio: vottii.com). */
 export const VOTTII_DISPLAY_NAME = "VOTTII";
-
-/** Partes do wordmark: VOTT + ii (dois i no final). */
-export const VOTTII_WORDMARK_PREFIX = "VOTT";
-export const VOTTII_WORDMARK_SUFFIX = "ii";
