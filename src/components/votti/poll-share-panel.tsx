@@ -2,6 +2,7 @@ import { Link, type LinkProps } from "@tanstack/react-router";
 import { Copy, ExternalLink, MessageCircle, Monitor, Plus, Share2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { buildPollShareWhatsAppText, type PollShareKind } from "@/lib/votti/poll-share-meta";
+import { getPublicAppOrigin } from "@/lib/votti/app-url";
 import { pollPublicUrl, pollResultsUrl, pollTelaoUrl } from "@/lib/votti/poll-store";
 import { VOTTII_DISPLAY_NAME } from "@/lib/votti/brand";
 
@@ -194,7 +195,7 @@ export function PollSharePanel({
           </div>
           <ShareDockActions actions={actions} />
           <ShareDockLink
-            to="/criar"
+            href={`${getPublicAppOrigin()}/criar`}
             name="Criar votação"
             icon={<Plus className="size-3.5" aria-hidden />}
           />
