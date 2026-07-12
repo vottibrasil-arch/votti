@@ -149,7 +149,7 @@ function PollCard({
     });
     if (typeof navigator.share === "function") {
       try {
-        await navigator.share({ title: poll.title, text, url });
+        await navigator.share({ title: poll.title, text });
         return;
       } catch {
         /* cancelado ou indisponível */

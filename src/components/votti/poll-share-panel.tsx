@@ -125,7 +125,6 @@ export function PollSharePanel({
         await navigator.share({
           title: `${VOTTII_DISPLAY_NAME} — ${title}`,
           text: shareText,
-          url: shareUrl,
         });
         return;
       } catch {
