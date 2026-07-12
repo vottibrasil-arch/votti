@@ -8,36 +8,7 @@ import { TrustStrip, SecurityBadge } from "@/components/landing/trust-strip";
 import { AppHeader } from "@/components/app/app-header";
 import { Logo } from "@/components/logo";
 import { useAuth } from "@/lib/auth/use-auth";
-
-const LIVE_POLLS = [
-  {
-    title: "Quem será Presidente?",
-    initial: [
-      { label: "Candidato A", pct: 42 },
-      { label: "Candidato B", pct: 36 },
-      { label: "Candidato C", pct: 22 },
-    ],
-    tickOffset: 0,
-  },
-  {
-    title: "Melhor Restaurante",
-    initial: [
-      { label: "Opção 1", pct: 48 },
-      { label: "Opção 2", pct: 35 },
-      { label: "Opção 3", pct: 17 },
-    ],
-    tickOffset: 400,
-  },
-  {
-    title: "Melhor Escola",
-    initial: [
-      { label: "Escola A", pct: 51 },
-      { label: "Escola B", pct: 32 },
-      { label: "Escola C", pct: 17 },
-    ],
-    tickOffset: 800,
-  },
-];
+import { LANDING_DEMO_POLLS } from "@/lib/votti/landing-demo";
 
 function LandingBody({ guest }: { guest: boolean }) {
   return (
@@ -103,11 +74,13 @@ function LandingBody({ guest }: { guest: boolean }) {
         <LiveVoteCounter />
 
         <div className="votti-live__cards">
-          {LIVE_POLLS.map((poll, i) => (
+          {LANDING_DEMO_POLLS.map((poll, i) => (
             <LivePollCard
-              key={poll.title}
+              key={poll.continent}
+              continent={poll.continent}
               title={poll.title}
-              initial={poll.initial}
+              options={poll.options}
+              primaryColor={poll.primaryColor}
               tickOffset={poll.tickOffset}
               className={`animate-rise votti-live-card--${i + 1}`}
             />
