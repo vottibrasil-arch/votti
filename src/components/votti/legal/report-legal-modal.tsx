@@ -7,7 +7,7 @@ type ReportLegalModalProps = {
 };
 
 function buildReportMailto(pollUrl?: string) {
-  const subject = encodeURIComponent("Denúncia de conteúdo no VOTTI");
+  const subject = encodeURIComponent("Denúncia de conteúdo no VOTTII");
   const linkLine = pollUrl ? `${pollUrl}\n` : "";
   const body = encodeURIComponent(`Link da votação:\n${linkLine}\nDescrição da denúncia:`);
   return `mailto:${VOTTI_REPORT_EMAIL}?subject=${subject}&body=${body}`;
@@ -27,7 +27,7 @@ export function ReportLegalModal({ pollUrl, onClose }: ReportLegalModalProps) {
       }
     >
       <p className="votti-legal-modal__text">
-        Caso encontre uma votação que viole os Termos de Uso do VOTTI, siga as instruções abaixo:
+        Caso encontre uma votação que viole os Termos de Uso do VOTTII, siga as instruções abaixo:
       </p>
       <ol className="votti-legal-modal__steps">
         <li>Copie o link da votação.</li>

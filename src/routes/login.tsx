@@ -19,10 +19,10 @@ export const Route = createFileRoute("/login")({
   }),
   head: () => ({
     meta: [
-      { title: "VOTTI — Entrar" },
+      { title: "VOTTII — Entrar" },
       {
         name: "description",
-        content: "Entre no VOTTI — o sistema de votação mais seguro do Brasil.",
+        content: "Entre no VOTTII — o sistema de votação mais seguro do Brasil.",
       },
     ],
   }),

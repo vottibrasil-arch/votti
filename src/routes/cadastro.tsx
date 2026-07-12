@@ -33,10 +33,10 @@ export const Route = createFileRoute("/cadastro")({
   }),
   head: () => ({
     meta: [
-      { title: "VOTTI — Criar conta" },
+      { title: "VOTTII — Criar conta" },
       {
         name: "description",
-        content: "Crie sua conta no VOTTI — o sistema de votação mais seguro do Brasil.",
+        content: "Crie sua conta no VOTTII — o sistema de votação mais seguro do Brasil.",
       },
     ],
   }),

@@ -8,7 +8,7 @@ import { mapAuthError } from "@/lib/auth/auth-errors";
 import { useAuth } from "@/lib/auth/use-auth";
 
 export const Route = createFileRoute("/minha-conta")({
-  head: () => ({ meta: [{ title: "VOTTI — Minha conta" }] }),
+  head: () => ({ meta: [{ title: "VOTTII — Minha conta" }] }),
   component: MinhaContaPage,
 });
 

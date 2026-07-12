@@ -12,12 +12,12 @@ export type LegalDocument = {
   sections: LegalSection[];
 };
 
-export const VOTTI_TERMS_OF_USE: LegalDocument = {
-  title: "Termos de Uso do VOTTI",
+export const VOTTII_TERMS_OF_USE: LegalDocument = {
+  title: "Termos de Uso do VOTTII",
   updatedAt: "julho de 2026",
   intro: [
-    "Bem-vindo ao VOTTI.",
-    "O VOTTI é uma plataforma digital destinada à criação, organização, compartilhamento e acompanhamento de votações públicas e privadas, permitindo que usuários criem enquetes e acompanhem resultados em tempo real.",
+    "Bem-vindo ao VOTTII.",
+    "O VOTTII é uma plataforma digital destinada à criação, organização, compartilhamento e acompanhamento de votações públicas e privadas, permitindo que usuários criem enquetes e acompanhem resultados em tempo real.",
     "Ao utilizar a plataforma, o usuário declara estar ciente e concorda com todas as condições abaixo.",
   ],
   sections: [
@@ -25,7 +25,7 @@ export const VOTTI_TERMS_OF_USE: LegalDocument = {
       heading: "1. Responsabilidade do usuário",
       paragraphs: [
         "O usuário é integralmente responsável pelas votações, textos, imagens e conteúdos publicados dentro da plataforma.",
-        "É proibido utilizar o VOTTI para:",
+        "É proibido utilizar o VOTTII para:",
       ],
       bullets: [
         "divulgar conteúdo ilegal;",
@@ -41,8 +41,8 @@ export const VOTTI_TERMS_OF_USE: LegalDocument = {
     {
       heading: "2. Responsabilidade da plataforma",
       paragraphs: [
-        "O VOTTI atua exclusivamente como uma plataforma tecnológica.",
-        "O VOTTI:",
+        "O VOTTII atua exclusivamente como uma plataforma tecnológica.",
+        "O VOTTII:",
       ],
       bullets: [
         "não produz o conteúdo publicado pelos usuários;",
@@ -58,7 +58,7 @@ export const VOTTI_TERMS_OF_USE: LegalDocument = {
     {
       heading: "3. Remoção de conteúdo",
       paragraphs: [
-        "O VOTTI poderá remover, suspender ou bloquear conteúdos e contas que:",
+        "O VOTTII poderá remover, suspender ou bloquear conteúdos e contas que:",
       ],
       bullets: [
         "violem estes termos;",
@@ -71,7 +71,7 @@ export const VOTTI_TERMS_OF_USE: LegalDocument = {
     },
     {
       heading: "4. Disponibilidade do serviço",
-      paragraphs: ["O VOTTI poderá passar por:"],
+      paragraphs: ["O VOTTII poderá passar por:"],
       bullets: [
         "manutenções;",
         "atualizações;",
@@ -80,13 +80,13 @@ export const VOTTI_TERMS_OF_USE: LegalDocument = {
         "indisponibilidade parcial ou total.",
       ],
       closing: [
-        "O VOTTI não se responsabiliza por prejuízos decorrentes dessas interrupções.",
+        "O VOTTII não se responsabiliza por prejuízos decorrentes dessas interrupções.",
       ],
     },
     {
       heading: "5. Propriedade intelectual",
       paragraphs: [
-        "A marca VOTTI, seu logotipo, design, identidade visual e funcionalidades pertencem aos responsáveis pela plataforma.",
+        "A marca VOTTII, seu logotipo, design, identidade visual e funcionalidades pertencem aos responsáveis pela plataforma.",
         "É proibida a reprodução, distribuição ou utilização sem autorização.",
       ],
     },
@@ -104,11 +104,11 @@ export const VOTTI_TERMS_OF_USE: LegalDocument = {
   ],
 };
 
-export const VOTTI_PRIVACY_POLICY: LegalDocument = {
-  title: "Política de Privacidade do VOTTI",
+export const VOTTII_PRIVACY_POLICY: LegalDocument = {
+  title: "Política de Privacidade do VOTTII",
   updatedAt: "julho de 2026",
   intro: [
-    "O VOTTI respeita a privacidade dos usuários e coleta apenas os dados necessários para o funcionamento da plataforma.",
+    "O VOTTII respeita a privacidade dos usuários e coleta apenas os dados necessários para o funcionamento da plataforma.",
   ],
   sections: [
     {
@@ -141,7 +141,7 @@ export const VOTTI_PRIVACY_POLICY: LegalDocument = {
     {
       heading: "3. Compartilhamento de dados",
       paragraphs: [
-        "O VOTTI não comercializa dados pessoais.",
+        "O VOTTII não comercializa dados pessoais.",
         "As informações somente poderão ser compartilhadas:",
       ],
       bullets: [
@@ -154,7 +154,7 @@ export const VOTTI_PRIVACY_POLICY: LegalDocument = {
     {
       heading: "4. Segurança",
       paragraphs: [
-        "O VOTTI adota medidas técnicas e administrativas para proteger os dados armazenados.",
+        "O VOTTII adota medidas técnicas e administrativas para proteger os dados armazenados.",
         "Apesar disso, nenhum sistema é completamente imune a falhas de segurança.",
       ],
     },

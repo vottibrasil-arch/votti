@@ -25,7 +25,7 @@ export function VottiFooter() {
 
   async function handleShare() {
     const url = window.location.href;
-    const title = "VOTTI — Sua votação em tempo real";
+    const title = "VOTTII — Sua votação em tempo real";
 
     if (navigator.share) {
       try {
@@ -79,7 +79,7 @@ export function VottiFooter() {
         </div>
 
         <p className="text-center text-[10px] text-muted-foreground/70">
-          © {new Date().getFullYear()} VOTTI
+          © {new Date().getFullYear()} VOTTII
         </p>
       </div>
     </footer>

@@ -5,10 +5,10 @@ import { VOTTI_CONTACT_EMAIL } from "@/lib/votti/legal-emails";
 export const Route = createFileRoute("/contato")({
   head: () => ({
     meta: [
-      { title: "VOTTI — Contato" },
+      { title: "VOTTII — Contato" },
       {
         name: "description",
-        content: "Entre em contato com o VOTTI — dúvidas, sugestões e suporte.",
+        content: "Entre em contato com o VOTTII — dúvidas, sugestões e suporte.",
       },
     ],
     links: [{ rel: "canonical", href: "/contato" }],

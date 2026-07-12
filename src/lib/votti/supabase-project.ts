@@ -52,7 +52,7 @@ export function wasSupabaseUrlOverridden(rawUrl?: string): boolean {
 
 export function getWrongSupabaseProjectMessage(currentRef?: string): string {
   if (!currentRef) {
-    return `Configure o Supabase do VOTTI: ${VOTTI_SUPABASE_URL}`;
+    return `Configure o Supabase do VOTTII: ${VOTTI_SUPABASE_URL}`;
   }
-  return `Projeto Supabase errado (${currentRef}). O VOTTI usa apenas ${VOTTI_SUPABASE_PROJECT_REF}. Atualize o .env com as chaves corretas e reinicie o npm run dev.`;
+  return `Projeto Supabase errado (${currentRef}). O VOTTII usa apenas ${VOTTI_SUPABASE_PROJECT_REF}. Atualize o .env com as chaves corretas e reinicie o npm run dev.`;
 }

@@ -41,7 +41,7 @@ export function SignupLegalNotice({ checked, onCheckedChange }: SignupLegalNotic
         >
           Política de Privacidade
         </button>{" "}
-        do VOTTI.
+        do VOTTII.
       </span>
     </label>
   );

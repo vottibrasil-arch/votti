@@ -17,7 +17,7 @@ import { downloadPollQrCode, pollQrCodeImageUrl } from "@/lib/votti/poll-qr";
 import type { StoredPoll } from "@/lib/votti/poll-types";
 
 export const Route = createFileRoute("/minhas")({
-  head: () => ({ meta: [{ title: "VOTTI — Minhas votações" }] }),
+  head: () => ({ meta: [{ title: "VOTTII — Minhas votações" }] }),
   component: MinhasPage,
 });
 

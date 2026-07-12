@@ -16,7 +16,7 @@ export const Route = createFileRoute("/criar/sucesso")({
   validateSearch: (search: Record<string, unknown>): SucessoSearch => ({
     slug: typeof search.slug === "string" ? search.slug : undefined,
   }),
-  head: () => ({ meta: [{ title: "VOTTI — Votação publicada" }] }),
+  head: () => ({ meta: [{ title: "VOTTII — Votação publicada" }] }),
   component: SucessoPage,
 });
 

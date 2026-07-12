@@ -11,7 +11,7 @@ type CriarSearch = {
 };
 
 export const Route = createFileRoute("/criar")({
-  head: () => ({ meta: [{ title: "VOTTI — Criar votação" }] }),
+  head: () => ({ meta: [{ title: "VOTTII — Criar votação" }] }),
   validateSearch: (search: Record<string, unknown>): CriarSearch => ({
     edit: typeof search.edit === "string" && search.edit.trim() ? search.edit.trim() : undefined,
   }),

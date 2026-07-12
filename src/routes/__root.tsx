@@ -87,19 +87,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "google-site-verification",
         content: "UVl-pT0CIRj7LcIYPCzW6Lc9J2Ot58ln21tPr1e5Ilw",
       },
-      { title: "VOTTI — Sua votação em tempo real" },
+      { title: "VOTTII — Sua votação em tempo real" },
       {
         name: "description",
         content: "Crie votações em menos de 1 minuto. Compartilhe pelo WhatsApp e acompanhe o resultado ao vivo.",
       },
-      { property: "og:title", content: "VOTTI — Sua votação em tempo real" },
+      { property: "og:title", content: "VOTTII — Sua votação em tempo real" },
       {
         property: "og:description",
         content: "Vote uma vez. Acompanhe ao vivo.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "VOTTI — Sua votação em tempo real" },
+      { name: "twitter:title", content: "VOTTII — Sua votação em tempo real" },
       {
         name: "twitter:description",
         content: "Vote uma vez. Acompanhe ao vivo.",

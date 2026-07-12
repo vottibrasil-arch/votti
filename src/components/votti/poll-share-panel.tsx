@@ -101,7 +101,7 @@ export function PollSharePanel({
   async function nativeShare() {
     if (navigator.share) {
       try {
-        await navigator.share({ title: `VOTTI — ${title}`, url: voteUrl });
+        await navigator.share({ title: `VOTTII — ${title}`, url: voteUrl });
         return;
       } catch {
         /* cancelado */

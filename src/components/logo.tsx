@@ -20,7 +20,7 @@ export function Logo({ size = "md", to, className = "" }: LogoProps) {
   const img = (
     <img
       src="/logo-full.png?v=2"
-      alt="VOTTI — Vote. Compartilhe. Acompanhe ao vivo."
+      alt="VOTTII — Vote. Compartilhe. Acompanhe ao vivo."
       className={`${HEIGHT[size]} w-auto object-contain object-center logo-img`}
       draggable={false}
     />
@@ -33,7 +33,7 @@ export function Logo({ size = "md", to, className = "" }: LogoProps) {
       <Link
         to={to}
         className={`${wrapperClass} focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg`}
-        aria-label="VOTTI — início"
+        aria-label="VOTTII — início"
       >
         {img}
       </Link>

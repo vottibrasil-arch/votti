@@ -153,7 +153,7 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
           <h1 className="votti-quest__title">Votação não encontrada</h1>
           <p className="votti-quest__hint">{error || "Este link pode estar errado ou a votação foi encerrada."}</p>
           <Link to="/" className="votti-mega-btn votti-mega-btn--sm mt-6">
-            IR PARA O VOTTI
+            IR PARA O VOTTII
           </Link>
         </div>
       </div>

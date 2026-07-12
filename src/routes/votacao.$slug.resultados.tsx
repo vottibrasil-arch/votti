@@ -20,7 +20,7 @@ export const Route = createFileRoute("/votacao/$slug/resultados")({
   validateSearch: (search: Record<string, unknown>): ResultadosSearch => ({
     confirmado: typeof search.confirmado === "string" ? search.confirmado : undefined,
   }),
-  head: () => ({ meta: [{ title: "VOTTI — Ranking ao vivo" }] }),
+  head: () => ({ meta: [{ title: "VOTTII — Ranking ao vivo" }] }),
   component: ResultadosPage,
 });
 

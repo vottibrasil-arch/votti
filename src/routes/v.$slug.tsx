@@ -3,7 +3,7 @@ import { PollVoteScreen } from "@/components/votti/poll-vote-screen";
 
 export const Route = createFileRoute("/v/$slug")({
   head: ({ params }) => ({
-    meta: [{ title: `VOTTI — Votar (${params.slug})` }],
+    meta: [{ title: `VOTTII — Votar (${params.slug})` }],
   }),
   component: VotePage,
 });

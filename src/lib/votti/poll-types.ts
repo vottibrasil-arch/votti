@@ -47,7 +47,7 @@ export type VoteSelection = {
 };
 
 export const THEME_PRESETS = [
-  { id: "votti-blue", label: "VOTTI Azul", primaryColor: "#4F8FD9", backgroundColor: "#0f1729", buttonColor: "#4F8FD9" },
+  { id: "votti-blue", label: "VOTTII Azul", primaryColor: "#4F8FD9", backgroundColor: "#0f1729", buttonColor: "#4F8FD9" },
   { id: "forest", label: "Verde vivo", primaryColor: "#22c55e", backgroundColor: "#0a1a12", buttonColor: "#22c55e" },
   { id: "sunset", label: "Pôr do sol", primaryColor: "#f97316", backgroundColor: "#1a1008", buttonColor: "#fb923c" },
   { id: "royal", label: "Roxo real", primaryColor: "#a855f7", backgroundColor: "#140f1f", buttonColor: "#c084fc" },

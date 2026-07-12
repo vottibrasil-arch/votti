@@ -9,7 +9,7 @@ import { rankingStateToStoredPoll } from "@/lib/votti/ranking/client";
 import { usePollRankingLive } from "@/lib/votti/use-poll-ranking-live";
 
 export const Route = createFileRoute("/votacao/$slug/telao")({
-  head: () => ({ meta: [{ title: "VOTTI — Modo Telão" }] }),
+  head: () => ({ meta: [{ title: "VOTTII — Modo Telão" }] }),
   component: TelaoPage,
 });
 

@@ -32,7 +32,7 @@ export function PublicLegalFooter({ pollUrl, compact, className }: PublicLegalFo
           Denunciar conteúdo
         </button>
       </nav>
-      <p className="votti-legal-footer__copy">© 2026 VOTTI — Todos os direitos reservados.</p>
+      <p className="votti-legal-footer__copy">© 2026 VOTTII — Todos os direitos reservados.</p>
     </footer>
   );
 }
