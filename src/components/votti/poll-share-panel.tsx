@@ -195,7 +195,7 @@ export function PollSharePanel({
           </div>
           <ShareDockActions actions={actions} />
           <ShareDockLink
-            href={`${getPublicAppOrigin()}/criar`}
+            href={getPublicAppOrigin()}
             name="Criar votação"
             icon={<Plus className="size-3.5" aria-hidden />}
           />
