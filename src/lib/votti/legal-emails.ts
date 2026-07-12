@@ -14,7 +14,7 @@ function resolveEmailDomain(): string {
     /* fallback */
   }
 
-  return "votti.com.br";
+  return "vottii.com";
 }
 
 const EMAIL_DOMAIN = resolveEmailDomain();

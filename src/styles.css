@@ -3143,8 +3143,55 @@
   transition: color 0.15s ease;
 }
 
-.votti-legal-footer__link:hover {
+a.votti-legal-footer__link:hover,
+button.votti-legal-footer__link:hover {
   color: oklch(0.82 0.12 250);
+}
+
+.votti-legal-page__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.votti-legal-page__back {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: oklch(0.68 0.1 250);
+  text-decoration: none;
+}
+
+.votti-legal-page__back:hover {
+  color: oklch(0.82 0.12 250);
+}
+
+.votti-legal-page__card {
+  padding: 1.125rem 1rem 1.25rem;
+  border-radius: 1rem;
+  background: oklch(0.14 0.04 260 / 96%);
+  border: 1px solid oklch(0.35 0.06 260 / 50%);
+  box-shadow: 0 16px 48px -24px oklch(0 0 0 / 55%);
+}
+
+.votti-legal-page__title {
+  margin: 0 0 0.875rem;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: oklch(0.94 0.01 260);
+}
+
+.votti-legal-page__body {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.votti-legal-page__action {
+  margin-top: 1rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid oklch(0.32 0.05 260 / 45%);
 }
 
 .votti-legal-footer__copy {

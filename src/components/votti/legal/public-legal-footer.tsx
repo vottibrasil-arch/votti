@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useLegalModals } from "@/lib/votti/use-legal-modals";
 
 type PublicLegalFooterProps = {
@@ -14,15 +15,15 @@ export function PublicLegalFooter({ pollUrl, compact, className }: PublicLegalFo
       className={`votti-legal-footer ${compact ? "votti-legal-footer--compact" : ""} ${className ?? ""}`.trim()}
     >
       <nav className="votti-legal-footer__links" aria-label="Links institucionais">
-        <button type="button" className="votti-legal-footer__link" onClick={() => open("terms")}>
+        <Link to="/termos-de-uso" className="votti-legal-footer__link">
           Termos de Uso
-        </button>
-        <button type="button" className="votti-legal-footer__link" onClick={() => open("privacy")}>
+        </Link>
+        <Link to="/politica-de-privacidade" className="votti-legal-footer__link">
           Política de Privacidade
-        </button>
-        <button type="button" className="votti-legal-footer__link" onClick={() => open("contact")}>
+        </Link>
+        <Link to="/contato" className="votti-legal-footer__link">
           Contato
-        </button>
+        </Link>
         <button
           type="button"
           className="votti-legal-footer__link"

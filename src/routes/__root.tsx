@@ -83,6 +83,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#1a2d5a" },
       { name: "google-adsense-account", content: ADSENSE_CLIENT },
+      {
+        name: "google-site-verification",
+        content: "UVl-pT0CIRj7LcIYPCzW6Lc9J2Ot58ln21tPr1e5Ilw",
+      },
       { title: "VOTTI — Sua votação em tempo real" },
       {
         name: "description",

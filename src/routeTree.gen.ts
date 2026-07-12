@@ -9,10 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermosDeUsoRouteImport } from './routes/termos-de-uso'
+import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
 import { Route as MinhasRouteImport } from './routes/minhas'
 import { Route as MinhaContaRouteImport } from './routes/minha-conta'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CriarRouteImport } from './routes/criar'
+import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as ComoFuncionaRouteImport } from './routes/como-funciona'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as IndexRouteImport } from './routes/index'
@@ -24,6 +27,16 @@ import { Route as VotacaoSlugIndexRouteImport } from './routes/votacao.$slug.ind
 import { Route as VotacaoSlugTelaoRouteImport } from './routes/votacao.$slug.telao'
 import { Route as VotacaoSlugResultadosRouteImport } from './routes/votacao.$slug.resultados'
 
+const TermosDeUsoRoute = TermosDeUsoRouteImport.update({
+  id: '/termos-de-uso',
+  path: '/termos-de-uso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
+  id: '/politica-de-privacidade',
+  path: '/politica-de-privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MinhasRoute = MinhasRouteImport.update({
   id: '/minhas',
   path: '/minhas',
@@ -42,6 +55,11 @@ const LoginRoute = LoginRouteImport.update({
 const CriarRoute = CriarRouteImport.update({
   id: '/criar',
   path: '/criar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContatoRoute = ContatoRouteImport.update({
+  id: '/contato',
+  path: '/contato',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComoFuncionaRoute = ComoFuncionaRouteImport.update({
@@ -99,10 +117,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/como-funciona': typeof ComoFuncionaRoute
+  '/contato': typeof ContatoRoute
   '/criar': typeof CriarRouteWithChildren
   '/login': typeof LoginRoute
   '/minha-conta': typeof MinhaContaRoute
   '/minhas': typeof MinhasRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/termos-de-uso': typeof TermosDeUsoRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
   '/v/$slug': typeof VSlugRoute
@@ -115,10 +136,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/como-funciona': typeof ComoFuncionaRoute
+  '/contato': typeof ContatoRoute
   '/criar': typeof CriarRouteWithChildren
   '/login': typeof LoginRoute
   '/minha-conta': typeof MinhaContaRoute
   '/minhas': typeof MinhasRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/termos-de-uso': typeof TermosDeUsoRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
   '/v/$slug': typeof VSlugRoute
@@ -131,10 +155,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/como-funciona': typeof ComoFuncionaRoute
+  '/contato': typeof ContatoRoute
   '/criar': typeof CriarRouteWithChildren
   '/login': typeof LoginRoute
   '/minha-conta': typeof MinhaContaRoute
   '/minhas': typeof MinhasRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/termos-de-uso': typeof TermosDeUsoRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
   '/v/$slug': typeof VSlugRoute
@@ -149,10 +176,13 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/como-funciona'
+    | '/contato'
     | '/criar'
     | '/login'
     | '/minha-conta'
     | '/minhas'
+    | '/politica-de-privacidade'
+    | '/termos-de-uso'
     | '/auth/callback'
     | '/criar/sucesso'
     | '/v/$slug'
@@ -165,10 +195,13 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/como-funciona'
+    | '/contato'
     | '/criar'
     | '/login'
     | '/minha-conta'
     | '/minhas'
+    | '/politica-de-privacidade'
+    | '/termos-de-uso'
     | '/auth/callback'
     | '/criar/sucesso'
     | '/v/$slug'
@@ -180,10 +213,13 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/como-funciona'
+    | '/contato'
     | '/criar'
     | '/login'
     | '/minha-conta'
     | '/minhas'
+    | '/politica-de-privacidade'
+    | '/termos-de-uso'
     | '/auth/callback'
     | '/criar/sucesso'
     | '/v/$slug'
@@ -197,10 +233,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CadastroRoute: typeof CadastroRoute
   ComoFuncionaRoute: typeof ComoFuncionaRoute
+  ContatoRoute: typeof ContatoRoute
   CriarRoute: typeof CriarRouteWithChildren
   LoginRoute: typeof LoginRoute
   MinhaContaRoute: typeof MinhaContaRoute
   MinhasRoute: typeof MinhasRoute
+  PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
+  TermosDeUsoRoute: typeof TermosDeUsoRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   VSlugRoute: typeof VSlugRoute
   VotacaoSlugRoute: typeof VotacaoSlugRouteWithChildren
@@ -208,6 +247,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/termos-de-uso': {
+      id: '/termos-de-uso'
+      path: '/termos-de-uso'
+      fullPath: '/termos-de-uso'
+      preLoaderRoute: typeof TermosDeUsoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-privacidade': {
+      id: '/politica-de-privacidade'
+      path: '/politica-de-privacidade'
+      fullPath: '/politica-de-privacidade'
+      preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/minhas': {
       id: '/minhas'
       path: '/minhas'
@@ -234,6 +287,13 @@ declare module '@tanstack/react-router' {
       path: '/criar'
       fullPath: '/criar'
       preLoaderRoute: typeof CriarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contato': {
+      id: '/contato'
+      path: '/contato'
+      fullPath: '/contato'
+      preLoaderRoute: typeof ContatoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/como-funciona': {
@@ -339,10 +399,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CadastroRoute: CadastroRoute,
   ComoFuncionaRoute: ComoFuncionaRoute,
+  ContatoRoute: ContatoRoute,
   CriarRoute: CriarRouteWithChildren,
   LoginRoute: LoginRoute,
   MinhaContaRoute: MinhaContaRoute,
   MinhasRoute: MinhasRoute,
+  PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
+  TermosDeUsoRoute: TermosDeUsoRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   VSlugRoute: VSlugRoute,
   VotacaoSlugRoute: VotacaoSlugRouteWithChildren,
