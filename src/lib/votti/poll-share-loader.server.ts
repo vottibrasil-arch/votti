@@ -10,6 +10,7 @@ export async function loadPollShareMeta(slug: string): Promise<PollShareMeta | n
 
     return {
       slug: poll.slug,
+      pollId: poll.id,
       title: poll.title,
       description: poll.description,
       coverUrl: getPollCoverUrl(poll),

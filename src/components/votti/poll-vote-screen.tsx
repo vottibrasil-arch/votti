@@ -137,7 +137,15 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
     return <Navigate to="/votacao/$slug/resultados" params={{ slug }} replace />;
   }
 
-  if (gate !== "ready" || loading) {
+  if (gate === "checking") {
+    return (
+      <div className="votti-vote-page flex-1 flex items-center justify-center px-5">
+        <p className="votti-app-muted">Verificando seu voto…</p>
+      </div>
+    );
+  }
+
+  if (loading) {
     return (
       <div className="votti-vote-page flex-1 flex items-center justify-center px-5">
         <p className="votti-app-muted">Carregando votação…</p>

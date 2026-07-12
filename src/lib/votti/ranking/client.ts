@@ -66,6 +66,27 @@ export function pollMetaToStoredPoll(meta: PollMetaResponse): StoredPoll {
   };
 }
 
+export function pollMetaToRankingState(meta: PollMetaResponse): PollRankingState {
+  const poll = pollMetaToStoredPoll(meta);
+  return {
+    slug: poll.slug,
+    pollId: poll.id,
+    version: Date.now(),
+    updatedAt: new Date().toISOString(),
+    participantCount: 0,
+    registeredVotes: 0,
+    meta: {
+      title: poll.title,
+      description: poll.description,
+      primaryColor: poll.primaryColor,
+      coverUrl: poll.coverUrl,
+      logoUrl: poll.logoUrl,
+      status: poll.status,
+    },
+    questions: poll.questions,
+  };
+}
+
 async function readPollRankingResponse(res: Response): Promise<PollRankingState | null> {
   if (res.status === 404) return null;
   if (!res.ok) throw new Error("Falha ao carregar ranking.");
@@ -82,18 +103,25 @@ export async function fetchPollRanking(slug: string): Promise<PollRankingState |
   const rankingUrl = `/ranking/${encodeURIComponent(slug)}`;
   const headers = { accept: "application/json" };
 
-  let data = await readPollRankingResponse(
-    await fetch(rankingUrl, { cache: "no-store", headers }),
-  );
-
-  if (!data) {
-    await refreshPollSnapshot(slug);
-    data = await readPollRankingResponse(
+  try {
+    let data = await readPollRankingResponse(
       await fetch(rankingUrl, { cache: "no-store", headers }),
     );
+
+    if (!data) {
+      await refreshPollSnapshot(slug);
+      data = await readPollRankingResponse(
+        await fetch(rankingUrl, { cache: "no-store", headers }),
+      );
+    }
+
+    if (data) return data;
+  } catch {
+    /* tenta meta abaixo */
   }
 
-  return data;
+  const meta = await fetchPollMeta(slug);
+  return meta ? pollMetaToRankingState(meta) : null;
 }
 
 /** Atualiza snapshot após voto confirmado. */

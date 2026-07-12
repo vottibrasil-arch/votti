@@ -11,7 +11,11 @@ async function readSnapshotRow(slug: string) {
   const attempts = [];
 
   if (getSupabaseAdminEnvStatus().ok) {
-    attempts.push(getSupabaseAdmin());
+    try {
+      attempts.push(getSupabaseAdmin());
+    } catch (err) {
+      console.warn("[votti-snapshot] admin client unavailable", err);
+    }
   }
   attempts.push(getSupabaseAnonServer());
 
@@ -29,7 +33,9 @@ async function readSnapshotRow(slug: string) {
     if (error) lastError = error;
   }
 
-  if (lastError) throw lastError;
+  if (lastError) {
+    console.warn("[votti-snapshot] read failed", key, lastError);
+  }
   return null;
 }
 

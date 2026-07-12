@@ -192,6 +192,44 @@ export async function buildPollMetaFromDb(slug: string): Promise<StoredPoll | nu
     console.warn("[votti-meta] snapshot fallback failed", key, err);
   }
 
-  if (lastError) throw lastError;
+  if (lastError) {
+    console.warn("[votti-meta] load failed, using fallbacks", slug, lastError);
+  }
   return null;
+}
+
+export function storedPollToRankingState(poll: StoredPoll): PollRankingState {
+  return {
+    slug: poll.slug,
+    pollId: poll.id,
+    version: Date.now(),
+    updatedAt: poll.createdAt || new Date().toISOString(),
+    participantCount: poll.participantCount,
+    registeredVotes: poll.registeredVotes,
+    meta: {
+      title: poll.title,
+      description: poll.description,
+      primaryColor: poll.primaryColor,
+      coverUrl: poll.coverUrl,
+      logoUrl: poll.logoUrl,
+      status: poll.status,
+    },
+    questions: poll.questions.map((q) => ({
+      id: q.id,
+      text: q.text,
+      options: q.options.map((o) => ({
+        id: o.id,
+        text: o.text,
+        votes: Number(o.votes) || 0,
+        imageUrl: o.imageUrl ?? "",
+      })),
+    })),
+  };
+}
+
+/** Ranking inicial (0 votos) quando ainda não há snapshot — evita tela travada. */
+export async function buildInitialRankingFromMeta(slug: string): Promise<PollRankingState | null> {
+  const poll = await buildPollMetaFromDb(slug);
+  if (!poll) return null;
+  return storedPollToRankingState(poll);
 }

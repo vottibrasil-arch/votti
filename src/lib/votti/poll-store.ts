@@ -83,7 +83,11 @@ export async function publishPoll(
   const resolvedDraft = await resolveDraftImages(draft, owner.id);
   const poll = await publishPollDb(resolvedDraft, owner);
   clearDraft();
-  await initializePollRankingFn({ data: { slug: poll.slug } });
+  try {
+    await initializePollRankingFn({ data: { slug: poll.slug } });
+  } catch (err) {
+    console.warn("[votti] ranking snapshot init skipped after publish", poll.slug, err);
+  }
   return poll;
 }
 

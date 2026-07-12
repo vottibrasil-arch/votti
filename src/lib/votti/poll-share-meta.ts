@@ -5,6 +5,7 @@ export type PollShareKind = "vote" | "results";
 
 export type PollShareMeta = {
   slug: string;
+  pollId: string;
   title: string;
   description: string;
   coverUrl: string;

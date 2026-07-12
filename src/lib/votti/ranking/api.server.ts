@@ -1,4 +1,7 @@
-import { buildPollMetaFromDb } from "@/lib/votti/ranking/poll-meta.server";
+import {
+  buildInitialRankingFromMeta,
+  buildPollMetaFromDb,
+} from "@/lib/votti/ranking/poll-meta.server";
 import { assertSupabaseAdminConfigured } from "@/lib/config.server";
 import {
   getStoredSnapshot,
@@ -49,11 +52,16 @@ async function handleGetRanking(slug: string): Promise<Response> {
       snapshot = await tryRefreshSnapshot(slug);
     }
     if (!snapshot) {
+      snapshot = await buildInitialRankingFromMeta(slug);
+    }
+    if (!snapshot) {
       return jsonResponse({ error: "Votação não encontrada." }, 404);
     }
     return rankingResponse(snapshot);
   } catch (err) {
     console.error("[votti-ranking] GET /ranking failed", slug, err);
+    const fallback = await buildInitialRankingFromMeta(slug).catch(() => null);
+    if (fallback) return rankingResponse(fallback);
     return jsonResponse({ error: "Falha ao carregar ranking." }, 500);
   }
 }
