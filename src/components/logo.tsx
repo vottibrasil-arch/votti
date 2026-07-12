@@ -20,7 +20,7 @@ type LogoProps = {
 export function Logo({ size = "md", to, className = "" }: LogoProps) {
   const img = (
     <img
-      src="/logo-full.png?v=3"
+      src="/logo-full.png"
       alt={`${VOTTII_DISPLAY_NAME} — Vote. Compartilhe. Acompanhe ao vivo.`}
       className={`${HEIGHT[size]} w-auto object-contain object-center logo-img`}
       draggable={false}

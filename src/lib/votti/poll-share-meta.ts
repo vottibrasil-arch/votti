@@ -10,7 +10,7 @@ export type PollShareMeta = {
   coverUrl: string;
 };
 
-export const DEFAULT_OG_LOGO_PATH = "/logo-full.png?v=3";
+export const DEFAULT_OG_LOGO_PATH = "/logo-full.png";
 
 export function resolveShareImageUrl(coverUrl: string, origin = getServerPublicOrigin()): string {
   const cover = coverUrl.trim();

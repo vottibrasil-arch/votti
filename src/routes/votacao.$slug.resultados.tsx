@@ -7,7 +7,7 @@ import { PollSharePanel } from "@/components/votti/poll-share-panel";
 import { SecurityBadge } from "@/components/votti/security-badge";
 import { VoteSuccessBanner } from "@/components/votti/vote-confirmed-screen";
 import { getServerPublicOrigin } from "@/lib/votti/app-url";
-import { loadPollShareMetaFn } from "@/lib/votti/poll-share-loader.server";
+import { loadPollShareMeta } from "@/lib/votti/poll-share-loader.server";
 import { buildPollShareHead } from "@/lib/votti/poll-share-meta";
 import { formatPollStats } from "@/lib/votti/poll-stats";
 import { pollPublicUrl, pollResultsUrl } from "@/lib/votti/poll-store";
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/votacao/$slug/resultados")({
     confirmado: typeof search.confirmado === "string" ? search.confirmado : undefined,
   }),
   loader: async ({ params }) => ({
-    share: await loadPollShareMetaFn({ data: params.slug }),
+    share: await loadPollShareMeta(params.slug),
   }),
   head: ({ loaderData, params }) => {
     const share = loaderData?.share;
