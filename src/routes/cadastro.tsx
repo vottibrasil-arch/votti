@@ -23,6 +23,7 @@ import {
   AuthInput,
   AuthScreen,
 } from "@/components/votti/auth/auth-screen";
+import { SignupLegalNotice } from "@/components/votti/auth/signup-legal-notice";
 
 type CadastroSearch = { redirect?: string };
 
@@ -224,6 +225,8 @@ function CadastroPage() {
           {submitting ? "Criando…" : "Criar conta"}
         </AuthButton>
       </form>
+
+      <SignupLegalNotice />
     </AuthScreen>
   );
 }
