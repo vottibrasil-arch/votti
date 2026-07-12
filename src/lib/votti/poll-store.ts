@@ -11,7 +11,6 @@ import {
   duplicatePollDb,
   getPollByIdForOwnerDb,
   getPollBySlugDb,
-  hasVotedPollDb,
   listPollsByOwnerDb,
   publishPollDb,
   castVoteDb,
@@ -20,7 +19,7 @@ import {
   managePollDb,
   updatePollDb,
 } from "@/lib/votti/poll-db";
-import { fetchPollMeta, pollMetaToStoredPoll, refreshPollSnapshot } from "@/lib/votti/ranking/client";
+import { fetchPollMeta, fetchVoterHasVoted, pollMetaToStoredPoll, refreshPollSnapshot } from "@/lib/votti/ranking/client";
 import { initializePollRankingFn } from "@/lib/votti/ranking/ranking-actions.server";
 import {
   confirmPollForVoter,
@@ -108,6 +107,11 @@ export async function confirmVotes(
   voterToken: string,
 ): Promise<void> {
   assertSupabaseConfigured();
+
+  if (await fetchVoterHasVoted(slug, voterToken)) {
+    throw new Error("Você já votou nesta votação.");
+  }
+
   await castVotesDb(slug, selections, voterToken);
   await refreshPollSnapshot(slug);
 }
@@ -126,17 +130,17 @@ export function isAlreadyVotedMessage(message: string): boolean {
 /** Decide se o participante deve ir para o ranking ou para a tela de voto. */
 export async function resolveVoterPollDestination(slug: string): Promise<VoterPollDestination> {
   if (isPollLockedForVoter(slug)) return "results";
-  if (!isSupabaseBrowserConfigured()) return "vote";
+
+  const token = getOrCreateVoterToken(slug);
 
   try {
-    const token = getOrCreateVoterToken(slug);
-    const voted = await hasVotedPollDb(slug, token);
+    const voted = await fetchVoterHasVoted(slug, token);
     if (voted) {
       confirmPollForVoter(slug);
       return "results";
     }
   } catch {
-    /* não bloqueia quem ainda não votou */
+    /* mantém fluxo de voto se a API falhar */
   }
 
   return "vote";

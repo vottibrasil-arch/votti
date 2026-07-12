@@ -835,9 +835,14 @@ export async function castVoteDb(
 
   const settings = parseSettings(poll.settings);
   if (settings.oneVotePerPerson) {
-    const alreadyVoted = await hasVotedPollDb(slug, voterToken);
-    if (alreadyVoted) {
-      throw new Error("Você já votou nesta votação.");
+    try {
+      const alreadyVoted = await hasVotedPollDb(slug, voterToken);
+      if (alreadyVoted) {
+        throw new Error("Você já votou nesta votação.");
+      }
+    } catch (err) {
+      if (err instanceof Error && /já votou/i.test(err.message)) throw err;
+      /* leitura bloqueada pelo RLS — insert + unique index impedem voto duplicado */
     }
   } else {
     const { data: existingVote, error: existingError } = await supabase
@@ -893,9 +898,14 @@ export async function castVotesDb(
 
   const settings = parseSettings(poll.settings);
   if (settings.oneVotePerPerson) {
-    const alreadyVoted = await hasVotedPollDb(slug, voterToken);
-    if (alreadyVoted) {
-      throw new Error("Você já votou nesta votação.");
+    try {
+      const alreadyVoted = await hasVotedPollDb(slug, voterToken);
+      if (alreadyVoted) {
+        throw new Error("Você já votou nesta votação.");
+      }
+    } catch (err) {
+      if (err instanceof Error && /já votou/i.test(err.message)) throw err;
+      /* leitura bloqueada pelo RLS — insert + unique index impedem voto duplicado */
     }
   }
 

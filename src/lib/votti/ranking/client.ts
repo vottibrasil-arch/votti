@@ -36,6 +36,23 @@ export async function fetchPollMeta(slug: string): Promise<PollMetaResponse | nu
   return (await res.json()) as PollMetaResponse;
 }
 
+export async function fetchVoterHasVoted(slug: string, voterToken: string): Promise<boolean> {
+  const token = voterToken.trim();
+  if (!token) return false;
+
+  try {
+    const res = await fetch(
+      `/api/polls/${encodeURIComponent(slug)}/voter-status?token=${encodeURIComponent(token)}`,
+      { cache: "no-store", headers: { accept: "application/json" } },
+    );
+    if (!res.ok) return false;
+    const data = (await res.json()) as { voted?: boolean };
+    return Boolean(data.voted);
+  } catch {
+    return false;
+  }
+}
+
 export function pollMetaToStoredPoll(meta: PollMetaResponse): StoredPoll {
   return {
     id: meta.pollId,

@@ -2,6 +2,7 @@ import {
   buildInitialRankingFromMeta,
   buildPollMetaFromDb,
 } from "@/lib/votti/ranking/poll-meta.server";
+import { hasVotedPollServer } from "@/lib/votti/ranking/voter-status.server";
 import { assertSupabaseAdminConfigured } from "@/lib/config.server";
 import {
   getStoredSnapshot,
@@ -47,9 +48,9 @@ async function tryRefreshSnapshot(slug: string): Promise<PollRankingState | null
 
 async function handleGetRanking(slug: string): Promise<Response> {
   try {
-    let snapshot = await getStoredSnapshot(slug);
+    let snapshot = await tryRefreshSnapshot(slug);
     if (!snapshot) {
-      snapshot = await tryRefreshSnapshot(slug);
+      snapshot = await getStoredSnapshot(slug);
     }
     if (!snapshot) {
       snapshot = await buildInitialRankingFromMeta(slug);
@@ -92,6 +93,16 @@ async function handleGetMeta(slug: string): Promise<Response> {
   }
 }
 
+async function handleGetVoterStatus(slug: string, voterToken: string): Promise<Response> {
+  try {
+    const voted = await hasVotedPollServer(slug, voterToken);
+    return jsonResponse({ voted });
+  } catch (err) {
+    console.error("[votti-ranking] GET voter-status failed", slug, err);
+    return jsonResponse({ voted: false });
+  }
+}
+
 async function handleRefreshSnapshot(slug: string): Promise<Response> {
   try {
     assertSupabaseAdminConfigured();
@@ -131,6 +142,12 @@ export async function handleRankingApi(request: Request): Promise<Response | nul
   const metaSlug = parsePollApiSlug(pathname, "/meta");
   if (metaSlug && request.method === "GET") {
     return handleGetMeta(metaSlug);
+  }
+
+  const voterSlug = parsePollApiSlug(pathname, "/voter-status");
+  if (voterSlug && request.method === "GET") {
+    const token = url.searchParams.get("token")?.trim() ?? "";
+    return handleGetVoterStatus(voterSlug, token);
   }
 
   if (pathname.startsWith("/api/polls/") || pathname.startsWith("/api/internal/")) {
