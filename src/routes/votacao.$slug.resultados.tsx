@@ -167,7 +167,6 @@ function ResultadosPage() {
           slug={slug}
           title={displayPoll.title}
           description={displayPoll.description}
-          shareKind="results"
           variant="footer"
         />
       </div>

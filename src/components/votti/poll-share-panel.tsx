@@ -2,7 +2,7 @@ import { Link, type LinkProps } from "@tanstack/react-router";
 import { Copy, ExternalLink, MessageCircle, Monitor, Plus, Share2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { buildPollShareWhatsAppText, type PollShareKind } from "@/lib/votti/poll-share-meta";
-import { pollPublicUrl, pollResultsUrl } from "@/lib/votti/poll-store";
+import { pollPublicUrl, pollResultsUrl, pollTelaoUrl } from "@/lib/votti/poll-store";
 import { VOTTII_DISPLAY_NAME } from "@/lib/votti/brand";
 
 type PollSharePanelProps = {
@@ -88,8 +88,12 @@ export function PollSharePanel({
   variant = "default",
   telaoUrl,
 }: PollSharePanelProps) {
-  const [copied, setCopied] = useState(false);
-  const kind: PollShareKind = shareKind ?? (variant === "footer" ? "results" : "vote");
+  const [copiedVote, setCopiedVote] = useState(false);
+  const [copiedTelao, setCopiedTelao] = useState(false);
+
+  const telaoLink = telaoUrl ?? pollTelaoUrl(slug);
+  const isResultsFooter = variant === "footer";
+  const kind: PollShareKind = isResultsFooter ? "vote" : (shareKind ?? "vote");
   const shareUrl = kind === "results" ? pollResultsUrl(slug) : pollPublicUrl(slug);
   const shareText = buildPollShareWhatsAppText({
     title,
@@ -98,10 +102,16 @@ export function PollSharePanel({
     kind,
   });
 
-  async function copy() {
+  async function copyVoteLink() {
     await navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedVote(true);
+    setTimeout(() => setCopiedVote(false), 2000);
+  }
+
+  async function copyTelaoLink() {
+    await navigator.clipboard.writeText(telaoLink);
+    setCopiedTelao(true);
+    setTimeout(() => setCopiedTelao(false), 2000);
   }
 
   function shareWhatsApp() {
@@ -121,16 +131,16 @@ export function PollSharePanel({
         /* cancelado */
       }
     }
-    await copy();
+    await copyVoteLink();
   }
 
-  const actions: ShareAction[] = [
+  const footerActions: ShareAction[] = [
     {
-      key: "copy",
-      name: copied ? "Copiado" : "Copiar",
-      icon: <Copy className="size-3.5" aria-hidden />,
+      key: "telao",
+      name: copiedTelao ? "Copiado" : "Ver telão",
+      icon: <Monitor className="size-3.5" aria-hidden />,
       tone: "copy",
-      onClick: () => void copy(),
+      onClick: () => void copyTelaoLink(),
     },
     {
       key: "whatsapp",
@@ -148,13 +158,39 @@ export function PollSharePanel({
     },
   ];
 
+  const defaultActions: ShareAction[] = [
+    {
+      key: "copy",
+      name: copiedVote ? "Copiado" : "Copiar",
+      icon: <Copy className="size-3.5" aria-hidden />,
+      tone: "copy",
+      onClick: () => void copyVoteLink(),
+    },
+    {
+      key: "whatsapp",
+      name: "WhatsApp",
+      icon: <MessageCircle className="size-3.5" aria-hidden />,
+      tone: "whatsapp",
+      onClick: shareWhatsApp,
+    },
+    {
+      key: "share",
+      name: "Enviar",
+      icon: <Share2 className="size-3.5" aria-hidden />,
+      tone: "share",
+      onClick: () => void nativeShare(),
+    },
+  ];
+
+  const actions = isResultsFooter ? footerActions : defaultActions;
+
   if (variant === "footer") {
     return (
       <footer className="votti-share-dock animate-rise">
         <ShareDockCard>
           <div className="votti-share-dock__head">
             <span className="votti-share-dock__label">Compartilhe</span>
-            <span className="votti-share-dock__hint">espalhe o ranking ao vivo</span>
+            <span className="votti-share-dock__hint">convide a votar</span>
           </div>
           <ShareDockActions actions={actions} />
           <ShareDockLink
