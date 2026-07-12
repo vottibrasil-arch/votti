@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app/app-shell";
 import { AppPageFrame } from "@/components/app/app-page-frame";
 import { AppPageBar } from "@/components/app/app-top-bar";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { mapAuthError } from "@/lib/auth/auth-errors";
 import { useAuth } from "@/lib/auth/use-auth";
 
@@ -248,53 +249,36 @@ function MinhaContaPage() {
 
             <div className="votti-account__block votti-account__block--danger">
               <p className="votti-account__subheading votti-account__subheading--danger">Zona de perigo</p>
-              {!confirmDelete ? (
-                <button
-                  type="button"
-                  className="votti-outline-btn votti-outline-btn--danger w-full"
-                  onClick={() => {
-                    setConfirmDelete(true);
-                    setDeleteError("");
-                  }}
-                >
-                  Excluir minha conta
-                </button>
-              ) : (
-                <div className="votti-account__confirm">
-                  <p className="votti-account__confirm-text">
-                    Tem certeza? Suas votações serão apagadas e esta ação não pode ser desfeita.
-                  </p>
-                  {deleteError ? <p className="votti-auth__error">{deleteError}</p> : null}
-                  <div className="votti-account__form-actions">
-                    <button
-                      type="button"
-                      className="votti-outline-btn"
-                      disabled={deleteBusy}
-                      onClick={() => setConfirmDelete(false)}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      className="votti-outline-btn votti-outline-btn--danger"
-                      disabled={deleteBusy}
-                      onClick={() => void handleDeleteAccount()}
-                    >
-                      {deleteBusy ? (
-                        <>
-                          <Loader2 className="size-4 animate-spin" /> Excluindo…
-                        </>
-                      ) : (
-                        "Confirmar exclusão"
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
+              <button
+                type="button"
+                className="votti-outline-btn votti-outline-btn--danger w-full"
+                onClick={() => {
+                  setConfirmDelete(true);
+                  setDeleteError("");
+                }}
+              >
+                Excluir minha conta
+              </button>
             </div>
           </section>
         </div>
       </AppPageFrame>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Excluir conta?"
+        message="Tem certeza? Suas votações serão apagadas e esta ação não pode ser desfeita."
+        confirmLabel="Confirmar exclusão"
+        busy={deleteBusy}
+        error={deleteError}
+        onCancel={() => {
+          if (!deleteBusy) {
+            setConfirmDelete(false);
+            setDeleteError("");
+          }
+        }}
+        onConfirm={() => void handleDeleteAccount()}
+      />
     </AppShell>
   );
 }

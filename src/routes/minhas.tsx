@@ -4,6 +4,7 @@ import { BarChart3, Copy, Pencil, QrCode, Share2, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
 import { AppPageFrame } from "@/components/app/app-page-frame";
 import { AppPageBar } from "@/components/app/app-top-bar";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useAuth } from "@/lib/auth/use-auth";
 import { buildPollShareWhatsAppText } from "@/lib/votti/poll-share-meta";
 import {
@@ -125,6 +126,18 @@ function PollCard({
   onDuplicate: () => Promise<void>;
 }) {
   const url = pollPublicUrl(poll.slug);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+
+  async function handleConfirmDelete() {
+    setDeleteBusy(true);
+    try {
+      await onDelete();
+      setDeleteOpen(false);
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
 
   async function handleShare() {
     const url = pollPublicUrl(poll.slug);
@@ -185,11 +198,31 @@ function PollCard({
           <button type="button" className="votti-poll-card__btn" onClick={() => void handleDownloadQr()}>
             <QrCode className="size-3.5" /> Baixar QR Code
           </button>
-          <button type="button" className="votti-poll-card__btn votti-poll-card__btn--danger" onClick={() => void onDelete()}>
+          <button
+            type="button"
+            className="votti-poll-card__btn votti-poll-card__btn--danger"
+            onClick={() => setDeleteOpen(true)}
+          >
             <Trash2 className="size-3.5" /> Excluir
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        title="Excluir votação?"
+        message={
+          <>
+            Tem certeza que deseja excluir <strong>{poll.title}</strong>? Esta ação não pode ser desfeita.
+          </>
+        }
+        confirmLabel="Excluir"
+        busy={deleteBusy}
+        onCancel={() => {
+          if (!deleteBusy) setDeleteOpen(false);
+        }}
+        onConfirm={() => void handleConfirmDelete()}
+      />
     </article>
   );
 }

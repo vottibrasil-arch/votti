@@ -3052,6 +3052,39 @@
   border-top: 1px solid oklch(0.32 0.05 260 / 45%);
 }
 
+.votti-confirm-dialog__foot {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid oklch(0.32 0.05 260 / 45%);
+}
+
+.votti-confirm-dialog__foot .votti-outline-btn {
+  flex: 1;
+}
+
+.votti-confirm-dialog__foot {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid oklch(0.32 0.05 260 / 45%);
+}
+
+.votti-confirm-dialog__foot .votti-outline-btn {
+  flex: 1;
+}
+
+.votti-confirm-dialog__foot {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid oklch(0.32 0.05 260 / 45%);
+}
+
+.votti-confirm-dialog__foot .votti-outline-btn {
+  flex: 1;
+}
+
 .votti-legal-modal__updated {
   margin: 0 0 0.75rem;
   font-size: 0.75rem;

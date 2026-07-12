@@ -4,7 +4,7 @@ import { Plus, Share2 } from "lucide-react";
 import { FooterAdSlot } from "@/components/footer/footer-ad-slot";
 import { getFooterAdConfig } from "@/lib/footer-ad";
 
-/** Rodapé fixo com ads — só em páginas de votação (futuro). Oculto no app e na landing. */
+/** Rodapé fixo com ads — só em páginas de votação (futuro). Oculto no app, landing e páginas institucionais. */
 const HIDE_FOOTER_ON = new Set([
   "/",
   "/como-funciona",
@@ -15,6 +15,9 @@ const HIDE_FOOTER_ON = new Set([
   "/minhas",
   "/minha-conta",
   "/auth/callback",
+  "/termos-de-uso",
+  "/politica-de-privacidade",
+  "/contato",
 ]);
 
 export function VottiFooter() {
