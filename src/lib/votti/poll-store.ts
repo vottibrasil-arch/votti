@@ -142,6 +142,11 @@ export function pollResultsPath(slug: string) {
   return `/votacao/${slug}/resultados`;
 }
 
+export function pollResultsUrl(slug: string) {
+  const origin = getPublicAppOrigin();
+  return `${origin}${pollResultsPath(slug)}`;
+}
+
 /** Metadados da votação para tela de voto — sem contagens (API /meta). */
 export async function getPollMetaForVoting(slug: string): Promise<StoredPoll | null> {
   const meta = await fetchPollMeta(slug);

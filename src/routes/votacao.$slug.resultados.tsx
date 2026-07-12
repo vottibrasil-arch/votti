@@ -6,8 +6,11 @@ import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { PollSharePanel } from "@/components/votti/poll-share-panel";
 import { SecurityBadge } from "@/components/votti/security-badge";
 import { VoteSuccessBanner } from "@/components/votti/vote-confirmed-screen";
+import { getServerPublicOrigin } from "@/lib/votti/app-url";
+import { loadPollShareMetaFn } from "@/lib/votti/poll-share-loader.server";
+import { buildPollShareHead } from "@/lib/votti/poll-share-meta";
 import { formatPollStats } from "@/lib/votti/poll-stats";
-import { pollPublicUrl } from "@/lib/votti/poll-store";
+import { pollPublicUrl, pollResultsUrl } from "@/lib/votti/poll-store";
 import { rankingStateToStoredPoll } from "@/lib/votti/ranking/client";
 import { getPollCoverUrl } from "@/lib/votti/poll-types";
 import { usePollRankingLive } from "@/lib/votti/use-poll-ranking-live";
@@ -20,7 +23,22 @@ export const Route = createFileRoute("/votacao/$slug/resultados")({
   validateSearch: (search: Record<string, unknown>): ResultadosSearch => ({
     confirmado: typeof search.confirmado === "string" ? search.confirmado : undefined,
   }),
-  head: () => ({ meta: [{ title: "VOTTII — Ranking ao vivo" }] }),
+  loader: async ({ params }) => ({
+    share: await loadPollShareMetaFn({ data: params.slug }),
+  }),
+  head: ({ loaderData, params }) => {
+    const share = loaderData?.share;
+    if (!share) {
+      return { meta: [{ title: "VOTTII — Ranking ao vivo" }] };
+    }
+
+    return buildPollShareHead(
+      share,
+      pollResultsUrl(params.slug),
+      "results",
+      getServerPublicOrigin(),
+    );
+  },
   component: ResultadosPage,
 });
 
@@ -145,7 +163,13 @@ function ResultadosPage() {
           ))}
         </div>
 
-        <PollSharePanel slug={slug} title={displayPoll.title} variant="footer" />
+        <PollSharePanel
+          slug={slug}
+          title={displayPoll.title}
+          description={displayPoll.description}
+          shareKind="results"
+          variant="footer"
+        />
       </div>
     </PollPublicShell>
   );

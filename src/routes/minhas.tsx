@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app/app-shell";
 import { AppPageFrame } from "@/components/app/app-page-frame";
 import { AppPageBar } from "@/components/app/app-top-bar";
 import { useAuth } from "@/lib/auth/use-auth";
+import { buildPollShareWhatsAppText } from "@/lib/votti/poll-share-meta";
 import {
   deletePoll,
   duplicatePoll,
@@ -126,7 +127,13 @@ function PollCard({
   const url = pollPublicUrl(poll.slug);
 
   async function handleShare() {
-    const text = `Vote agora: ${url}`;
+    const url = pollPublicUrl(poll.slug);
+    const text = buildPollShareWhatsAppText({
+      title: poll.title,
+      description: poll.description,
+      url,
+      kind: "vote",
+    });
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ title: poll.title, text, url });

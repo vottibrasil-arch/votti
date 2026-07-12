@@ -69,6 +69,7 @@ function SucessoPage() {
               <PollSharePanel
                 slug={slug}
                 title={title}
+                description={poll?.description}
                 variant="success"
                 telaoUrl={telaoUrl}
               />

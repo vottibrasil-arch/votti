@@ -1,11 +1,15 @@
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { Copy, ExternalLink, MessageCircle, Monitor, Plus, Share2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { pollPublicUrl } from "@/lib/votti/poll-store";
+import { buildPollShareWhatsAppText, type PollShareKind } from "@/lib/votti/poll-share-meta";
+import { pollPublicUrl, pollResultsUrl } from "@/lib/votti/poll-store";
+import { VOTTII_DISPLAY_NAME } from "@/lib/votti/brand";
 
 type PollSharePanelProps = {
   slug: string;
   title: string;
+  description?: string;
+  shareKind?: PollShareKind;
   variant?: "default" | "footer" | "success";
   telaoUrl?: string;
 };
@@ -79,29 +83,39 @@ function ShareDockLink({ name, icon, href, to, params }: ShareDockLinkProps) {
 export function PollSharePanel({
   slug,
   title,
+  description = "",
+  shareKind,
   variant = "default",
   telaoUrl,
 }: PollSharePanelProps) {
   const [copied, setCopied] = useState(false);
-  const voteUrl = pollPublicUrl(slug);
+  const kind: PollShareKind = shareKind ?? (variant === "footer" ? "results" : "vote");
+  const shareUrl = kind === "results" ? pollResultsUrl(slug) : pollPublicUrl(slug);
+  const shareText = buildPollShareWhatsAppText({
+    title,
+    description,
+    url: shareUrl,
+    kind,
+  });
 
   async function copy() {
-    await navigator.clipboard.writeText(voteUrl);
+    await navigator.clipboard.writeText(shareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
   function shareWhatsApp() {
-    window.open(
-      `https://wa.me/?text=${encodeURIComponent(`Vote em "${title}": ${voteUrl}`)}`,
-      "_blank",
-    );
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
   }
 
   async function nativeShare() {
     if (navigator.share) {
       try {
-        await navigator.share({ title: `VOTTII — ${title}`, url: voteUrl });
+        await navigator.share({
+          title: `${VOTTII_DISPLAY_NAME} — ${title}`,
+          text: shareText,
+          url: shareUrl,
+        });
         return;
       } catch {
         /* cancelado */
@@ -140,7 +154,7 @@ export function PollSharePanel({
         <ShareDockCard>
           <div className="votti-share-dock__head">
             <span className="votti-share-dock__label">Compartilhe</span>
-            <span className="votti-share-dock__hint">espalhe o link ao vivo</span>
+            <span className="votti-share-dock__hint">espalhe o ranking ao vivo</span>
           </div>
           <ShareDockActions actions={actions} />
           <ShareDockLink
@@ -170,6 +184,12 @@ export function PollSharePanel({
                 icon={<Monitor className="size-3.5" aria-hidden />}
               />
             ) : null}
+            <ShareDockLink
+              to="/votacao/$slug/resultados"
+              params={{ slug }}
+              name="Ver resultados"
+              icon={<ExternalLink className="size-3.5" aria-hidden />}
+            />
             <ShareDockLink
               to="/v/$slug"
               params={{ slug }}

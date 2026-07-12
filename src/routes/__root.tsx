@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { ADSENSE_CLIENT, ADSENSE_SCRIPT_SRC } from "../lib/adsense";
 import { reportAppError } from "../lib/votti-error-reporting";
+import { getServerPublicOrigin } from "../lib/votti/app-url";
+import { DEFAULT_OG_LOGO_PATH } from "../lib/votti/poll-share-meta";
 import { AuthProvider } from "../lib/auth/use-auth";
 import { VottiFooter } from "../components/votti-footer";
 import { LegalModalsProvider } from "../lib/votti/use-legal-modals";
@@ -77,7 +79,11 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+  head: () => {
+    const origin = getServerPublicOrigin();
+    const defaultImage = `${origin}${DEFAULT_OG_LOGO_PATH}`;
+
+    return {
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
@@ -98,12 +104,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "Vote uma vez. Acompanhe ao vivo.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: defaultImage },
+      { property: "og:image:alt", content: "VOTTII — Vote. Compartilhe. Acompanhe ao vivo." },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "VOTTII — Sua votação em tempo real" },
       {
         name: "twitter:description",
         content: "Vote uma vez. Acompanhe ao vivo.",
       },
+      { name: "twitter:image", content: defaultImage },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -118,7 +127,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
       },
     ],
-  }),
+    };
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
