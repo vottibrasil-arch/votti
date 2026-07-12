@@ -1,14 +1,12 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { getSupabaseAdmin, getSupabaseAnonServer } from "@/lib/api/supabase.server";
+import type { Database } from "@/lib/supabase/database.types";
 import { getSupabaseAdminEnvStatus } from "@/lib/supabase-env";
+import { getStoredSnapshot } from "@/lib/votti/ranking/snapshot.server";
+import type { PollRankingState } from "@/lib/votti/ranking/types";
 import type { PollQuestion, StoredPoll } from "@/lib/votti/poll-types";
 import { DEFAULT_SETTINGS, type PollSettings } from "@/lib/votti/poll-types";
-
-function getSupabaseForMeta() {
-  if (getSupabaseAdminEnvStatus().ok) {
-    return getSupabaseAdmin();
-  }
-  return getSupabaseAnonServer();
-}
 
 function parseSettings(raw: unknown): PollSettings {
   if (!raw || typeof raw !== "object") return DEFAULT_SETTINGS;
@@ -26,10 +24,40 @@ function parseSettings(raw: unknown): PollSettings {
   };
 }
 
-/** Estrutura da votação sem contagens — nunca consulta votes nem poll_results. */
-export async function buildPollMetaFromDb(slug: string): Promise<StoredPoll | null> {
-  const supabase = getSupabaseForMeta();
+function buildStoredPollFromSnapshot(snapshot: PollRankingState): StoredPoll {
+  return {
+    id: snapshot.pollId,
+    slug: snapshot.slug,
+    ownerId: "",
+    ownerEmail: "",
+    title: snapshot.meta.title,
+    description: snapshot.meta.description,
+    category: "",
+    logoUrl: snapshot.meta.logoUrl,
+    coverUrl: snapshot.meta.coverUrl,
+    primaryColor: snapshot.meta.primaryColor,
+    questions: snapshot.questions.map((q) => ({
+      id: q.id,
+      text: q.text,
+      options: q.options.map((o) => ({
+        id: o.id,
+        text: o.text,
+        votes: 0,
+        imageUrl: o.imageUrl ?? "",
+      })),
+    })),
+    settings: DEFAULT_SETTINGS,
+    status: snapshot.meta.status,
+    createdAt: snapshot.updatedAt,
+    participantCount: 0,
+    registeredVotes: 0,
+  };
+}
 
+async function fetchPollMetaWithSupabase(
+  supabase: SupabaseClient<Database>,
+  slug: string,
+): Promise<StoredPoll | null> {
   const { data: poll, error: pollError } = await supabase
     .from("polls")
     .select(
@@ -119,4 +147,51 @@ export async function buildPollMetaFromDb(slug: string): Promise<StoredPoll | nu
     participantCount: 0,
     registeredVotes: 0,
   };
+}
+
+function getSupabaseClientsForMeta(): SupabaseClient<Database>[] {
+  const clients: SupabaseClient<Database>[] = [];
+
+  if (getSupabaseAdminEnvStatus().ok) {
+    try {
+      clients.push(getSupabaseAdmin());
+    } catch (err) {
+      console.warn("[votti-meta] admin client unavailable", err);
+    }
+  }
+
+  try {
+    clients.push(getSupabaseAnonServer());
+  } catch (err) {
+    console.warn("[votti-meta] anon client unavailable", err);
+  }
+
+  return clients;
+}
+
+/** Estrutura da votação sem contagens — nunca consulta votes nem poll_results. */
+export async function buildPollMetaFromDb(slug: string): Promise<StoredPoll | null> {
+  const key = slug.trim();
+  let lastError: unknown;
+
+  for (const supabase of getSupabaseClientsForMeta()) {
+    try {
+      const poll = await fetchPollMetaWithSupabase(supabase, key);
+      if (poll) return poll;
+    } catch (err) {
+      lastError = err;
+      console.warn("[votti-meta] fetch via supabase client failed", key, err);
+    }
+  }
+
+  try {
+    const snapshot = await getStoredSnapshot(key);
+    if (snapshot) return buildStoredPollFromSnapshot(snapshot);
+  } catch (err) {
+    lastError = err;
+    console.warn("[votti-meta] snapshot fallback failed", key, err);
+  }
+
+  if (lastError) throw lastError;
+  return null;
 }
