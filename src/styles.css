@@ -2999,6 +2999,33 @@
   box-shadow: 0 24px 64px oklch(0 0 0 / 45%);
 }
 
+.votti-legal-modal__panel--form {
+  width: min(100%, 32rem);
+  max-height: min(92dvh, 42rem);
+}
+
+.votti-legal-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.votti-legal-modal__success {
+  color: oklch(0.78 0.12 145);
+}
+
+.votti-legal-modal__error {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: oklch(0.78 0.16 25);
+}
+
+.votti-legal-modal__action:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .votti-legal-modal__head {
   display: flex;
   align-items: center;

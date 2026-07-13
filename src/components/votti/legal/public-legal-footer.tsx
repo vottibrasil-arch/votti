@@ -21,9 +21,13 @@ export function PublicLegalFooter({ pollUrl, compact, className }: PublicLegalFo
         <Link to="/politica-de-privacidade" className="votti-legal-footer__link">
           Política de Privacidade
         </Link>
-        <Link to="/contato" className="votti-legal-footer__link">
+        <button
+          type="button"
+          className="votti-legal-footer__link"
+          onClick={() => open("contact")}
+        >
           Contato
-        </Link>
+        </button>
         <button
           type="button"
           className="votti-legal-footer__link"

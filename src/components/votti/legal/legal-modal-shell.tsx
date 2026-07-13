@@ -6,9 +6,16 @@ type LegalModalShellProps = {
   children: ReactNode;
   onClose: () => void;
   footer?: ReactNode;
+  panelClassName?: string;
 };
 
-export function LegalModalShell({ title, children, onClose, footer }: LegalModalShellProps) {
+export function LegalModalShell({
+  title,
+  children,
+  onClose,
+  footer,
+  panelClassName,
+}: LegalModalShellProps) {
   const titleId = useId();
 
   useEffect(() => {
@@ -29,7 +36,7 @@ export function LegalModalShell({ title, children, onClose, footer }: LegalModal
   return (
     <div className="votti-legal-modal" role="presentation" onClick={onClose}>
       <div
-        className="votti-legal-modal__panel"
+        className={`votti-legal-modal__panel${panelClassName ? ` ${panelClassName}` : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

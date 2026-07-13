@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { LegalPublicPage } from "@/components/votti/legal/legal-public-page";
-import { VOTTI_CONTACT_EMAIL } from "@/lib/votti/legal-emails";
+import { useLegalModals } from "@/lib/votti/use-legal-modals";
 
 export const Route = createFileRoute("/contato")({
   head: () => ({
@@ -17,21 +18,17 @@ export const Route = createFileRoute("/contato")({
 });
 
 function ContatoPage() {
-  const mailto = `mailto:${VOTTI_CONTACT_EMAIL}`;
+  const { open } = useLegalModals();
+
+  useEffect(() => {
+    open("contact");
+  }, [open]);
 
   return (
-    <LegalPublicPage
-      title="Contato"
-      action={
-        <a href={mailto} className="votti-legal-modal__action">
-          Enviar e-mail
-        </a>
-      }
-    >
-      <p className="votti-legal-modal__text">Para dúvidas, sugestões ou suporte:</p>
-      <a href={mailto} className="votti-legal-modal__email">
-        {VOTTI_CONTACT_EMAIL}
-      </a>
+    <LegalPublicPage title="Contato">
+      <p className="votti-legal-modal__text">
+        Use o formulário de contato para enviar sua mensagem à equipe VOTTII.
+      </p>
     </LegalPublicPage>
   );
 }
