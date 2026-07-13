@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useLegalModals } from "@/lib/votti/use-legal-modals";
-import { resolveLegalReturnTarget } from "@/lib/votti/legal-return";
+import { getSearchParam, resolveLegalReturnTarget } from "@/lib/votti/legal-return";
 
 type PublicLegalFooterProps = {
   pollUrl?: string;
@@ -14,7 +14,7 @@ export function PublicLegalFooter({ pollUrl, compact, className }: PublicLegalFo
     select: (state) => state.location,
   });
 
-  const fromParam = new URLSearchParams(search).get("from");
+  const fromParam = getSearchParam(search, "from");
   const returnTo = resolveLegalReturnTarget(pathname, search, hash, fromParam);
   const legalSearch = returnTo === "/" ? undefined : { from: returnTo };
 

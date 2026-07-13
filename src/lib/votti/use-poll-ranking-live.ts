@@ -17,9 +17,18 @@ export function usePollRankingLive({ slug, enabled = true }: UsePollRankingLiveO
   const versionRef = useRef(0);
 
   const applyState = useCallback((next: PollRankingState) => {
-    if (next.version === versionRef.current) return;
-    versionRef.current = next.version;
-    setState(next);
+    setState((prev) => {
+      if (
+        prev &&
+        prev.version === next.version &&
+        prev.updatedAt === next.updatedAt &&
+        prev.registeredVotes === next.registeredVotes
+      ) {
+        return prev;
+      }
+      versionRef.current = next.version;
+      return next;
+    });
     setError("");
   }, []);
 
@@ -37,6 +46,7 @@ export function usePollRankingLive({ slug, enabled = true }: UsePollRankingLiveO
 
     let cancelled = false;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
+    versionRef.current = 0;
 
     const poll = () => {
       void fetchPollRanking(slug)

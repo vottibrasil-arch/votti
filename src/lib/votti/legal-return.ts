@@ -27,10 +27,40 @@ export function isLegalPathname(pathname: string): boolean {
   return LEGAL_PATHS.has(pathname);
 }
 
+export function formatLocationSearch(search: unknown): string {
+  if (!search) return "";
+  if (typeof search === "string") {
+    if (!search) return "";
+    return search.startsWith("?") ? search : `?${search}`;
+  }
+  if (typeof search !== "object") return "";
+
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(search as Record<string, unknown>)) {
+    if (value === undefined || value === null || value === "") continue;
+    params.set(key, String(value));
+  }
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+export function getSearchParam(search: unknown, key: string): string | null {
+  if (typeof search === "string") {
+    const qs = search.startsWith("?") ? search.slice(1) : search;
+    return new URLSearchParams(qs).get(key);
+  }
+  if (search && typeof search === "object" && key in search) {
+    const value = (search as Record<string, unknown>)[key];
+    if (typeof value === "string") return value;
+    if (value != null) return String(value);
+  }
+  return null;
+}
+
 /** Página atual ou ?from= para links de Termos/Privacidade. */
 export function resolveLegalReturnTarget(
   pathname: string,
-  search: string,
+  search: unknown,
   hash: string,
   fromParam?: string | null,
 ): string {
@@ -39,7 +69,7 @@ export function resolveLegalReturnTarget(
 
   if (isLegalPathname(pathname)) return "/";
 
-  return `${pathname}${search}${hash}`;
+  return `${pathname}${formatLocationSearch(search)}${hash}`;
 }
 
 export function parseLegalBackLink(backTo: string): {
