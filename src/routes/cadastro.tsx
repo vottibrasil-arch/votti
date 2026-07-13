@@ -10,6 +10,8 @@ import {
   resolveSignupConflictMessage,
 } from "@/lib/auth/auth-errors";
 import { getSupabaseProjectInfo, lookupAuthEmail } from "@/lib/auth/auth-signup.server";
+import { fetchPublicSignupStatus } from "@/lib/auth/app-settings.server";
+import { assertSignupAllowedForNewUser } from "@/lib/auth/super-admin.server";
 import { navigateAfterAuth, sanitizeRedirect } from "@/lib/auth/redirect";
 import {
   getWrongSupabaseProjectMessage,
@@ -55,12 +57,28 @@ function CadastroPage() {
   const [submitting, setSubmitting] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(true);
   const [serverProjectRef, setServerProjectRef] = useState<string | undefined>();
+  const [signupOpen, setSignupOpen] = useState(true);
+  const [signupMessage, setSignupMessage] = useState("");
+  const [signupStatusLoading, setSignupStatusLoading] = useState(true);
   const serverOk = !serverProjectRef || serverProjectRef === VOTTI_SUPABASE_PROJECT_REF;
 
   useEffect(() => {
     void getSupabaseProjectInfo().then((info) => {
       setServerProjectRef(info.projectRef);
     });
+  }, []);
+
+  useEffect(() => {
+    void fetchPublicSignupStatus()
+      .then((status) => {
+        setSignupOpen(status.open);
+        setSignupMessage(status.message);
+      })
+      .catch(() => {
+        setSignupOpen(true);
+        setSignupMessage("");
+      })
+      .finally(() => setSignupStatusLoading(false));
   }, []);
 
   useEffect(() => {
@@ -82,8 +100,13 @@ function CadastroPage() {
       setError("Marque a caixa de concordância com os Termos de Uso e a Política de Privacidade.");
       return;
     }
+    if (!signupOpen) {
+      setError(signupMessage || "Cadastro temporariamente fechado.");
+      return;
+    }
     setSubmitting(true);
     try {
+      await assertSignupAllowedForNewUser();
       await signInWithGoogle(redirect);
     } catch (err) {
       setError(err instanceof Error ? mapAuthError(err.message) : "Erro ao continuar com Google");
@@ -111,9 +134,15 @@ function CadastroPage() {
       setError("Marque a caixa de concordância com os Termos de Uso e a Política de Privacidade.");
       return;
     }
+    if (!signupOpen) {
+      setError(signupMessage || "Cadastro temporariamente fechado.");
+      return;
+    }
     setSubmitting(true);
     let lookup: Awaited<ReturnType<typeof lookupAuthEmail>> | null = null;
     try {
+      await assertSignupAllowedForNewUser();
+
       const safeEmail = email.trim().toLowerCase();
 
       lookup = await lookupAuthEmail({ data: { email: safeEmail } });
@@ -178,6 +207,7 @@ function CadastroPage() {
 
   const loginSearch =
     sanitizeRedirect(redirect) === "/" ? {} : { redirect: sanitizeRedirect(redirect) };
+  const signupBlocked = !signupStatusLoading && !signupOpen;
 
   return (
     <AuthScreen
@@ -190,7 +220,16 @@ function CadastroPage() {
         </p>
       }
     >
-      <AuthButton variant="google" onClick={() => void handleGoogle()} disabled={submitting || !serverOk || !termsAccepted}>
+      {signupBlocked ? (
+        <div className="votti-auth__notice votti-auth__notice--danger">
+          <p>{signupMessage || "Cadastro temporariamente fechado."}</p>
+          <p className="mt-2 text-sm opacity-90">
+            Se você já tem conta, use <Link to="/login">Entrar</Link>.
+          </p>
+        </div>
+      ) : (
+        <>
+      <AuthButton variant="google" onClick={() => void handleGoogle()} disabled={submitting || !serverOk || !termsAccepted || signupStatusLoading}>
         Continuar com Google
       </AuthButton>
 
@@ -230,12 +269,14 @@ function CadastroPage() {
         </AuthField>
         {error ? <p className="votti-auth__error">{error}</p> : null}
         {success ? <p className="votti-auth__success">{success}</p> : null}
-        <AuthButton type="submit" disabled={submitting || !serverOk || !termsAccepted}>
+        <AuthButton type="submit" disabled={submitting || !serverOk || !termsAccepted || signupStatusLoading}>
           {submitting ? "Criando…" : "Criar conta"}
         </AuthButton>
       </form>
 
       <SignupLegalNotice checked={termsAccepted} onCheckedChange={setTermsAccepted} />
+        </>
+      )}
     </AuthScreen>
   );
 }

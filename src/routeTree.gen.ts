@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermosDeUsoRouteImport } from './routes/termos-de-uso'
+import { Route as SupRouteImport } from './routes/sup'
 import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
 import { Route as MinhasRouteImport } from './routes/minhas'
 import { Route as MinhaContaRouteImport } from './routes/minha-conta'
@@ -30,6 +31,11 @@ import { Route as VotacaoSlugResultadosRouteImport } from './routes/votacao.$slu
 const TermosDeUsoRoute = TermosDeUsoRouteImport.update({
   id: '/termos-de-uso',
   path: '/termos-de-uso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupRoute = SupRouteImport.update({
+  id: '/sup',
+  path: '/sup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/minha-conta': typeof MinhaContaRoute
   '/minhas': typeof MinhasRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/sup': typeof SupRoute
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/minha-conta': typeof MinhaContaRoute
   '/minhas': typeof MinhasRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/sup': typeof SupRoute
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/minha-conta': typeof MinhaContaRoute
   '/minhas': typeof MinhasRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/sup': typeof SupRoute
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/minha-conta'
     | '/minhas'
     | '/politica-de-privacidade'
+    | '/sup'
     | '/termos-de-uso'
     | '/auth/callback'
     | '/criar/sucesso'
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/minha-conta'
     | '/minhas'
     | '/politica-de-privacidade'
+    | '/sup'
     | '/termos-de-uso'
     | '/auth/callback'
     | '/criar/sucesso'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/minha-conta'
     | '/minhas'
     | '/politica-de-privacidade'
+    | '/sup'
     | '/termos-de-uso'
     | '/auth/callback'
     | '/criar/sucesso'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   MinhaContaRoute: typeof MinhaContaRoute
   MinhasRoute: typeof MinhasRoute
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
+  SupRoute: typeof SupRoute
   TermosDeUsoRoute: typeof TermosDeUsoRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   VSlugRoute: typeof VSlugRoute
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       path: '/termos-de-uso'
       fullPath: '/termos-de-uso'
       preLoaderRoute: typeof TermosDeUsoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sup': {
+      id: '/sup'
+      path: '/sup'
+      fullPath: '/sup'
+      preLoaderRoute: typeof SupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/politica-de-privacidade': {
@@ -405,6 +425,7 @@ const rootRouteChildren: RootRouteChildren = {
   MinhaContaRoute: MinhaContaRoute,
   MinhasRoute: MinhasRoute,
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
+  SupRoute: SupRoute,
   TermosDeUsoRoute: TermosDeUsoRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   VSlugRoute: VSlugRoute,
