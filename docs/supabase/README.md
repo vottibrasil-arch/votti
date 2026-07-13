@@ -49,10 +49,28 @@ VITE_SUPABASE_ANON_KEY=sua_publishable_key_aqui
 
 Em **Authentication → Providers**: habilite **Email** e/ou **Google**.
 
+Em **Authentication → URL Configuration** (obrigatório para Google):
+
+| Campo | Valor |
+|-------|--------|
+| **Site URL** | `https://vottii.com` |
+| **Redirect URLs** | `https://vottii.com/auth/callback` |
+| | `https://www.vottii.com/auth/callback` |
+| | `http://localhost:8080/auth/callback` |
+
 | Ambiente | Redirect URL |
 |----------|--------------|
 | Local | `http://localhost:8080/auth/callback` |
 | Produção | `https://vottii.com/auth/callback` |
+
+### Google volta para `localhost:3000`?
+
+Isso acontece quando a **Site URL** do Supabase ainda está `http://localhost:3000` ou quando `https://vottii.com/auth/callback` **não** está na lista de Redirect URLs. O Supabase ignora o redirect do app e manda para a Site URL.
+
+1. Abra **Supabase → Authentication → URL Configuration**
+2. Troque **Site URL** para `https://vottii.com`
+3. Em **Redirect URLs**, adicione `https://vottii.com/auth/callback` (e salve)
+4. Na **Vercel**, confira `VITE_APP_URL=https://vottii.com` e faça redeploy
 
 ### Cadastro não aparece no banco?
 

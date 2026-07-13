@@ -23,12 +23,12 @@ import { getSupabaseBrowser, isSupabaseBrowserConfigured } from "@/lib/api/supab
 import {
   AUTH_SIGNUP_NOT_CREATED_MSG,
 } from "@/lib/auth/auth-errors";
+import { buildOAuthCallbackUrl } from "@/lib/auth/oauth-callback-url";
 import {
   resolveDisplayName,
   usesEmailPasswordAuth,
   usesGoogleAuth,
 } from "@/lib/auth/ensure-auth-session";
-import { sanitizeRedirect } from "@/lib/auth/redirect";
 import type { VottiUser } from "@/lib/auth/types";
 
 import { deleteOwnAccount } from "@/lib/auth/auth-account.server";
@@ -242,16 +242,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = useCallback(async (redirect?: string) => {
     assertSupabaseConfigured(configured);
 
-    const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
-    const safeRedirect = sanitizeRedirect(redirect);
-    if (safeRedirect !== "/") {
-      callbackUrl.searchParams.set("redirect", safeRedirect);
-    }
-
     const { error } = await getSupabaseBrowser().auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: callbackUrl.toString(),
+        redirectTo: buildOAuthCallbackUrl(redirect),
         queryParams: { prompt: "select_account" },
       },
     });

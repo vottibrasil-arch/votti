@@ -30,13 +30,6 @@ function AuthCallbackPage() {
       }
 
       try {
-        const url = new URL(window.location.href);
-        const oauthError = url.searchParams.get("error_description");
-        if (oauthError) {
-          if (!cancelled) setError(mapAuthError(decodeURIComponent(oauthError)));
-          return;
-        }
-
         const session = await ensureAuthSession();
         await finalizeOAuthSession(session);
 

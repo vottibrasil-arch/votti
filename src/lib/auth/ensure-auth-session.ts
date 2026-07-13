@@ -2,20 +2,53 @@ import type { Session, User } from "@supabase/supabase-js";
 
 import { getSupabaseBrowser } from "@/lib/api/supabase-browser";
 
-function readOAuthCode(): string | null {
-  if (typeof window === "undefined") return null;
-  return new URL(window.location.href).searchParams.get("code");
+function cleanAuthUrl() {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  url.searchParams.delete("code");
+  url.hash = "";
+  window.history.replaceState({}, document.title, `${url.pathname}${url.search}`);
+}
+
+/** Converte ?code= (PKCE) ou #access_token= (fallback) em sessão Supabase. */
+export async function establishSessionFromUrl(): Promise<void> {
+  const supabase = getSupabaseBrowser();
+  const url = new URL(window.location.href);
+
+  const oauthError = url.searchParams.get("error_description");
+  if (oauthError) {
+    throw new Error(decodeURIComponent(oauthError));
+  }
+
+  const code = url.searchParams.get("code");
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) throw error;
+    cleanAuthUrl();
+    return;
+  }
+
+  const hash = url.hash.startsWith("#") ? url.hash.slice(1) : url.hash;
+  if (hash) {
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+    if (accessToken && refreshToken) {
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (error) throw error;
+      cleanAuthUrl();
+    }
+  }
 }
 
 /** Garante sessão JWT válida antes de gravar no Supabase (votação, imagens, etc.). */
 export async function ensureAuthSession(): Promise<Session> {
   const supabase = getSupabaseBrowser();
-  const code = readOAuthCode();
 
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) throw error;
-  }
+  await establishSessionFromUrl();
 
   const { data, error } = await supabase.auth.getSession();
   if (!error && data.session) {
