@@ -1,5 +1,6 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useLegalModals } from "@/lib/votti/use-legal-modals";
+import { resolveLegalReturnTarget } from "@/lib/votti/legal-return";
 
 type PublicLegalFooterProps = {
   pollUrl?: string;
@@ -9,16 +10,23 @@ type PublicLegalFooterProps = {
 
 export function PublicLegalFooter({ pollUrl, compact, className }: PublicLegalFooterProps) {
   const { open } = useLegalModals();
+  const { pathname, search, hash } = useRouterState({
+    select: (state) => state.location,
+  });
+
+  const fromParam = new URLSearchParams(search).get("from");
+  const returnTo = resolveLegalReturnTarget(pathname, search, hash, fromParam);
+  const legalSearch = returnTo === "/" ? undefined : { from: returnTo };
 
   return (
     <footer
       className={`votti-legal-footer ${compact ? "votti-legal-footer--compact" : ""} ${className ?? ""}`.trim()}
     >
       <nav className="votti-legal-footer__links" aria-label="Links institucionais">
-        <Link to="/termos-de-uso" className="votti-legal-footer__link">
+        <Link to="/termos-de-uso" search={legalSearch} className="votti-legal-footer__link">
           Termos de Uso
         </Link>
-        <Link to="/politica-de-privacidade" className="votti-legal-footer__link">
+        <Link to="/politica-de-privacidade" search={legalSearch} className="votti-legal-footer__link">
           Política de Privacidade
         </Link>
         <button
