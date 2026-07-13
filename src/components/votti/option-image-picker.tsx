@@ -22,7 +22,6 @@ type OptionImagePickerProps = {
 const ACCEPT = "image/*,.heic,.heif";
 
 function stopPointerEvent(event: React.SyntheticEvent) {
-  event.preventDefault();
   event.stopPropagation();
 }
 
@@ -44,13 +43,20 @@ export function OptionImagePicker({
   const [pendingPreview, setPendingPreview] = useState("");
 
   const busy = uploading || pickerOpen || Boolean(pendingFile);
+  const onBusyChangeRef = useRef(onBusyChange);
+  onBusyChangeRef.current = onBusyChange;
 
   useEffect(() => {
-    onBusyChange?.(busy);
-  }, [busy, onBusyChange]);
+    onBusyChangeRef.current?.(busy);
+  }, [busy]);
 
   useEffect(() => {
     if (!pickerOpen) return;
+
+    const timeoutId = window.setTimeout(() => {
+      pickerOpenRef.current = false;
+      setPickerOpen(false);
+    }, 120_000);
 
     function onWindowFocus() {
       window.setTimeout(() => {
@@ -62,7 +68,10 @@ export function OptionImagePicker({
     }
 
     window.addEventListener("focus", onWindowFocus);
-    return () => window.removeEventListener("focus", onWindowFocus);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("focus", onWindowFocus);
+    };
   }, [pickerOpen, pendingFile, uploading]);
 
   function clearPending() {
@@ -172,7 +181,6 @@ export function OptionImagePicker({
           tabIndex={-1}
           aria-hidden
           onChange={(e) => void handleFile(e.target.files?.[0])}
-          onClick={stopPointerEvent}
         />
         <button
           type="button"

@@ -49,6 +49,9 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
 
   const setOptionPhotoBusy = useCallback((optionId: string, busy: boolean) => {
     setBusyOptionPhotos((prev) => {
+      const alreadyBusy = prev.has(optionId);
+      if (busy === alreadyBusy) return prev;
+
       const next = new Set(prev);
       if (busy) next.add(optionId);
       else next.delete(optionId);
