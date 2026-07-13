@@ -27,6 +27,16 @@ export async function autoProcessPickedImage(
   return cropImageCover(normalized, CENTER_FOCUS, mobile ? 960 : 1280, mobile ? 0.82 : 0.9);
 }
 
+/** No celular: recorta a capa; se o navegador não abrir o arquivo, envia o original. */
+export async function prepareCoverForMobileUpload(file: File): Promise<File> {
+  const normalized = normalizeImageFile(file);
+  try {
+    return await autoProcessPickedImage(normalized, "cover");
+  } catch {
+    return normalized;
+  }
+}
+
 export async function processPickedImageWithFocus(
   file: File,
   mode: "option" | "cover",

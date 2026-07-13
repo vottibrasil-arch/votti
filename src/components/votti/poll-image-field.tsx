@@ -8,8 +8,8 @@ import {
 } from "@/lib/votti/crop-image";
 import { normalizeImageUrl } from "@/lib/votti/persist-image-url";
 import {
-  autoProcessPickedImage,
   isCoarsePointerDevice,
+  prepareCoverForMobileUpload,
   processPickedImageWithFocus,
 } from "@/lib/votti/process-picked-image";
 import { uploadPollAsset } from "@/lib/votti/upload-poll-asset";
@@ -103,16 +103,8 @@ export function PollImageField({
 
     if (variant === "cover") {
       if (isCoarsePointerDevice()) {
-        setUploading(true);
-        try {
-          clearPending();
-          const processed = await autoProcessPickedImage(normalized, "cover");
-          await uploadProcessed(processed);
-        } catch (err) {
-          setError(formatImageProcessError(err));
-          setUploading(false);
-          resetInput();
-        }
+        clearPending();
+        await uploadProcessed(await prepareCoverForMobileUpload(normalized));
         return;
       }
 
