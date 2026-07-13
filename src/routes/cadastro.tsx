@@ -53,7 +53,7 @@ function CadastroPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(true);
   const [serverProjectRef, setServerProjectRef] = useState<string | undefined>();
   const serverOk = !serverProjectRef || serverProjectRef === VOTTI_SUPABASE_PROJECT_REF;
 
