@@ -16,6 +16,8 @@ export type AdminPollRow = {
   status: PollStatus;
   createdAt: string;
   publicUrl: string;
+  participantCount: number;
+  voteCount: number;
 };
 
 export type AdminUserRow = {
@@ -27,7 +29,18 @@ export type AdminUserRow = {
   provider: string;
   activePollCount: number;
   totalPollCount: number;
+  participantCount: number;
+  voteCount: number;
   isSuperAdmin: boolean;
+};
+
+type ParticipationStats = {
+  globalParticipants: number;
+  globalVotes: number;
+  participantsByOwner: Map<string, number>;
+  votesByOwner: Map<string, number>;
+  participantsByPoll: Map<string, number>;
+  votesByPoll: Map<string, number>;
 };
 
 async function assertSuperAdmin(accessToken: string) {
@@ -94,7 +107,81 @@ async function fetchPollCountsByOwner() {
   }
 }
 
-async function buildAdminUserRows(adminSettings: Awaited<ReturnType<typeof getSuperAdminSettings>>): Promise<AdminUserRow[]> {
+async function fetchParticipationStats(): Promise<ParticipationStats> {
+  try {
+    const admin = getSupabaseAdmin();
+    const [pollsResult, votesResult] = await Promise.all([
+      admin.from("polls").select("id, owner_id"),
+      admin.from("votes").select("poll_id, voter_token"),
+    ]);
+
+    if (pollsResult.error) throw pollsResult.error;
+    if (votesResult.error) throw votesResult.error;
+
+    const pollToOwner = new Map(
+      (pollsResult.data ?? [])
+        .filter((poll) => poll.owner_id)
+        .map((poll) => [poll.id, poll.owner_id as string]),
+    );
+
+    const globalTokens = new Set<string>();
+    const participantsByOwner = new Map<string, Set<string>>();
+    const votesByOwner = new Map<string, number>();
+    const participantsByPoll = new Map<string, Set<string>>();
+    const votesByPoll = new Map<string, number>();
+
+    for (const vote of votesResult.data ?? []) {
+      globalTokens.add(vote.voter_token);
+      votesByPoll.set(vote.poll_id, (votesByPoll.get(vote.poll_id) ?? 0) + 1);
+
+      let pollParticipants = participantsByPoll.get(vote.poll_id);
+      if (!pollParticipants) {
+        pollParticipants = new Set<string>();
+        participantsByPoll.set(vote.poll_id, pollParticipants);
+      }
+      pollParticipants.add(vote.voter_token);
+
+      const ownerId = pollToOwner.get(vote.poll_id);
+      if (!ownerId) continue;
+
+      votesByOwner.set(ownerId, (votesByOwner.get(ownerId) ?? 0) + 1);
+
+      let ownerParticipants = participantsByOwner.get(ownerId);
+      if (!ownerParticipants) {
+        ownerParticipants = new Set<string>();
+        participantsByOwner.set(ownerId, ownerParticipants);
+      }
+      ownerParticipants.add(vote.voter_token);
+    }
+
+    return {
+      globalParticipants: globalTokens.size,
+      globalVotes: votesResult.data?.length ?? 0,
+      participantsByOwner: new Map(
+        [...participantsByOwner.entries()].map(([ownerId, tokens]) => [ownerId, tokens.size]),
+      ),
+      votesByOwner,
+      participantsByPoll: new Map(
+        [...participantsByPoll.entries()].map(([pollId, tokens]) => [pollId, tokens.size]),
+      ),
+      votesByPoll,
+    };
+  } catch {
+    return {
+      globalParticipants: 0,
+      globalVotes: 0,
+      participantsByOwner: new Map(),
+      votesByOwner: new Map(),
+      participantsByPoll: new Map(),
+      votesByPoll: new Map(),
+    };
+  }
+}
+
+async function buildAdminUserRows(
+  adminSettings: Awaited<ReturnType<typeof getSuperAdminSettings>>,
+  participation: ParticipationStats,
+): Promise<AdminUserRow[]> {
   const [authUsers, profilesResult, pollCounts] = await Promise.all([
     listAuthUsers(),
     (async () => {
@@ -130,6 +217,8 @@ async function buildAdminUserRows(adminSettings: Awaited<ReturnType<typeof getSu
         provider: String(provider),
         activePollCount: pollCounts.active.get(user.id) ?? 0,
         totalPollCount: pollCounts.totals.get(user.id) ?? 0,
+        participantCount: participation.participantsByOwner.get(user.id) ?? 0,
+        voteCount: participation.votesByOwner.get(user.id) ?? 0,
         isSuperAdmin: isSuperAdminEmail(email, adminSettings),
       };
     })
@@ -137,7 +226,7 @@ async function buildAdminUserRows(adminSettings: Awaited<ReturnType<typeof getSu
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-async function listPollsForOwner(ownerId: string): Promise<AdminPollRow[]> {
+async function listPollsForOwner(ownerId: string, participation: ParticipationStats): Promise<AdminPollRow[]> {
   assertSupabaseAdminConfigured();
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
@@ -155,6 +244,8 @@ async function listPollsForOwner(ownerId: string): Promise<AdminPollRow[]> {
     status: poll.status,
     createdAt: poll.created_at,
     publicUrl: pollPublicUrl(poll.slug),
+    participantCount: participation.participantsByPoll.get(poll.id) ?? 0,
+    voteCount: participation.votesByPoll.get(poll.id) ?? 0,
   }));
 }
 
@@ -166,9 +257,10 @@ export const fetchAdminDashboard = createServerFn({ method: "POST" })
     await assertSuperAdmin(data.accessToken);
 
     const adminSettings = await getSuperAdminSettings();
+    const participation = await fetchParticipationStats();
     const [totalUsers, users] = await Promise.all([
       countRegisteredUsers(),
-      buildAdminUserRows(adminSettings),
+      buildAdminUserRows(adminSettings, participation),
     ]);
 
     const activeLinks = users.reduce((sum, user) => sum + user.activePollCount, 0);
@@ -176,6 +268,8 @@ export const fetchAdminDashboard = createServerFn({ method: "POST" })
     return {
       totalUsers,
       activeLinks,
+      totalParticipants: participation.globalParticipants,
+      totalVotes: participation.globalVotes,
       users,
     };
   });
@@ -189,7 +283,8 @@ export const fetchAdminUserPolls = createServerFn({ method: "POST" })
     await assertSuperAdmin(data.accessToken);
     if (!data.userId) throw new Error("Usuário inválido.");
 
-    const polls = await listPollsForOwner(data.userId);
+    const participation = await fetchParticipationStats();
+    const polls = await listPollsForOwner(data.userId, participation);
     return { polls };
   });
 

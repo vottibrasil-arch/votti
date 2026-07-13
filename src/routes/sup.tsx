@@ -3,11 +3,14 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ChevronDown,
   ExternalLink,
+  KeyRound,
   Link2,
   Loader2,
   Shield,
   Trash2,
+  UserCheck,
   Users,
+  Vote,
   XCircle,
 } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
@@ -15,6 +18,7 @@ import { AppPageFrame } from "@/components/app/app-page-frame";
 import { AppPageBar } from "@/components/app/app-top-bar";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { getSupabaseBrowser } from "@/lib/api/supabase-browser";
+import { mapAuthError } from "@/lib/auth/auth-errors";
 import { useAuth } from "@/lib/auth/use-auth";
 import type { AdminPollRow, AdminUserRow } from "@/lib/auth/super-admin.server";
 import {
@@ -54,12 +58,20 @@ async function getAccessToken() {
 
 function SupPage() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, updatePassword } = useAuth();
   const [totalUsers, setTotalUsers] = useState(0);
   const [activeLinks, setActiveLinks] = useState(0);
+  const [totalParticipants, setTotalParticipants] = useState(0);
+  const [totalVotes, setTotalVotes] = useState(0);
   const [users, setUsers] = useState<AdminUserRow[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [userPolls, setUserPolls] = useState<AdminPollRow[]>([]);
@@ -83,6 +95,8 @@ function SupPage() {
       const dashboard = await fetchAdminDashboard({ data: { accessToken } });
       setTotalUsers(dashboard.totalUsers);
       setActiveLinks(dashboard.activeLinks);
+      setTotalParticipants(dashboard.totalParticipants);
+      setTotalVotes(dashboard.totalVotes);
       setUsers(dashboard.users);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível carregar o painel.";
@@ -143,6 +157,33 @@ function SupPage() {
       setError(err instanceof Error ? err.message : "Não foi possível cancelar o link.");
     } finally {
       setPollActionId(null);
+    }
+  }
+
+  async function handlePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordMsg("");
+    if (newPassword.length < 6) {
+      setPasswordError("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("As senhas não coincidem.");
+      return;
+    }
+    setPasswordBusy(true);
+    try {
+      await updatePassword(newPassword);
+      setPasswordMsg("Senha alterada com sucesso.");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setPasswordError(
+        err instanceof Error ? mapAuthError(err.message) : "Não foi possível alterar a senha.",
+      );
+    } finally {
+      setPasswordBusy(false);
     }
   }
 
@@ -214,6 +255,73 @@ function SupPage() {
               <span className="votti-sup__stat-value tabular-nums">{activeLinks}</span>
               <span className="votti-sup__stat-label">links ativos</span>
             </article>
+            <article className="votti-sup__stat">
+              <UserCheck className="size-5" />
+              <span className="votti-sup__stat-value tabular-nums">{totalParticipants}</span>
+              <span className="votti-sup__stat-label">participantes</span>
+            </article>
+            <article className="votti-sup__stat">
+              <Vote className="size-5" />
+              <span className="votti-sup__stat-value tabular-nums">{totalVotes}</span>
+              <span className="votti-sup__stat-label">votos</span>
+            </article>
+          </div>
+          <p className="votti-sup__hint -mt-2">
+            Participantes = pessoas únicas que votaram nas votações da plataforma.
+          </p>
+
+          <div className="votti-sup__panel">
+            <div className="votti-sup__panel-head">
+              <h2>
+                <KeyRound className="inline size-4 mr-1.5 -mt-0.5" />
+                Senha do administrador
+              </h2>
+            </div>
+            {user.usesGoogle && !user.usesEmailPassword ? (
+              <p className="votti-sup__hint">
+                Sua conta usa Google. A senha é gerenciada pela conta Google — para mudar, use as configurações do
+                Google.
+              </p>
+            ) : (
+              <form className="votti-sup__password-form" onSubmit={(e) => void handlePasswordSubmit(e)}>
+                <label className="votti-field">
+                  <span className="votti-field__label">Nova senha</span>
+                  <input
+                    type="password"
+                    className="votti-field__input"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    autoComplete="new-password"
+                    minLength={6}
+                    required
+                  />
+                </label>
+                <label className="votti-field">
+                  <span className="votti-field__label">Confirmar nova senha</span>
+                  <input
+                    type="password"
+                    className="votti-field__input"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
+                    minLength={6}
+                    required
+                  />
+                </label>
+                {passwordError ? <p className="votti-auth__error">{passwordError}</p> : null}
+                {passwordMsg ? <p className="votti-auth__success">{passwordMsg}</p> : null}
+                <button type="submit" className="votti-mega-btn votti-mega-btn--sm w-full" disabled={passwordBusy}>
+                  {passwordBusy ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" />
+                      Salvando…
+                    </>
+                  ) : (
+                    "Alterar senha"
+                  )}
+                </button>
+              </form>
+            )}
           </div>
 
           <div className="votti-sup__panel">
@@ -247,6 +355,9 @@ function SupPage() {
                           <span className="votti-sup__badge votti-sup__badge--admin">Admin</span>
                         ) : null}
                         <span className="votti-sup__badge">
+                          {row.participantCount} participante{row.participantCount === 1 ? "" : "s"}
+                        </span>
+                        <span className="votti-sup__badge">
                           {row.activePollCount} ativo{row.activePollCount === 1 ? "" : "s"}
                         </span>
                         <ChevronDown className={`size-4 transition ${expanded ? "rotate-180" : ""}`} />
@@ -259,6 +370,10 @@ function SupPage() {
                           <span>Plano: {row.plan}</span>
                           <span className="tabular-nums">Desde {formatDate(row.createdAt)}</span>
                           <span>{row.totalPollCount} votaç{row.totalPollCount === 1 ? "ão" : "ões"} no total</span>
+                          <span>
+                            {row.participantCount} participante{row.participantCount === 1 ? "" : "s"} ·{" "}
+                            {row.voteCount} voto{row.voteCount === 1 ? "" : "s"}
+                          </span>
                         </div>
 
                         {pollsLoading ? (
@@ -270,7 +385,13 @@ function SupPage() {
                             {userPolls.map((poll) => (
                               <div key={poll.id} className="votti-sup__poll">
                                 <div className="votti-sup__poll-main">
-                                  <strong>{poll.title}</strong>
+                                  <div>
+                                    <strong>{poll.title}</strong>
+                                    <p className="votti-sup__poll-metrics">
+                                      {poll.participantCount} participante{poll.participantCount === 1 ? "" : "s"} ·{" "}
+                                      {poll.voteCount} voto{poll.voteCount === 1 ? "" : "s"}
+                                    </p>
+                                  </div>
                                   <span className={`votti-sup__poll-status votti-sup__poll-status--${poll.status}`}>
                                     {pollStatusLabel(poll.status)}
                                   </span>
