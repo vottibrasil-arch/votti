@@ -1,13 +1,17 @@
 import { ImagePlus, Loader2, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImageFocusEditor } from "@/components/votti/image-focus-editor";
 import {
-  cropImageCover,
   formatImageProcessError,
   isAcceptedImageFile,
   normalizeImageFile,
 } from "@/lib/votti/crop-image";
 import { normalizeImageUrl } from "@/lib/votti/persist-image-url";
+import {
+  autoProcessPickedImage,
+  isCoarsePointerDevice,
+  processPickedImageWithFocus,
+} from "@/lib/votti/process-picked-image";
 import { uploadPollAsset } from "@/lib/votti/upload-poll-asset";
 
 type PollImageFieldProps = {
@@ -20,11 +24,7 @@ type PollImageFieldProps = {
   onBusyChange?: (busy: boolean) => void;
 };
 
-const ACCEPT = "image/*,.heic,.heif";
-
-function stopPointerEvent(event: React.SyntheticEvent) {
-  event.stopPropagation();
-}
+const ACCEPT = "image/jpeg,image/png,image/webp,image/*";
 
 export function PollImageField({
   label,
@@ -35,18 +35,15 @@ export function PollImageField({
   ownerId,
   onBusyChange,
 }: PollImageFieldProps) {
-  const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
-  const pickerOpenRef = useRef(false);
   const [uploading, setUploading] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState("");
 
   const displayUrl = normalizeImageUrl(preview) || normalizeImageUrl(value);
-  const busy = uploading || pickerOpen || Boolean(pendingFile);
+  const busy = uploading || Boolean(pendingFile);
   const onBusyChangeRef = useRef(onBusyChange);
   onBusyChangeRef.current = onBusyChange;
 
@@ -54,39 +51,20 @@ export function PollImageField({
     onBusyChangeRef.current?.(busy);
   }, [busy]);
 
-  useEffect(() => {
-    if (!pickerOpen) return;
-
-    const timeoutId = window.setTimeout(() => {
-      pickerOpenRef.current = false;
-      setPickerOpen(false);
-    }, 120_000);
-
-    function onWindowFocus() {
-      window.setTimeout(() => {
-        if (pickerOpenRef.current && !pendingFile && !uploading) {
-          pickerOpenRef.current = false;
-          setPickerOpen(false);
-        }
-      }, 400);
-    }
-
-    window.addEventListener("focus", onWindowFocus);
-    return () => {
-      window.clearTimeout(timeoutId);
-      window.removeEventListener("focus", onWindowFocus);
-    };
-  }, [pickerOpen, pendingFile, uploading]);
-
   function clearPending() {
     if (pendingPreview) URL.revokeObjectURL(pendingPreview);
     setPendingFile(null);
     setPendingPreview("");
   }
 
-  async function uploadFile(file: File) {
+  function resetInput() {
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  async function uploadProcessed(file: File) {
     if (!ownerId) {
       setError("Entre na conta para salvar a imagem.");
+      setUploading(false);
       return;
     }
 
@@ -96,6 +74,7 @@ export function PollImageField({
       onChange(publicUrl);
       if (preview) URL.revokeObjectURL(preview);
       setPreview(null);
+      setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível enviar a imagem.");
     } finally {
@@ -104,51 +83,54 @@ export function PollImageField({
   }
 
   async function handleFile(file: File | undefined) {
-    pickerOpenRef.current = false;
-    setPickerOpen(false);
-
     if (!file) return;
     setError("");
 
     if (!isAcceptedImageFile(file)) {
-      setError("Selecione uma imagem (PNG, JPG, WebP ou HEIC).");
-      if (inputRef.current) inputRef.current.value = "";
+      setError("Selecione JPG, PNG ou WebP.");
+      resetInput();
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Imagem muito grande. Máximo 5 MB.");
-      if (inputRef.current) inputRef.current.value = "";
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Imagem muito grande. Máximo 8 MB.");
+      resetInput();
       return;
     }
 
-    try {
-      const normalized = normalizeImageFile(file);
+    const normalized = normalizeImageFile(file);
 
-      if (variant === "cover") {
-        clearPending();
-        setPendingFile(normalized);
-        setPendingPreview(URL.createObjectURL(normalized));
+    if (variant === "cover") {
+      if (isCoarsePointerDevice()) {
+        setUploading(true);
+        try {
+          clearPending();
+          const processed = await autoProcessPickedImage(normalized, "cover");
+          await uploadProcessed(processed);
+        } catch (err) {
+          setError(formatImageProcessError(err));
+          setUploading(false);
+        } finally {
+          resetInput();
+        }
         return;
       }
 
-      const localUrl = URL.createObjectURL(normalized);
-      setPreview(localUrl);
-      await uploadFile(normalized);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível abrir a imagem.");
-      if (inputRef.current) inputRef.current.value = "";
+      try {
+        clearPending();
+        setPendingFile(normalized);
+        setPendingPreview(URL.createObjectURL(normalized));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Não foi possível abrir a imagem.");
+        resetInput();
+      }
+      return;
     }
-  }
 
-  function openPicker(event: React.MouseEvent | React.TouchEvent) {
-    stopPointerEvent(event);
-    if (uploading || pendingFile) return;
-
-    pickerOpenRef.current = true;
-    setPickerOpen(true);
-    setError("");
-    inputRef.current?.click();
+    const localUrl = URL.createObjectURL(normalized);
+    setPreview(localUrl);
+    await uploadProcessed(normalized);
+    resetInput();
   }
 
   async function confirmCoverFocus(focus: { x: number; y: number }) {
@@ -157,29 +139,29 @@ export function PollImageField({
     setUploading(true);
 
     try {
-      const cropped = await cropImageCover(pendingFile, focus);
+      const processed = await processPickedImageWithFocus(pendingFile, "cover", focus);
       clearPending();
-      await uploadFile(cropped);
+      await uploadProcessed(processed);
     } catch (err) {
       setError(formatImageProcessError(err));
       setUploading(false);
     } finally {
-      if (inputRef.current) inputRef.current.value = "";
+      resetInput();
     }
   }
 
   function handleCancelFocus() {
     clearPending();
-    if (inputRef.current) inputRef.current.value = "";
+    resetInput();
   }
 
   function clearImage(event: React.MouseEvent) {
-    stopPointerEvent(event);
+    event.stopPropagation();
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
     onChange("");
     setError("");
-    if (inputRef.current) inputRef.current.value = "";
+    resetInput();
   }
 
   const focusEditor =
@@ -193,31 +175,28 @@ export function PollImageField({
       />
     ) : null;
 
+  const showPicker = !uploading && !pendingFile;
+
   return (
     <>
       <div className="votti-image-field">
         <span className="votti-field__label">{label}</span>
         {hint ? <p className="votti-image-field__hint">{hint}</p> : null}
 
-        <input
-          id={inputId}
-          ref={inputRef}
-          type="file"
-          accept={ACCEPT}
-          className="sr-only"
-          disabled={uploading}
-          tabIndex={-1}
-          aria-hidden
-          onChange={(e) => void handleFile(e.target.files?.[0])}
-        />
-
-        <button
-          type="button"
-          className={`votti-image-box votti-image-box--${variant} ${displayUrl ? "votti-image-box--filled" : ""}`}
-          disabled={uploading}
-          aria-label={displayUrl ? "Trocar imagem" : "Escolher imagem"}
-          onClick={openPicker}
+        <div
+          className={`votti-image-box votti-image-box--${variant} votti-image-box--picker ${displayUrl ? "votti-image-box--filled" : ""} ${uploading ? "votti-image-box--busy" : ""}`}
         >
+          {showPicker ? (
+            <input
+              ref={inputRef}
+              type="file"
+              accept={ACCEPT}
+              className="votti-file-overlay"
+              aria-label={displayUrl ? "Trocar imagem" : "Escolher imagem"}
+              onChange={(e) => void handleFile(e.target.files?.[0])}
+            />
+          ) : null}
+
           {uploading ? (
             <span className="votti-image-box__placeholder">
               <Loader2 className="size-8 animate-spin opacity-70" />
@@ -241,10 +220,10 @@ export function PollImageField({
           ) : (
             <span className="votti-image-box__placeholder">
               <ImagePlus className="size-8 opacity-60" />
-              <span>Clique para escolher</span>
+              <span>Toque para escolher</span>
             </span>
           )}
-        </button>
+        </div>
 
         {displayUrl && !uploading ? (
           <button type="button" className="votti-image-field__remove" onClick={clearImage}>

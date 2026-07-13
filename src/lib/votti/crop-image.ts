@@ -7,7 +7,7 @@ function clamp01(value: number) {
 export function formatImageProcessError(error: unknown): string {
   const msg = error instanceof Error ? error.message : "";
   if (/could not be decoded|decode|invalid image|corrupt/i.test(msg)) {
-    return "Não foi possível abrir esta imagem. Tente JPG ou PNG.";
+    return "Não foi possível abrir esta foto. No iPhone, em Ajustes da foto, use “Mais compatível” (JPG).";
   }
   if (msg) return msg;
   return "Não foi possível processar a imagem.";
@@ -42,7 +42,40 @@ export function isAcceptedImageFile(file: File): boolean {
 }
 
 async function loadImageElement(file: File): Promise<{ img: HTMLImageElement; cleanup: () => void }> {
-  const url = URL.createObjectURL(file);
+  const normalized = normalizeImageFile(file);
+
+  if (typeof createImageBitmap === "function") {
+    try {
+      const bitmap = await createImageBitmap(normalized);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        bitmap.close();
+        throw new Error("Canvas indisponível.");
+      }
+      ctx.drawImage(bitmap, 0, 0);
+      bitmap.close();
+
+      const url = canvas.toDataURL("image/jpeg", 0.92);
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image();
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error("Não foi possível abrir esta imagem. Tente JPG ou PNG."));
+        el.src = url;
+      });
+
+      return {
+        img,
+        cleanup: () => {},
+      };
+    } catch {
+      /* fallback para Image() abaixo */
+    }
+  }
+
+  const url = URL.createObjectURL(normalized);
 
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
