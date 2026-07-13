@@ -1,5 +1,7 @@
 import { Logo } from "@/components/logo";
 import { LandingAuthLink } from "@/components/landing/landing-auth-link";
+import { FooterAdSlot } from "@/components/footer/footer-ad-slot";
+import { getFooterAdConfig } from "@/lib/footer-ad";
 import { PublicLegalFooter } from "@/components/votti/legal/public-legal-footer";
 
 /** Cabeçalho da landing para visitantes — só logo e âncoras, sem painel do usuário. */
@@ -22,6 +24,8 @@ export function LandingHeader() {
 }
 
 export function LandingFooter({ guest = false }: { guest?: boolean }) {
+  const adConfig = getFooterAdConfig();
+
   return (
     <footer className="votti-footer">
       <div className="votti-footer__actions">
@@ -34,6 +38,11 @@ export function LandingFooter({ guest = false }: { guest?: boolean }) {
           </LandingAuthLink>
         ) : null}
       </div>
+
+      <div className="votti-footer__ad mx-auto mt-4 h-[92px] max-w-md overflow-hidden rounded-xl border border-border/40 bg-surface/50 md:h-[80px]">
+        <FooterAdSlot config={adConfig} />
+      </div>
+
       <PublicLegalFooter />
     </footer>
   );
