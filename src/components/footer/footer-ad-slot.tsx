@@ -32,7 +32,7 @@ export function FooterAdSlot({ config, advertiseHref }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!mounted || config.provider !== "monetag" || !config.monetagScriptUrl) return;
+    if (!mounted || config.provider !== "monetag") return;
     ensureMonetagScriptLoaded(config.monetagScriptUrl, config.monetagZoneId);
   }, [mounted, config.provider, config.monetagScriptUrl, config.monetagZoneId]);
 
@@ -58,9 +58,10 @@ export function FooterAdSlot({ config, advertiseHref }: Props) {
   }, [mounted, isAdSense, hasSlot, config.adsenseSlot]);
 
   const showFallback =
+    config.provider !== "monetag" &&
     config.provider !== "adsense" &&
     (config.provider === "none" ||
-      ((config.provider === "monetag" || config.provider === "image") && !adLoaded));
+      ((config.provider === "image") && !adLoaded));
 
   return (
     <div className="relative flex h-full w-full items-center overflow-hidden" suppressHydrationWarning>
@@ -89,14 +90,13 @@ export function FooterAdSlot({ config, advertiseHref }: Props) {
         </div>
       ) : null}
 
-      {config.provider === "monetag" && config.monetagZoneId ? (
-        <div ref={containerRef} className="flex h-full w-full items-center justify-center px-1.5">
-          <div
-            id={`monetag-zone-${config.monetagZoneId}`}
-            data-monetag-zone={config.monetagZoneId}
-            className="h-full min-h-[92px] w-full md:min-h-[80px]"
-          />
-        </div>
+      {config.provider === "monetag" ? (
+        <div
+          ref={containerRef}
+          data-monetag-footer
+          className="flex h-full w-full items-center justify-center px-1.5"
+          aria-label="Anúncio"
+        />
       ) : null}
 
       {config.provider === "html" && config.html ? (
