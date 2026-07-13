@@ -1,6 +1,7 @@
 import type { PollRankingState } from "@/lib/votti/ranking/types";
 import type { StoredPoll } from "@/lib/votti/poll-types";
 import { DEFAULT_SETTINGS } from "@/lib/votti/poll-types";
+import { normalizeImageUrl } from "@/lib/votti/persist-image-url";
 
 export type PollMetaResponse = {
   slug: string;
@@ -116,6 +117,34 @@ async function readPollRankingResponse(res: Response): Promise<PollRankingState 
   return (await res.json()) as PollRankingState;
 }
 
+async function enrichRankingState(slug: string, data: PollRankingState): Promise<PollRankingState> {
+  const coverUrl = normalizeImageUrl(data.meta.coverUrl);
+  const logoUrl = normalizeImageUrl(data.meta.logoUrl);
+  if (coverUrl) {
+    if (coverUrl === data.meta.coverUrl && logoUrl === data.meta.logoUrl) return data;
+    return {
+      ...data,
+      meta: { ...data.meta, coverUrl, logoUrl: logoUrl || data.meta.logoUrl },
+    };
+  }
+
+  const meta = await fetchPollMeta(slug);
+  if (!meta) return data;
+
+  const metaCover = normalizeImageUrl(meta.coverUrl);
+  const metaLogo = normalizeImageUrl(meta.logoUrl);
+  if (!metaCover && !metaLogo) return data;
+
+  return {
+    ...data,
+    meta: {
+      ...data.meta,
+      coverUrl: metaCover || data.meta.coverUrl,
+      logoUrl: metaLogo || data.meta.logoUrl,
+    },
+  };
+}
+
 export async function fetchPollRanking(slug: string): Promise<PollRankingState | null> {
   const rankingUrl = `/ranking/${encodeURIComponent(slug)}`;
   const headers = { accept: "application/json" };
@@ -132,13 +161,13 @@ export async function fetchPollRanking(slug: string): Promise<PollRankingState |
       );
     }
 
-    if (data) return data;
+    if (data) return enrichRankingState(slug, data);
   } catch {
     /* tenta meta abaixo */
   }
 
   const meta = await fetchPollMeta(slug);
-  return meta ? pollMetaToRankingState(meta) : null;
+  return meta ? enrichRankingState(slug, pollMetaToRankingState(meta)) : null;
 }
 
 /** Atualiza snapshot após voto confirmado. */

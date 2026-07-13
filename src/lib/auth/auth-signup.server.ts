@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 
-import { getSupabaseAdmin } from "@/lib/api/supabase.server";
+import { getSupabaseAdmin, getSupabaseWithToken } from "@/lib/api/supabase.server";
 import { getServerConfig } from "@/lib/config.server";
+import { resolveDisplayName } from "@/lib/auth/ensure-auth-session";
 import { getSupabaseEnvMismatch } from "@/lib/supabase-env";
 import {
   getSupabaseProjectRef,
@@ -124,4 +125,33 @@ export const lookupAuthEmail = createServerFn({ method: "POST" })
       }
       throw err;
     }
+  });
+
+/** Garante linha em profiles após login Google/OAuth (trigger pode não ter rodado). */
+export const ensureAuthProfile = createServerFn({ method: "POST" })
+  .inputValidator((data: { accessToken?: string }) => ({
+    accessToken: typeof data.accessToken === "string" ? data.accessToken : "",
+  }))
+  .handler(async ({ data }) => {
+    if (!data.accessToken) return { ok: false as const };
+
+    const userClient = getSupabaseWithToken(data.accessToken);
+    const { data: userData, error: userError } = await userClient.auth.getUser();
+    if (userError || !userData.user) return { ok: false as const };
+
+    const user = userData.user;
+    const nome = resolveDisplayName(user);
+
+    if (!getServerConfig().supabase.serviceRoleKey) {
+      return { ok: true as const, skipped: true as const };
+    }
+
+    const admin = getSupabaseAdmin();
+    const { error } = await admin.from("profiles").upsert(
+      { id: user.id, nome },
+      { onConflict: "id" },
+    );
+
+    if (error) throw error;
+    return { ok: true as const };
   });

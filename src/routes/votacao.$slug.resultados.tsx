@@ -4,6 +4,8 @@ import { PollPublicShell } from "@/components/votti/poll-public-shell";
 import { PublicLegalFooter } from "@/components/votti/legal/public-legal-footer";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { PollSharePanel } from "@/components/votti/poll-share-panel";
+import { CoverImage } from "@/components/votti/poll-cover-hero";
+import { PollLiveBadge } from "@/components/votti/poll-live-badge";
 import { SecurityBadge } from "@/components/votti/security-badge";
 import { VoteSuccessBanner } from "@/components/votti/vote-confirmed-screen";
 import { getServerPublicOrigin } from "@/lib/votti/app-url";
@@ -113,7 +115,6 @@ function ResultadosPage() {
   }
 
   const liveOn = status === "live";
-  const liveLabel = status === "connecting" ? "CONECTANDO…" : "AO VIVO";
   const coverUrl = getPollCoverUrl(displayPoll);
 
   return (
@@ -123,11 +124,7 @@ function ResultadosPage() {
 
         <div className="votti-results-hero animate-rise">
           {coverUrl ? (
-            <div
-              className="votti-results-hero__cover"
-              style={{ backgroundImage: `url(${coverUrl})` }}
-              aria-hidden
-            />
+            <CoverImage src={coverUrl} className="votti-results-hero__cover" />
           ) : (
             <div className="votti-results-hero__cover votti-results-hero__cover--accent" aria-hidden />
           )}
@@ -135,12 +132,7 @@ function ResultadosPage() {
           <div className="votti-results-hero__body">
             <div className="votti-results-hero__meta">
               <SecurityBadge compact />
-              <span
-                className={`votti-results-hero__live ${liveOn || status !== "connecting" ? "votti-results-hero__live--on" : "votti-results-hero__live--sync"}`}
-              >
-                <span className="votti-results-hero__live-dot" aria-hidden />
-                {liveLabel}
-              </span>
+              <PollLiveBadge syncing={status === "connecting"} />
             </div>
             <h1 className="votti-results-hero__title">{displayPoll.title}</h1>
             <p className="votti-results-hero__stats tabular-nums">{formatPollStats(displayPoll)}</p>

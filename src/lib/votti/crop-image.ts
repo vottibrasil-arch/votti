@@ -41,34 +41,47 @@ export function isAcceptedImageFile(file: File): boolean {
   return IMAGE_EXTENSIONS.has(ext);
 }
 
-async function loadImageElement(file: File): Promise<{ img: HTMLImageElement; cleanup: () => void }> {
+type DrawableSource = {
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+  cleanup: () => void;
+};
+
+function scaledDimensions(width: number, height: number, maxEdge: number) {
+  const max = Math.max(width, height);
+  if (max <= maxEdge) return { width, height };
+  const scale = maxEdge / max;
+  return {
+    width: Math.round(width * scale),
+    height: Math.round(height * scale),
+  };
+}
+
+/** Decodifica e reduz a imagem antes do recorte — evita travar o celular em fotos 12 MP+. */
+async function loadDrawableSource(file: File, maxEdge = 2000): Promise<DrawableSource> {
   const normalized = normalizeImageFile(file);
 
   if (typeof createImageBitmap === "function") {
     try {
-      const bitmap = await createImageBitmap(normalized);
-      const canvas = document.createElement("canvas");
-      canvas.width = bitmap.width;
-      canvas.height = bitmap.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        bitmap.close();
-        throw new Error("Canvas indisponível.");
-      }
-      ctx.drawImage(bitmap, 0, 0);
-      bitmap.close();
+      let bitmap = await createImageBitmap(normalized);
+      const target = scaledDimensions(bitmap.width, bitmap.height, maxEdge);
 
-      const url = canvas.toDataURL("image/jpeg", 0.92);
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const el = new Image();
-        el.onload = () => resolve(el);
-        el.onerror = () => reject(new Error("Não foi possível abrir esta imagem. Tente JPG ou PNG."));
-        el.src = url;
-      });
+      if (target.width !== bitmap.width || target.height !== bitmap.height) {
+        const resized = await createImageBitmap(bitmap, {
+          resizeWidth: target.width,
+          resizeHeight: target.height,
+          resizeQuality: "medium",
+        });
+        bitmap.close();
+        bitmap = resized;
+      }
 
       return {
-        img,
-        cleanup: () => {},
+        source: bitmap,
+        width: bitmap.width,
+        height: bitmap.height,
+        cleanup: () => bitmap.close(),
       };
     } catch {
       /* fallback para Image() abaixo */
@@ -91,9 +104,30 @@ async function loadImageElement(file: File): Promise<{ img: HTMLImageElement; cl
       throw new Error("Imagem inválida ou corrompida.");
     }
 
+    const target = scaledDimensions(width, height, maxEdge);
+    if (target.width === width && target.height === height) {
+      return {
+        source: img,
+        width,
+        height,
+        cleanup: () => URL.revokeObjectURL(url),
+      };
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = target.width;
+    canvas.height = target.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas indisponível.");
+
+    ctx.drawImage(img, 0, 0, target.width, target.height);
+    URL.revokeObjectURL(url);
+
     return {
-      img,
-      cleanup: () => URL.revokeObjectURL(url),
+      source: canvas,
+      width: target.width,
+      height: target.height,
+      cleanup: () => {},
     };
   } catch (error) {
     URL.revokeObjectURL(url);
@@ -124,11 +158,12 @@ export async function cropImageSquare(
   outputSize = 256,
 ): Promise<File> {
   const normalized = normalizeImageFile(file);
-  const { img, cleanup } = await loadImageElement(normalized);
+  const { source, width, height, cleanup } = await loadDrawableSource(
+    normalized,
+    Math.max(outputSize * 3, 900),
+  );
 
   try {
-    const width = img.naturalWidth;
-    const height = img.naturalHeight;
     const side = Math.min(width, height);
     const focusX = clamp01(focus.x) * width;
     const focusY = clamp01(focus.y) * height;
@@ -144,7 +179,7 @@ export async function cropImageSquare(
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas indisponível.");
 
-    ctx.drawImage(img, sx, sy, side, side, 0, 0, outputSize, outputSize);
+    ctx.drawImage(source, sx, sy, side, side, 0, 0, outputSize, outputSize);
 
     return canvasToFile(canvas, normalized.name);
   } finally {
@@ -157,14 +192,16 @@ export async function cropImageCover(
   file: File,
   focus: ImageFocus,
   outputWidth = 1280,
+  quality = 0.9,
 ): Promise<File> {
   const normalized = normalizeImageFile(file);
-  const { img, cleanup } = await loadImageElement(normalized);
+  const outputHeight = Math.round((outputWidth * 9) / 16);
+  const { source, width, height, cleanup } = await loadDrawableSource(
+    normalized,
+    Math.max(outputWidth * 1.35, 1200),
+  );
 
   try {
-    const width = img.naturalWidth;
-    const height = img.naturalHeight;
-    const outputHeight = Math.round((outputWidth * 9) / 16);
     const targetRatio = outputWidth / outputHeight;
 
     let cropW = width;
@@ -190,9 +227,9 @@ export async function cropImageCover(
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas indisponível.");
 
-    ctx.drawImage(img, sx, sy, cropW, cropH, 0, 0, outputWidth, outputHeight);
+    ctx.drawImage(source, sx, sy, cropW, cropH, 0, 0, outputWidth, outputHeight);
 
-    return canvasToFile(canvas, normalized.name, 0.9);
+    return canvasToFile(canvas, normalized.name, quality);
   } finally {
     cleanup();
   }

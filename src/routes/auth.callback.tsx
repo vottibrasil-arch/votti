@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser, isSupabaseBrowserConfigured } from "@/lib/api/supabase-browser";
-import { navigateAfterAuth, sanitizeRedirect } from "@/lib/auth/redirect";
+import { ensureAuthSession, finalizeOAuthSession } from "@/lib/auth/ensure-auth-session";
+import { mapAuthError } from "@/lib/auth/auth-errors";
+import { navigateAfterAuth } from "@/lib/auth/redirect";
 import { AppShell } from "@/components/app/app-shell";
 
 type CallbackSearch = { redirect?: string };
@@ -19,19 +21,40 @@ function AuthCallbackPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!isSupabaseBrowserConfigured()) {
-      navigateAfterAuth(navigate, redirect);
-      return;
-    }
+    let cancelled = false;
 
-    const supabase = getSupabaseBrowser();
-    supabase.auth.getSession().then(({ data, error: sessionError }) => {
-      if (sessionError || !data.session) {
-        setError("Não foi possível completar o login.");
+    async function complete() {
+      if (!isSupabaseBrowserConfigured()) {
+        navigateAfterAuth(navigate, redirect);
         return;
       }
-      navigateAfterAuth(navigate, redirect);
-    });
+
+      try {
+        const url = new URL(window.location.href);
+        const oauthError = url.searchParams.get("error_description");
+        if (oauthError) {
+          if (!cancelled) setError(mapAuthError(decodeURIComponent(oauthError)));
+          return;
+        }
+
+        const session = await ensureAuthSession();
+        await finalizeOAuthSession(session);
+
+        if (!cancelled) navigateAfterAuth(navigate, redirect);
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error ? mapAuthError(err.message) : "Não foi possível completar o login.",
+          );
+        }
+      }
+    }
+
+    void complete();
+
+    return () => {
+      cancelled = true;
+    };
   }, [navigate, redirect]);
 
   return (

@@ -3819,6 +3819,7 @@ button.votti-legal-footer__link:hover {
   display: block;
   width: 100%;
   height: 9.5rem;
+  object-fit: cover;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -3889,6 +3890,37 @@ button.votti-legal-footer__link:hover {
     opacity: 0.55;
     transform: scale(0.88);
   }
+}
+
+/* Badge único “AO VIVO” — vermelho e piscando */
+.votti-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.votti-live-badge--on {
+  color: oklch(0.62 0.26 25);
+}
+
+.votti-live-badge--sync {
+  color: oklch(0.72 0.14 55);
+}
+
+.votti-live-badge__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 8px color-mix(in oklab, currentColor 65%, transparent);
+}
+
+.votti-live-badge--on .votti-live-badge__dot {
+  animation: votti-live-pulse 1.4s ease-in-out infinite;
 }
 
 .votti-results-hero__title {
@@ -4010,7 +4042,6 @@ button.votti-legal-footer__link:hover {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: oklch(0.72 0.18 145);
 }
 
 .poll-ranking-preview--featured .poll-ranking-preview__featured-count {
@@ -5142,6 +5173,13 @@ button.votti-image-box:disabled {
 
 .votti-image-box--filled:hover .votti-image-box__overlay {
   opacity: 1;
+}
+
+.votti-image-box__overlay--busy {
+  gap: 0.5rem;
+  opacity: 1;
+  background: oklch(0.12 0.04 260 / 72%);
+  pointer-events: none;
 }
 
 .votti-image-field__remove {

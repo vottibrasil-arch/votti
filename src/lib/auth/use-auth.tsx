@@ -23,7 +23,12 @@ import { getSupabaseBrowser, isSupabaseBrowserConfigured } from "@/lib/api/supab
 import {
   AUTH_SIGNUP_NOT_CREATED_MSG,
 } from "@/lib/auth/auth-errors";
-
+import {
+  resolveDisplayName,
+  usesEmailPasswordAuth,
+  usesGoogleAuth,
+} from "@/lib/auth/ensure-auth-session";
+import { sanitizeRedirect } from "@/lib/auth/redirect";
 import type { VottiUser } from "@/lib/auth/types";
 
 import { deleteOwnAccount } from "@/lib/auth/auth-account.server";
@@ -62,7 +67,7 @@ type AuthContextValue = {
 
   signUp: (email: string, password: string, name?: string) => Promise<SignUpResult>;
 
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (redirect?: string) => Promise<void>;
 
   updateProfileName: (name: string) => Promise<void>;
 
@@ -83,25 +88,16 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 
 function mapUser(user: User): VottiUser {
+  const usesGoogle = usesGoogleAuth(user);
+  const usesEmail = usesEmailPasswordAuth(user);
 
   return {
-
     id: user.id,
-
     email: user.email ?? "",
-
-    name:
-
-      (user.user_metadata?.nome as string | undefined) ??
-
-      (user.user_metadata?.name as string | undefined) ??
-
-      user.email?.split("@")[0] ??
-
-      "Usuário",
-
+    name: resolveDisplayName(user),
+    usesGoogle,
+    usesEmailPassword: usesEmail,
   };
-
 }
 
 
@@ -243,22 +239,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
 
-  const signInWithGoogle = useCallback(async () => {
-
+  const signInWithGoogle = useCallback(async (redirect?: string) => {
     assertSupabaseConfigured(configured);
 
-    const redirectTo = `${window.location.origin}/auth/callback`;
+    const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+    const safeRedirect = sanitizeRedirect(redirect);
+    if (safeRedirect !== "/") {
+      callbackUrl.searchParams.set("redirect", safeRedirect);
+    }
 
     const { error } = await getSupabaseBrowser().auth.signInWithOAuth({
-
       provider: "google",
-
-      options: { redirectTo },
-
+      options: {
+        redirectTo: callbackUrl.toString(),
+        queryParams: { prompt: "select_account" },
+      },
     });
 
     if (error) throw error;
-
   }, [configured]);
 
 
@@ -290,25 +288,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const updatePassword = useCallback(
-
     async (newPassword: string) => {
-
       assertSupabaseConfigured(configured);
 
+      const { data } = await getSupabaseBrowser().auth.getUser();
+      if (data.user && usesGoogleAuth(data.user) && !usesEmailPasswordAuth(data.user)) {
+        throw new Error("Sua conta usa Google. A senha é gerenciada pela conta Google.");
+      }
+
       if (newPassword.length < 6) {
-
         throw new Error("A senha deve ter pelo menos 6 caracteres");
-
       }
 
       const { error } = await getSupabaseBrowser().auth.updateUser({ password: newPassword });
-
       if (error) throw error;
-
     },
-
     [configured],
-
   );
 
 

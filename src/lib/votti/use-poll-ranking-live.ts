@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchPollRanking, type PollRankingLiveStatus } from "@/lib/votti/ranking/client";
 import type { PollRankingState } from "@/lib/votti/ranking/types";
 
-const POLL_MS = 2_000;
+const POLL_MS = 1_500;
 
 type UsePollRankingLiveOptions = {
   slug: string;
@@ -60,6 +60,7 @@ export function usePollRankingLive({ slug, enabled = true }: UsePollRankingLiveO
 
     setStatus("connecting");
     poll();
+    const kickTimer = setTimeout(poll, 400);
     pollTimer = setInterval(poll, POLL_MS);
 
     const handleVisibility = () => {
@@ -71,6 +72,7 @@ export function usePollRankingLive({ slug, enabled = true }: UsePollRankingLiveO
 
     return () => {
       cancelled = true;
+      clearTimeout(kickTimer);
       if (pollTimer) clearInterval(pollTimer);
       document.removeEventListener("visibilitychange", handleVisibility);
       setStatus("idle");

@@ -190,7 +190,11 @@ function MinhaContaPage() {
 
             <div id="senha" className="votti-account__block scroll-mt-24">
               <p className="votti-account__subheading">Senha</p>
-              {!showPasswordForm ? (
+              {user.usesGoogle && !user.usesEmailPassword ? (
+                <p className="votti-account__hint">
+                  Você entrou com Google. A senha é gerenciada pela sua conta Google.
+                </p>
+              ) : !showPasswordForm ? (
                 <button
                   type="button"
                   className="votti-outline-btn w-full"

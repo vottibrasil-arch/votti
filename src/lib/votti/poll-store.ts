@@ -1,4 +1,5 @@
 import { isSupabaseBrowserConfigured } from "@/lib/api/supabase-browser";
+import { ensureAuthSession } from "@/lib/auth/ensure-auth-session";
 import {
   findInvalidDraftImages,
   resolveDraftImages,
@@ -76,11 +77,17 @@ export async function publishPoll(
   assertSupabaseConfigured();
   clearLegacyLocalPolls();
 
+  const session = await ensureAuthSession();
+  const activeOwner = {
+    id: session.user.id,
+    email: session.user.email ?? owner.email,
+  };
+
   const imageError = findInvalidDraftImages(draft);
   if (imageError) throw new Error(imageError);
 
-  const resolvedDraft = await resolveDraftImages(draft, owner.id);
-  const poll = await publishPollDb(resolvedDraft, owner);
+  const resolvedDraft = await resolveDraftImages(draft, activeOwner.id);
+  const poll = await publishPollDb(resolvedDraft, activeOwner);
   clearDraft();
   try {
     await initializePollRankingFn({ data: { slug: poll.slug } });
@@ -98,7 +105,7 @@ export async function castVote(
 ): Promise<void> {
   assertSupabaseConfigured();
   await castVoteDb(slug, questionId, optionId, voterToken);
-  await refreshPollSnapshot(slug);
+  void refreshPollSnapshot(slug);
 }
 
 export async function confirmVotes(
@@ -113,7 +120,7 @@ export async function confirmVotes(
   }
 
   await castVotesDb(slug, selections, voterToken);
-  await refreshPollSnapshot(slug);
+  void refreshPollSnapshot(slug);
 }
 
 /** Verifica localmente se o participante já confirmou voto nesta votação. */
@@ -186,15 +193,18 @@ export async function updatePoll(
 ): Promise<StoredPoll> {
   assertSupabaseConfigured();
 
+  const session = await ensureAuthSession();
+  const activeOwnerId = session.user.id;
+
   const imageError = findInvalidDraftImages(draft);
   if (imageError) throw new Error(imageError);
 
-  const existing = await getPollByIdForOwnerDb(pollId, ownerId);
+  const existing = await getPollByIdForOwnerDb(pollId, activeOwnerId);
   if (!existing) throw new Error("Votação não encontrada.");
 
-  const resolvedDraft = await resolveDraftImages(draft, ownerId);
+  const resolvedDraft = await resolveDraftImages(draft, activeOwnerId);
   const mergedDraft = mergeVisualEditDraft(existing, resolvedDraft);
-  return updatePollDb(pollId, ownerId, mergedDraft, opts);
+  return updatePollDb(pollId, activeOwnerId, mergedDraft, opts);
 }
 
 export async function closePoll(pollId: string, ownerId: string): Promise<void> {

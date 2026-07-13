@@ -1,4 +1,4 @@
-import { LiveDot } from "@/components/ui-kit";
+import { PollLiveBadge } from "@/components/votti/poll-live-badge";
 import { LivePollBar, optionStackZ } from "@/components/votti/live-poll-bar";
 import type { PollQuestion } from "@/lib/votti/poll-types";
 
@@ -46,7 +46,7 @@ export function PollRankingPreview({
     >
       {!featured ? (
         <div className="poll-ranking-preview__head">
-          {live ? <LiveDot /> : null}
+          {live ? <PollLiveBadge /> : null}
           {!hideTitle ? (
             <h3 className="poll-ranking-preview__title">{title || "Sua votação"}</h3>
           ) : null}
@@ -56,8 +56,7 @@ export function PollRankingPreview({
         </div>
       ) : live && !hideFeaturedLive ? (
         <div className="poll-ranking-preview__featured-live">
-          <LiveDot />
-          <span>Ao vivo</span>
+          <PollLiveBadge />
           <span className="poll-ranking-preview__featured-count tabular-nums">
             {hasVotes ? `${totalVotes} votos` : "0 votos"}
           </span>

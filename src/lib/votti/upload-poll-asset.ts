@@ -1,4 +1,5 @@
 import { getSupabaseBrowser, isSupabaseBrowserConfigured } from "@/lib/api/supabase-browser";
+import { ensureAuthSession } from "@/lib/auth/ensure-auth-session";
 
 const BUCKET = "poll-assets";
 
@@ -10,6 +11,8 @@ export async function uploadPollAsset(
   if (!isSupabaseBrowserConfigured()) {
     throw new Error("Supabase não configurado. Não foi possível enviar a imagem.");
   }
+
+  await ensureAuthSession();
 
   const supabase = getSupabaseBrowser();
   const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";

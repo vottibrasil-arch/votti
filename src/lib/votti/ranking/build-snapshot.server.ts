@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/api/supabase.server";
+import { normalizeImageUrl } from "@/lib/votti/persist-image-url";
 import type { PollRankingState } from "@/lib/votti/ranking/types";
 import { sumRankingVotes } from "@/lib/votti/ranking/types";
 
@@ -63,11 +64,12 @@ export async function buildSnapshotFromPollResults(slug: string): Promise<PollRa
           id: o.option_id,
           text: o.option_text,
           votes: Number(o.vote_count),
-          imageUrl: o.image_url?.trim() ?? "",
+          imageUrl: normalizeImageUrl(o.image_url),
         })),
     }));
 
-  const coverUrl = (head.photo_url ?? "").trim() || (head.logo_url ?? "").trim();
+  const coverUrl =
+    normalizeImageUrl(head.photo_url) || normalizeImageUrl(head.logo_url);
   const updatedAt = new Date().toISOString();
 
   return {
@@ -82,7 +84,7 @@ export async function buildSnapshotFromPollResults(slug: string): Promise<PollRa
       description: head.description ?? "",
       primaryColor: head.primary_color ?? "#4F8FD9",
       coverUrl,
-      logoUrl: head.logo_url ?? "",
+      logoUrl: normalizeImageUrl(head.logo_url),
       status: head.status === "closed" ? "closed" : "active",
     },
     questions: builtQuestions,

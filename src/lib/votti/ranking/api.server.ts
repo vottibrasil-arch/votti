@@ -48,9 +48,9 @@ async function tryRefreshSnapshot(slug: string): Promise<PollRankingState | null
 
 async function handleGetRanking(slug: string): Promise<Response> {
   try {
-    let snapshot = await tryRefreshSnapshot(slug);
+    let snapshot = await getStoredSnapshot(slug);
     if (!snapshot) {
-      snapshot = await getStoredSnapshot(slug);
+      snapshot = await tryRefreshSnapshot(slug);
     }
     if (!snapshot) {
       snapshot = await buildInitialRankingFromMeta(slug);

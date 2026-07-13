@@ -5,7 +5,7 @@ import { PollCoverHero } from "@/components/votti/poll-cover-hero";
 import { PollPublicShell } from "@/components/votti/poll-public-shell";
 import { RankingOptionAvatar } from "@/components/votti/ranking-option-avatar";
 import { SecurityBadge } from "@/components/votti/security-badge";
-import { LiveDot } from "@/components/ui-kit";
+import { PollLiveBadge } from "@/components/votti/poll-live-badge";
 import {
   confirmVotes,
   getPollMetaForVoting,
@@ -178,10 +178,7 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
         <PollCoverHero poll={poll}>
           <div className="votti-vote-hero__trust">
             <SecurityBadge compact />
-            <span className="votti-vote-hero__live">
-              <LiveDot />
-              ao vivo
-            </span>
+            <PollLiveBadge />
           </div>
           <h1 className="votti-vote-hero__title">{poll.title}</h1>
           {poll.description ? <p className="votti-vote-hero__desc">{poll.description}</p> : null}

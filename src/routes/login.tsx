@@ -68,7 +68,7 @@ function LoginPage() {
     }
     setSubmitting(true);
     try {
-      await signInWithGoogle();
+      await signInWithGoogle(redirect);
       if (!loading) navigateAfterAuth(navigate, redirect);
     } catch (err) {
       setError(err instanceof Error ? mapAuthError(err.message) : "Erro ao entrar com Google");

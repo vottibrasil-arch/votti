@@ -84,7 +84,7 @@ function CadastroPage() {
     }
     setSubmitting(true);
     try {
-      await signInWithGoogle();
+      await signInWithGoogle(redirect);
     } catch (err) {
       setError(err instanceof Error ? mapAuthError(err.message) : "Erro ao continuar com Google");
       setSubmitting(false);

@@ -43,6 +43,19 @@ export function mapAuthError(message: string): string {
     return "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.";
   }
 
+  if (
+    normalized.includes("oauth") ||
+    normalized.includes("external provider") ||
+    normalized.includes("sso") ||
+    normalized.includes("identity is already linked")
+  ) {
+    return "Sua conta usa Google. Use o botão Entrar com Google.";
+  }
+
+  if (normalized.includes("password") && normalized.includes("google")) {
+    return "Sua conta usa Google. A senha é gerenciada pela conta Google.";
+  }
+
   if (normalized.includes("auth_signup_not_created")) {
     return AUTH_SIGNUP_NOT_CREATED_MSG;
   }

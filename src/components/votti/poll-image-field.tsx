@@ -102,12 +102,17 @@ export function PollImageField({
 
     if (variant === "cover") {
       if (isCoarsePointerDevice()) {
+        const localUrl = URL.createObjectURL(normalized);
+        if (preview) URL.revokeObjectURL(preview);
+        setPreview(localUrl);
         setUploading(true);
         try {
           clearPending();
           const processed = await autoProcessPickedImage(normalized, "cover");
           await uploadProcessed(processed);
         } catch (err) {
+          if (preview) URL.revokeObjectURL(preview);
+          setPreview(null);
           setError(formatImageProcessError(err));
           setUploading(false);
         } finally {
@@ -197,10 +202,10 @@ export function PollImageField({
             />
           ) : null}
 
-          {uploading ? (
+          {uploading && !displayUrl ? (
             <span className="votti-image-box__placeholder">
               <Loader2 className="size-8 animate-spin opacity-70" />
-              <span>Enviando…</span>
+              <span>{variant === "cover" ? "Salvando capa…" : "Enviando…"}</span>
             </span>
           ) : displayUrl ? (
             <>
@@ -215,7 +220,14 @@ export function PollImageField({
                   setError("Não foi possível carregar a imagem. Envie novamente.");
                 }}
               />
-              <span className="votti-image-box__overlay">Trocar imagem</span>
+              {uploading ? (
+                <span className="votti-image-box__overlay votti-image-box__overlay--busy">
+                  <Loader2 className="size-5 animate-spin" />
+                  {variant === "cover" ? "Salvando capa…" : "Enviando…"}
+                </span>
+              ) : (
+                <span className="votti-image-box__overlay">Trocar imagem</span>
+              )}
             </>
           ) : (
             <span className="votti-image-box__placeholder">

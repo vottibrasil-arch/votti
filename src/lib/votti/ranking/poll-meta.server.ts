@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin, getSupabaseAnonServer } from "@/lib/api/supabase.server";
 import type { Database } from "@/lib/supabase/database.types";
 import { getSupabaseAdminEnvStatus } from "@/lib/supabase-env";
+import { normalizeImageUrl } from "@/lib/votti/persist-image-url";
 import { getStoredSnapshot } from "@/lib/votti/ranking/snapshot.server";
 import type { PollRankingState } from "@/lib/votti/ranking/types";
 import type { PollQuestion, StoredPoll } from "@/lib/votti/poll-types";
@@ -127,7 +128,7 @@ async function fetchPollMetaWithSupabase(
         })),
     }));
 
-  const coverUrl = (poll.photo_url ?? "").trim() || (poll.logo_url ?? "").trim();
+  const coverUrl = normalizeImageUrl(poll.photo_url) || normalizeImageUrl(poll.logo_url);
 
   return {
     id: poll.id,
