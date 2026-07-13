@@ -3682,6 +3682,15 @@ button.votti-legal-footer__link:hover {
   border: 1px solid oklch(0.62 0.18 145 / 25%);
 }
 
+.votti-question-card__remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: oklch(0.68 0.16 25);
+}
+
 .votti-toggle--card {
   padding: 0.875rem 1rem;
   border-radius: 0.875rem;

@@ -42,7 +42,8 @@ export function PollImageField({
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState("");
 
-  const displayUrl = normalizeImageUrl(preview) || normalizeImageUrl(value);
+  const savedUrl = normalizeImageUrl(value);
+  const displayUrl = variant === "cover" ? savedUrl : normalizeImageUrl(preview) || savedUrl;
   const busy = uploading || Boolean(pendingFile);
   const onBusyChangeRef = useRef(onBusyChange);
   onBusyChangeRef.current = onBusyChange;
@@ -70,8 +71,7 @@ export function PollImageField({
 
     setUploading(true);
     try {
-      const publicUrl = await uploadPollAsset(file, ownerId, variant);
-      onChange(publicUrl);
+      onChange(await uploadPollAsset(file, ownerId, variant));
       if (preview) URL.revokeObjectURL(preview);
       setPreview(null);
       setError("");
@@ -79,6 +79,7 @@ export function PollImageField({
       setError(err instanceof Error ? err.message : "Não foi possível enviar a imagem.");
     } finally {
       setUploading(false);
+      resetInput();
     }
   }
 
@@ -102,20 +103,14 @@ export function PollImageField({
 
     if (variant === "cover") {
       if (isCoarsePointerDevice()) {
-        const localUrl = URL.createObjectURL(normalized);
-        if (preview) URL.revokeObjectURL(preview);
-        setPreview(localUrl);
         setUploading(true);
         try {
           clearPending();
           const processed = await autoProcessPickedImage(normalized, "cover");
           await uploadProcessed(processed);
         } catch (err) {
-          if (preview) URL.revokeObjectURL(preview);
-          setPreview(null);
           setError(formatImageProcessError(err));
           setUploading(false);
-        } finally {
           resetInput();
         }
         return;
@@ -135,7 +130,6 @@ export function PollImageField({
     const localUrl = URL.createObjectURL(normalized);
     setPreview(localUrl);
     await uploadProcessed(normalized);
-    resetInput();
   }
 
   async function confirmCoverFocus(focus: { x: number; y: number }) {
@@ -150,7 +144,6 @@ export function PollImageField({
     } catch (err) {
       setError(formatImageProcessError(err));
       setUploading(false);
-    } finally {
       resetInput();
     }
   }
@@ -214,9 +207,6 @@ export function PollImageField({
                 alt=""
                 className="votti-image-box__preview"
                 onError={() => {
-                  if (preview) URL.revokeObjectURL(preview);
-                  setPreview(null);
-                  onChange("");
                   setError("Não foi possível carregar a imagem. Envie novamente.");
                 }}
               />

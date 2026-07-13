@@ -9,6 +9,7 @@ import {
   Rocket,
   Settings2,
   Sparkles,
+  Trash2,
   Trophy,
   Users,
   Zap,
@@ -114,6 +115,16 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
         },
       ],
     }));
+  }
+
+  function removeQuestion(questionId: string) {
+    setDraft((d) => {
+      if (d.questions.length <= 1) return d;
+      return {
+        ...d,
+        questions: d.questions.filter((q) => q.id !== questionId),
+      };
+    });
   }
 
   const previewQuestion = draft.questions[0];
@@ -264,6 +275,16 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
             <div key={q.id} className="votti-question-card">
               <div className="votti-question-card__head">
                 <span className="votti-question-card__badge">Pergunta {qi + 1}</span>
+                {!isEditing && draft.questions.length > 1 ? (
+                  <button
+                    type="button"
+                    className="votti-question-card__remove"
+                    onClick={() => removeQuestion(q.id)}
+                  >
+                    <Trash2 className="size-3.5" aria-hidden />
+                    Remover
+                  </button>
+                ) : null}
               </div>
               <label className="votti-field">
                 <span className="votti-field__label">Título da pergunta</span>
