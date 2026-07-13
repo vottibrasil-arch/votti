@@ -32,6 +32,8 @@ export type AdminUserRow = {
   participantCount: number;
   voteCount: number;
   isSuperAdmin: boolean;
+  usesGoogle: boolean;
+  usesEmailPassword: boolean;
 };
 
 type ParticipationStats = {
@@ -178,6 +180,15 @@ async function fetchParticipationStats(): Promise<ParticipationStats> {
   }
 }
 
+function userUsesGoogle(user: { identities?: { provider?: string }[] | null; app_metadata?: { provider?: string } }) {
+  const identities = user.identities ?? [];
+  return identities.some((identity) => identity.provider === "google") || user.app_metadata?.provider === "google";
+}
+
+function userUsesEmailPassword(user: { identities?: { provider?: string }[] | null }) {
+  return (user.identities ?? []).some((identity) => identity.provider === "email");
+}
+
 async function buildAdminUserRows(
   adminSettings: Awaited<ReturnType<typeof getSuperAdminSettings>>,
   participation: ParticipationStats,
@@ -220,6 +231,8 @@ async function buildAdminUserRows(
         participantCount: participation.participantsByOwner.get(user.id) ?? 0,
         voteCount: participation.votesByOwner.get(user.id) ?? 0,
         isSuperAdmin: isSuperAdminEmail(email, adminSettings),
+        usesGoogle: userUsesGoogle(user),
+        usesEmailPassword: userUsesEmailPassword(user),
       };
     })
     .filter((row) => row.email)
@@ -354,6 +367,37 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
 
     const { error: deleteError } = await admin.auth.admin.deleteUser(data.userId);
     if (deleteError) throw deleteError;
+
+    return { ok: true as const };
+  });
+
+export const adminResetUserPassword = createServerFn({ method: "POST" })
+  .inputValidator((data: { accessToken?: string; userId?: string; password?: string }) => ({
+    accessToken: typeof data.accessToken === "string" ? data.accessToken : "",
+    userId: typeof data.userId === "string" ? data.userId : "",
+    password: typeof data.password === "string" ? data.password : "",
+  }))
+  .handler(async ({ data }) => {
+    await assertSuperAdmin(data.accessToken);
+    if (!data.userId) throw new Error("Usuário inválido.");
+    if (data.password.length < 6) {
+      throw new Error("A senha deve ter pelo menos 6 caracteres.");
+    }
+
+    assertSupabaseAdminConfigured();
+    const admin = getSupabaseAdmin();
+
+    const { data: target, error: targetError } = await admin.auth.admin.getUserById(data.userId);
+    if (targetError || !target.user) throw new Error("Usuário não encontrado.");
+
+    if (userUsesGoogle(target.user) && !userUsesEmailPassword(target.user)) {
+      throw new Error("Esta conta usa Google. A senha é gerenciada pela conta Google.");
+    }
+
+    const { error } = await admin.auth.admin.updateUserById(data.userId, {
+      password: data.password,
+    });
+    if (error) throw error;
 
     return { ok: true as const };
   });

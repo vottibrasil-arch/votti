@@ -24,6 +24,7 @@ import type { AdminPollRow, AdminUserRow } from "@/lib/auth/super-admin.server";
 import {
   adminClosePoll,
   adminDeleteUser,
+  adminResetUserPassword,
   fetchAdminDashboard,
   fetchAdminUserPolls,
 } from "@/lib/auth/super-admin.server";
@@ -58,7 +59,7 @@ async function getAccessToken() {
 
 function SupPage() {
   const navigate = useNavigate();
-  const { user, loading, updatePassword } = useAuth();
+  const { user, loading } = useAuth();
   const [totalUsers, setTotalUsers] = useState(0);
   const [activeLinks, setActiveLinks] = useState(0);
   const [totalParticipants, setTotalParticipants] = useState(0);
@@ -67,11 +68,11 @@ function SupPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordBusy, setPasswordBusy] = useState(false);
-  const [passwordMsg, setPasswordMsg] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [userNewPassword, setUserNewPassword] = useState("");
+  const [userConfirmPassword, setUserConfirmPassword] = useState("");
+  const [passwordResetBusy, setPasswordResetBusy] = useState(false);
+  const [passwordResetMsg, setPasswordResetMsg] = useState("");
+  const [passwordResetError, setPasswordResetError] = useState("");
 
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [userPolls, setUserPolls] = useState<AdminPollRow[]>([]);
@@ -137,9 +138,17 @@ function SupPage() {
     if (expandedUserId === row.id) {
       setExpandedUserId(null);
       setUserPolls([]);
+      setUserNewPassword("");
+      setUserConfirmPassword("");
+      setPasswordResetMsg("");
+      setPasswordResetError("");
       return;
     }
     setExpandedUserId(row.id);
+    setUserNewPassword("");
+    setUserConfirmPassword("");
+    setPasswordResetMsg("");
+    setPasswordResetError("");
     await loadUserPolls(row.id);
   }
 
@@ -160,30 +169,33 @@ function SupPage() {
     }
   }
 
-  async function handlePasswordSubmit(e: React.FormEvent) {
+  async function handleResetUserPassword(e: React.FormEvent, row: AdminUserRow) {
     e.preventDefault();
-    setPasswordError("");
-    setPasswordMsg("");
-    if (newPassword.length < 6) {
-      setPasswordError("A senha deve ter pelo menos 6 caracteres.");
+    setPasswordResetError("");
+    setPasswordResetMsg("");
+    if (userNewPassword.length < 6) {
+      setPasswordResetError("A senha deve ter pelo menos 6 caracteres.");
       return;
     }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("As senhas não coincidem.");
+    if (userNewPassword !== userConfirmPassword) {
+      setPasswordResetError("As senhas não coincidem.");
       return;
     }
-    setPasswordBusy(true);
+    setPasswordResetBusy(true);
     try {
-      await updatePassword(newPassword);
-      setPasswordMsg("Senha alterada com sucesso.");
-      setNewPassword("");
-      setConfirmPassword("");
+      const accessToken = await getAccessToken();
+      await adminResetUserPassword({
+        data: { accessToken, userId: row.id, password: userNewPassword },
+      });
+      setPasswordResetMsg(`Nova senha definida para ${row.email}. Avise o usuário para entrar com ela.`);
+      setUserNewPassword("");
+      setUserConfirmPassword("");
     } catch (err) {
-      setPasswordError(
+      setPasswordResetError(
         err instanceof Error ? mapAuthError(err.message) : "Não foi possível alterar a senha.",
       );
     } finally {
-      setPasswordBusy(false);
+      setPasswordResetBusy(false);
     }
   }
 
@@ -272,65 +284,11 @@ function SupPage() {
 
           <div className="votti-sup__panel">
             <div className="votti-sup__panel-head">
-              <h2>
-                <KeyRound className="inline size-4 mr-1.5 -mt-0.5" />
-                Senha do administrador
-              </h2>
-            </div>
-            {user.usesGoogle && !user.usesEmailPassword ? (
-              <p className="votti-sup__hint">
-                Sua conta usa Google. A senha é gerenciada pela conta Google — para mudar, use as configurações do
-                Google.
-              </p>
-            ) : (
-              <form className="votti-sup__password-form" onSubmit={(e) => void handlePasswordSubmit(e)}>
-                <label className="votti-field">
-                  <span className="votti-field__label">Nova senha</span>
-                  <input
-                    type="password"
-                    className="votti-field__input"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    autoComplete="new-password"
-                    minLength={6}
-                    required
-                  />
-                </label>
-                <label className="votti-field">
-                  <span className="votti-field__label">Confirmar nova senha</span>
-                  <input
-                    type="password"
-                    className="votti-field__input"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    autoComplete="new-password"
-                    minLength={6}
-                    required
-                  />
-                </label>
-                {passwordError ? <p className="votti-auth__error">{passwordError}</p> : null}
-                {passwordMsg ? <p className="votti-auth__success">{passwordMsg}</p> : null}
-                <button type="submit" className="votti-mega-btn votti-mega-btn--sm w-full" disabled={passwordBusy}>
-                  {passwordBusy ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin" />
-                      Salvando…
-                    </>
-                  ) : (
-                    "Alterar senha"
-                  )}
-                </button>
-              </form>
-            )}
-          </div>
-
-          <div className="votti-sup__panel">
-            <div className="votti-sup__panel-head">
               <h2>Usuários cadastrados</h2>
               <span className="votti-sup__count tabular-nums">{users.length}</span>
             </div>
             <p className="votti-sup__hint">
-              Toque em um usuário para ver os links dele, cancelar votações ativas ou excluir o cadastro.
+              Toque em um usuário para ver links, trocar senha quando pedirem, cancelar votações ou excluir cadastro.
             </p>
 
             <div className="votti-sup__user-list">
@@ -426,6 +384,68 @@ function SupPage() {
                             ))}
                           </div>
                         )}
+
+                        <div className="votti-sup__password-block">
+                          <p className="votti-sup__subheading">
+                            <KeyRound className="size-4" />
+                            Senha do usuário
+                          </p>
+                          {row.usesGoogle && !row.usesEmailPassword ? (
+                            <p className="votti-sup__hint">
+                              Esta conta entrou só com Google. A senha é gerenciada pela conta Google dele.
+                            </p>
+                          ) : (
+                            <form
+                              className="votti-sup__password-form"
+                              onSubmit={(e) => void handleResetUserPassword(e, row)}
+                            >
+                              <p className="votti-sup__hint">
+                                Use quando o usuário pedir para redefinir a senha. Defina uma nova e avise por WhatsApp
+                                ou e-mail.
+                              </p>
+                              <label className="votti-field">
+                                <span className="votti-field__label">Nova senha</span>
+                                <input
+                                  type="password"
+                                  className="votti-field__input"
+                                  value={userNewPassword}
+                                  onChange={(e) => setUserNewPassword(e.target.value)}
+                                  autoComplete="new-password"
+                                  minLength={6}
+                                  required
+                                />
+                              </label>
+                              <label className="votti-field">
+                                <span className="votti-field__label">Confirmar nova senha</span>
+                                <input
+                                  type="password"
+                                  className="votti-field__input"
+                                  value={userConfirmPassword}
+                                  onChange={(e) => setUserConfirmPassword(e.target.value)}
+                                  autoComplete="new-password"
+                                  minLength={6}
+                                  required
+                                />
+                              </label>
+                              {passwordResetError ? <p className="votti-auth__error">{passwordResetError}</p> : null}
+                              {passwordResetMsg ? <p className="votti-auth__success">{passwordResetMsg}</p> : null}
+                              <button
+                                type="submit"
+                                className="votti-mega-btn votti-mega-btn--sm w-full"
+                                disabled={passwordResetBusy}
+                              >
+                                {passwordResetBusy ? (
+                                  <>
+                                    <Loader2 className="size-4 animate-spin" />
+                                    Salvando…
+                                  </>
+                                ) : (
+                                  "Definir nova senha"
+                                )}
+                              </button>
+                            </form>
+                          )}
+                        </div>
 
                         {!row.isSuperAdmin && row.id !== user.id ? (
                           <button

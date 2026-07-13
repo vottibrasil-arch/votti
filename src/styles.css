@@ -6128,6 +6128,26 @@ button.votti-image-box:disabled {
   gap: 0.75rem;
 }
 
+.votti-sup__password-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border-radius: 0.625rem;
+  background: oklch(0.14 0.04 260 / 0.55);
+  border: 1px solid oklch(0.32 0.05 260 / 0.45);
+}
+
+.votti-sup__subheading {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: oklch(0.88 0.03 260);
+}
+
 .votti-sup__poll-metrics {
   margin: 0.25rem 0 0;
   font-size: 0.75rem;
