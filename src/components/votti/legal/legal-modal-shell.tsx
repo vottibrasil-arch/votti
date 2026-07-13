@@ -59,10 +59,11 @@ export function LegalModalShell({
         <div className="votti-legal-modal__body">{children}</div>
 
         <footer className="votti-legal-modal__foot">
-          {footer}
-          <button type="button" className="votti-legal-modal__ok" onClick={onClose}>
-            Fechar
-          </button>
+          {footer ?? (
+            <button type="button" className="votti-legal-modal__ok" onClick={onClose}>
+              Fechar
+            </button>
+          )}
         </footer>
       </div>
     </div>

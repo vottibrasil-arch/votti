@@ -1,13 +1,15 @@
-import { useId, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { submitToFormSubmit } from "@/lib/votti/formsubmit";
 import { LegalModalShell } from "@/components/votti/legal/legal-modal-shell";
+
+const CONTACT_FORM_ID = "votti-contact-form";
 
 type ContactLegalModalProps = {
   onClose: () => void;
 };
 
 export function ContactLegalModal({ onClose }: ContactLegalModalProps) {
-  const formId = useId();
+  const formRef = useRef<HTMLFormElement>(null);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,14 +21,16 @@ export function ContactLegalModal({ onClose }: ContactLegalModalProps) {
 
     const form = event.currentTarget;
     const data = new FormData(form);
+    const email = String(data.get("email") ?? "").trim();
 
     try {
       await submitToFormSubmit({
         _subject: "Contato enviado pelo VOTTII",
         _captcha: "false",
         _template: "table",
+        _replyto: email,
         nome: String(data.get("nome") ?? "").trim(),
-        email: String(data.get("email") ?? "").trim(),
+        email,
         assunto: String(data.get("assunto") ?? "").trim(),
         mensagem: String(data.get("mensagem") ?? "").trim(),
       });
@@ -36,6 +40,10 @@ export function ContactLegalModal({ onClose }: ContactLegalModalProps) {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleSendClick() {
+    formRef.current?.requestSubmit();
   }
 
   return (
@@ -51,10 +59,10 @@ export function ContactLegalModal({ onClose }: ContactLegalModalProps) {
         ) : (
           <>
             <button
-              type="submit"
-              form={formId}
+              type="button"
               className="votti-legal-modal__action"
               disabled={submitting}
+              onClick={handleSendClick}
             >
               {submitting ? "Enviando…" : "Enviar mensagem"}
             </button>
@@ -70,7 +78,12 @@ export function ContactLegalModal({ onClose }: ContactLegalModalProps) {
           Sua mensagem foi enviada com sucesso.
         </p>
       ) : (
-        <form id={formId} className="votti-legal-modal__form" onSubmit={(e) => void handleSubmit(e)}>
+        <form
+          ref={formRef}
+          id={CONTACT_FORM_ID}
+          className="votti-legal-modal__form"
+          onSubmit={(e) => void handleSubmit(e)}
+        >
           <label className="votti-field">
             <span className="votti-field__label">Nome</span>
             <input

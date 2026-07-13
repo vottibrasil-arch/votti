@@ -1,6 +1,8 @@
-import { useId, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { submitToFormSubmit } from "@/lib/votti/formsubmit";
 import { LegalModalShell } from "@/components/votti/legal/legal-modal-shell";
+
+const REPORT_FORM_ID = "votti-report-form";
 
 type ReportLegalModalProps = {
   pollUrl?: string;
@@ -8,7 +10,7 @@ type ReportLegalModalProps = {
 };
 
 export function ReportLegalModal({ pollUrl, onClose }: ReportLegalModalProps) {
-  const formId = useId();
+  const formRef = useRef<HTMLFormElement>(null);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,14 +22,16 @@ export function ReportLegalModal({ pollUrl, onClose }: ReportLegalModalProps) {
 
     const form = event.currentTarget;
     const data = new FormData(form);
+    const email = String(data.get("email") ?? "").trim();
 
     try {
       await submitToFormSubmit({
         _subject: "Denúncia recebida pelo VOTTII",
         _captcha: "false",
         _template: "table",
+        ...(email ? { _replyto: email } : {}),
         link_votacao: String(data.get("link_votacao") ?? "").trim(),
-        email: String(data.get("email") ?? "").trim(),
+        email,
         motivo: String(data.get("motivo") ?? "").trim(),
         descricao: String(data.get("descricao") ?? "").trim(),
       });
@@ -37,6 +41,10 @@ export function ReportLegalModal({ pollUrl, onClose }: ReportLegalModalProps) {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleSendClick() {
+    formRef.current?.requestSubmit();
   }
 
   return (
@@ -52,10 +60,10 @@ export function ReportLegalModal({ pollUrl, onClose }: ReportLegalModalProps) {
         ) : (
           <>
             <button
-              type="submit"
-              form={formId}
+              type="button"
               className="votti-legal-modal__action"
               disabled={submitting}
+              onClick={handleSendClick}
             >
               {submitting ? "Enviando…" : "Enviar denúncia"}
             </button>
@@ -72,7 +80,12 @@ export function ReportLegalModal({ pollUrl, onClose }: ReportLegalModalProps) {
           a Política de Privacidade do VOTTII.
         </p>
       ) : (
-        <form id={formId} className="votti-legal-modal__form" onSubmit={(e) => void handleSubmit(e)}>
+        <form
+          ref={formRef}
+          id={REPORT_FORM_ID}
+          className="votti-legal-modal__form"
+          onSubmit={(e) => void handleSubmit(e)}
+        >
           <label className="votti-field">
             <span className="votti-field__label">Link da votação</span>
             <input
