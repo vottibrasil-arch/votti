@@ -1,10 +1,11 @@
+import { useEffect } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { Plus, Share2 } from "lucide-react";
 import { FooterAdSlot } from "@/components/footer/footer-ad-slot";
 import { getFooterAdConfig } from "@/lib/footer-ad";
 
-/** Rodapé fixo com ads — só em páginas de votação (futuro). Oculto no app, landing e páginas institucionais. */
+/** Páginas internas do app — sem rodapé com anúncio. */
 const HIDE_FOOTER_ON = new Set([
   "/",
   "/como-funciona",
@@ -21,11 +22,27 @@ const HIDE_FOOTER_ON = new Set([
   "/contato",
 ]);
 
+function shouldShowFooter(pathname: string) {
+  if (HIDE_FOOTER_ON.has(pathname)) return false;
+  if (pathname.startsWith("/auth/")) return false;
+  if (pathname.endsWith("/telao")) return false;
+  return pathname.startsWith("/v/") || pathname.startsWith("/votacao/");
+}
+
 export function VottiFooter() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const adConfig = getFooterAdConfig();
+  const visible = shouldShowFooter(pathname);
 
-  if (HIDE_FOOTER_ON.has(pathname) || pathname.startsWith("/votacao/") || pathname.startsWith("/v/")) return null;
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.classList.toggle("votti-has-footer-ad", visible);
+    return () => {
+      document.body.classList.remove("votti-has-footer-ad");
+    };
+  }, [visible]);
+
+  if (!visible) return null;
 
   async function handleShare() {
     const url = window.location.href;

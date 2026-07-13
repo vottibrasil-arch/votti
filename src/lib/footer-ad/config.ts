@@ -1,5 +1,5 @@
-import { ADSENSE_CLIENT } from "@/lib/adsense";
 import type { FooterAdConfig } from "./types";
+import { getMonetagFooterZoneId, getMonetagScriptUrl } from "@/lib/monetag";
 
 function pickEnv(...values: Array<string | undefined>) {
   return values.find((v) => typeof v === "string" && v.trim().length > 0)?.trim();
@@ -8,10 +8,21 @@ function pickEnv(...values: Array<string | undefined>) {
 /**
  * Configuração padrão do slot de anúncio no rodapé.
  * Prioridade:
- * prop explícita > VITE_ADSENSE_FOOTER_SLOT / VITE_ADSENSE_SLOT > Monetag > AdSense (cliente).
+ * prop explícita > Monetag (script/zona) > AdSense slot > AdSense (cliente).
  */
 export function getFooterAdConfig(override?: FooterAdConfig, slotFromServer?: string | null): FooterAdConfig {
   if (override) return override;
+
+  const monetagScriptUrl = getMonetagScriptUrl();
+  const monetagZoneId = getMonetagFooterZoneId();
+
+  if (monetagScriptUrl || monetagZoneId) {
+    return {
+      provider: "monetag",
+      monetagZoneId,
+      monetagScriptUrl,
+    };
+  }
 
   const adsenseSlot = pickEnv(
     typeof import.meta !== "undefined" ? import.meta.env?.VITE_ADSENSE_FOOTER_SLOT : undefined,
@@ -20,15 +31,6 @@ export function getFooterAdConfig(override?: FooterAdConfig, slotFromServer?: st
     process.env.VITE_ADSENSE_SLOT,
   ) || slotFromServer?.trim() || undefined;
 
-  const monetagZoneId = pickEnv(
-    typeof import.meta !== "undefined" ? import.meta.env?.VITE_MONETAG_FOOTER_ZONE : undefined,
-    process.env.VITE_MONETAG_FOOTER_ZONE,
-  );
-
-  if (monetagZoneId && !adsenseSlot) {
-    return { provider: "monetag", monetagZoneId };
-  }
-
   return {
     provider: "adsense",
     adsenseSlot,
@@ -36,4 +38,4 @@ export function getFooterAdConfig(override?: FooterAdConfig, slotFromServer?: st
   };
 }
 
-export { ADSENSE_CLIENT };
+export { ADSENSE_CLIENT } from "@/lib/adsense";

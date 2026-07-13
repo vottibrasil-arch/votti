@@ -1,4 +1,5 @@
 import { ADSENSE_VERIFICATION_BLOCK } from "./adsense";
+import { MONETAG_META_TAG } from "./monetag";
 
 export function renderErrorPage(): string {
   return `<!doctype html>
@@ -8,6 +9,7 @@ export function renderErrorPage(): string {
     <title>This page didn't load</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     ${ADSENSE_VERIFICATION_BLOCK}
+    ${MONETAG_META_TAG}
     <style>
       body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa; color: #111; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 1.5rem; }
       .card { max-width: 28rem; width: 100%; text-align: center; padding: 2rem; }

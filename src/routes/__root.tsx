@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { ADSENSE_CLIENT, ADSENSE_SCRIPT_SRC } from "../lib/adsense";
+import { MONETAG_VERIFICATION_CONTENT, getMonetagScriptUrl } from "../lib/monetag";
 import { reportAppError } from "../lib/votti-error-reporting";
 import { getServerPublicOrigin } from "../lib/votti/app-url";
 import { VOTTI_LOGO_PATH } from "../lib/votti/brand";
@@ -90,6 +91,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#1a2d5a" },
       { name: "google-adsense-account", content: ADSENSE_CLIENT },
+      { name: "monetag", content: MONETAG_VERIFICATION_CONTENT },
       {
         name: "google-site-verification",
         content: "UVl-pT0CIRj7LcIYPCzW6Lc9J2Ot58ln21tPr1e5Ilw",
@@ -137,11 +139,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const monetagScriptUrl = getMonetagScriptUrl();
+
   return (
     <html lang="pt-BR">
       <head>
         <HeadContent />
         <script async src={ADSENSE_SCRIPT_SRC} crossOrigin="anonymous" suppressHydrationWarning />
+        {monetagScriptUrl ? (
+          <script async src={monetagScriptUrl} data-monetag-site="1" suppressHydrationWarning />
+        ) : null}
       </head>
       <body>
         {children}

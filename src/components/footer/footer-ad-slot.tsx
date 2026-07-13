@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ADSENSE_CLIENT } from "@/lib/adsense";
 import type { FooterAdConfig } from "@/lib/footer-ad";
 import { useFooterAdLoaded } from "@/lib/footer-ad/use-footer-ad-loaded";
+import { ensureMonetagScriptLoaded } from "@/lib/monetag";
 import { FooterAdFallback } from "./footer-ad-fallback";
 
 type Props = {
@@ -29,6 +30,11 @@ export function FooterAdSlot({ config, advertiseHref }: Props) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted || config.provider !== "monetag" || !config.monetagScriptUrl) return;
+    ensureMonetagScriptLoaded(config.monetagScriptUrl, config.monetagZoneId);
+  }, [mounted, config.provider, config.monetagScriptUrl, config.monetagZoneId]);
 
   useEffect(() => {
     if (!mounted || !isAdSense || !hasSlot) return;

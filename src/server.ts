@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { injectAdSenseVerification } from "./lib/adsense";
+import { injectMonetagVerification } from "./lib/monetag";
 import { handleRankingApi } from "./lib/votti/ranking/api.server";
 
 const DEVICE_APIS_PERMISSION_POLICY = [
@@ -57,7 +58,7 @@ async function injectAdSenseIntoHtmlResponse(response: Response): Promise<Respon
   if (!contentType.includes("text/html")) return response;
 
   const html = await response.text();
-  const nextHtml = injectAdSenseVerification(html);
+  const nextHtml = injectMonetagVerification(injectAdSenseVerification(html));
 
   const headers = new Headers(response.headers);
   headers.delete("content-length");

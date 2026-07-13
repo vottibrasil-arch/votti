@@ -25,8 +25,10 @@ export type FooterAdConfig = {
   adsenseSlot?: string;
   /** Formato responsivo AdSense */
   adsenseFormat?: "auto" | "horizontal" | "rectangle";
-  /** ID da zona Monetag (data-zone ou container id) */
+  /** ID da zona Monetag */
   monetagZoneId?: string;
+  /** URL do script Monetag (painel → Get tag) */
+  monetagScriptUrl?: string;
   /** HTML bruto — útil para scripts/embeds do Super ADM */
   html?: string;
   /** Banner em imagem */
