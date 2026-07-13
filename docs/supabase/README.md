@@ -65,12 +65,17 @@ Em **Authentication → URL Configuration** (obrigatório para Google):
 
 ### Google volta para `localhost:3000`?
 
-Isso acontece quando a **Site URL** do Supabase ainda está `http://localhost:3000` ou quando `https://vottii.com/auth/callback` **não** está na lista de Redirect URLs. O Supabase ignora o redirect do app e manda para a Site URL.
+O app agora usa **popup do Google na própria página** (sem redirect). Mesmo assim, configure:
 
-1. Abra **Supabase → Authentication → URL Configuration**
-2. Troque **Site URL** para `https://vottii.com`
-3. Em **Redirect URLs**, adicione `https://vottii.com/auth/callback` (e salve)
-4. Na **Vercel**, confira `VITE_APP_URL=https://vottii.com` e faça redeploy
+1. **Vercel** → variável `GOOGLE_CLIENT_ID` = Web Client ID (o mesmo de Supabase → Authentication → Google)
+2. **Google Cloud Console** → Credentials → Web client → **Authorized JavaScript origins**:
+   - `https://vottii.com`
+   - `http://localhost:8080`
+3. **Supabase** → Authentication → URL Configuration:
+   - **Site URL:** `https://vottii.com`
+   - **Redirect URLs:** `https://vottii.com/auth/callback`
+
+Se o popup não abrir, copie o Client ID em Supabase → Authentication → Providers → Google.
 
 ### Cadastro não aparece no banco?
 

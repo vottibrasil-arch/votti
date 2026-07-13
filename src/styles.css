@@ -2934,6 +2934,18 @@
   box-shadow: none;
 }
 
+.votti-google-signin-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: oklch(0.08 0.03 260 / 72%);
+  backdrop-filter: blur(4px);
+}
+
 .votti-auth-divider {
   display: flex;
   align-items: center;

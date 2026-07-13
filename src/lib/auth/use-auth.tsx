@@ -29,6 +29,7 @@ import {
   usesEmailPasswordAuth,
   usesGoogleAuth,
 } from "@/lib/auth/ensure-auth-session";
+import { signInWithGoogleIdentity } from "@/lib/auth/google-identity";
 import type { VottiUser } from "@/lib/auth/types";
 
 import { deleteOwnAccount } from "@/lib/auth/auth-account.server";
@@ -241,6 +242,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(async (redirect?: string) => {
     assertSupabaseConfigured(configured);
+
+    try {
+      await signInWithGoogleIdentity();
+      return;
+    } catch (identityErr) {
+      const message = identityErr instanceof Error ? identityErr.message : "";
+      const useOAuthFallback =
+        /google não configurado|falha ao carregar google/i.test(message) ||
+        /client_id|invalid|not found/i.test(message);
+
+      if (!useOAuthFallback) {
+        throw identityErr;
+      }
+    }
 
     const { error } = await getSupabaseBrowser().auth.signInWithOAuth({
       provider: "google",

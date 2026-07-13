@@ -21,6 +21,7 @@ export function getSupabaseBrowser(): SupabaseClient<Database> {
   if (!browserClient || browserClientUrl !== url || browserClientKey !== anonKey) {
     browserClient = createClient<Database>(url, anonKey, {
       auth: {
+        flowType: "pkce",
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
