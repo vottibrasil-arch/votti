@@ -1,7 +1,7 @@
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { ImageFocusEditor } from "@/components/votti/image-focus-editor";
-import { cropImageCover, formatImageProcessError, normalizeImageFile } from "@/lib/votti/crop-image";
+import { cropImageCover, formatImageProcessError, isAcceptedImageFile, normalizeImageFile } from "@/lib/votti/crop-image";
 import { normalizeImageUrl } from "@/lib/votti/persist-image-url";
 import { uploadPollAsset } from "@/lib/votti/upload-poll-asset";
 
@@ -63,8 +63,8 @@ export function PollImageField({
     if (!file) return;
     setError("");
 
-    if (!file.type.startsWith("image/")) {
-      setError("Selecione uma imagem (PNG, JPG ou WebP).");
+    if (!isAcceptedImageFile(file)) {
+      setError("Selecione uma imagem (PNG, JPG, WebP ou HEIC).");
       return;
     }
 

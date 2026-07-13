@@ -25,9 +25,20 @@ export function normalizeImageFile(file: File): File {
         ? "image/webp"
         : ext === "gif"
           ? "image/gif"
-          : "image/jpeg";
+          : ext === "heic" || ext === "heif"
+            ? "image/heic"
+            : "image/jpeg";
 
   return new File([file], file.name || "foto.jpg", { type, lastModified: file.lastModified });
+}
+
+const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "heic", "heif"]);
+
+/** Aceita fotos do celular mesmo quando o MIME vem vazio (comum no iOS). */
+export function isAcceptedImageFile(file: File): boolean {
+  if (file.type?.startsWith("image/")) return true;
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return IMAGE_EXTENSIONS.has(ext);
 }
 
 async function loadImageElement(file: File): Promise<{ img: HTMLImageElement; cleanup: () => void }> {

@@ -1,9 +1,14 @@
 import { ImagePlus, Loader2, X } from "lucide-react";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { RankingOptionAvatar } from "@/components/votti/ranking-option-avatar";
 import { normalizeImageUrl } from "@/lib/votti/persist-image-url";
 import { ImageFocusEditor } from "@/components/votti/image-focus-editor";
-import { cropImageSquare, formatImageProcessError, normalizeImageFile } from "@/lib/votti/crop-image";
+import {
+  cropImageSquare,
+  formatImageProcessError,
+  isAcceptedImageFile,
+  normalizeImageFile,
+} from "@/lib/votti/crop-image";
 import { uploadPollAsset } from "@/lib/votti/upload-poll-asset";
 
 type OptionImagePickerProps = {
@@ -11,18 +16,54 @@ type OptionImagePickerProps = {
   onChange: (url: string) => void;
   ownerId?: string;
   label?: string;
+  onBusyChange?: (busy: boolean) => void;
 };
 
 const ACCEPT = "image/*,.heic,.heif";
 
-export function OptionImagePicker({ value, onChange, ownerId, label = "Foto" }: OptionImagePickerProps) {
+function stopPointerEvent(event: React.SyntheticEvent) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+export function OptionImagePicker({
+  value,
+  onChange,
+  ownerId,
+  label = "Foto",
+  onBusyChange,
+}: OptionImagePickerProps) {
   const imageUrl = normalizeImageUrl(value);
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const pickerOpenRef = useRef(false);
   const [uploading, setUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [error, setError] = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState("");
+
+  const busy = uploading || pickerOpen || Boolean(pendingFile);
+
+  useEffect(() => {
+    onBusyChange?.(busy);
+  }, [busy, onBusyChange]);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+
+    function onWindowFocus() {
+      window.setTimeout(() => {
+        if (pickerOpenRef.current && !pendingFile && !uploading) {
+          pickerOpenRef.current = false;
+          setPickerOpen(false);
+        }
+      }, 400);
+    }
+
+    window.addEventListener("focus", onWindowFocus);
+    return () => window.removeEventListener("focus", onWindowFocus);
+  }, [pickerOpen, pendingFile, uploading]);
 
   function clearPending() {
     if (pendingPreview) URL.revokeObjectURL(pendingPreview);
@@ -48,23 +89,43 @@ export function OptionImagePicker({ value, onChange, ownerId, label = "Foto" }: 
   }
 
   async function handleFile(file: File | undefined) {
+    pickerOpenRef.current = false;
+    setPickerOpen(false);
+
     if (!file) return;
     setError("");
 
-    if (!file.type.startsWith("image/")) {
-      setError("Use PNG, JPG ou WebP.");
+    if (!isAcceptedImageFile(file)) {
+      setError("Use PNG, JPG, WebP ou HEIC.");
+      if (inputRef.current) inputRef.current.value = "";
       return;
     }
 
     if (file.size > 3 * 1024 * 1024) {
       setError("Máximo 3 MB.");
+      if (inputRef.current) inputRef.current.value = "";
       return;
     }
 
-    const normalized = normalizeImageFile(file);
-    clearPending();
-    setPendingFile(normalized);
-    setPendingPreview(URL.createObjectURL(normalized));
+    try {
+      const normalized = normalizeImageFile(file);
+      clearPending();
+      setPendingFile(normalized);
+      setPendingPreview(URL.createObjectURL(normalized));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível abrir a imagem.");
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  function openPicker(event: React.MouseEvent | React.TouchEvent) {
+    stopPointerEvent(event);
+    if (uploading || pendingFile) return;
+
+    pickerOpenRef.current = true;
+    setPickerOpen(true);
+    setError("");
+    inputRef.current?.click();
   }
 
   async function confirmFocusWithPosition(focus: { x: number; y: number }) {
@@ -82,19 +143,45 @@ export function OptionImagePicker({ value, onChange, ownerId, label = "Foto" }: 
     }
   }
 
+  function handleCancelFocus() {
+    clearPending();
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  const focusEditor =
+    pendingFile && pendingPreview ? (
+      <ImageFocusEditor
+        previewUrl={pendingPreview}
+        variant="circle"
+        title="Ajustar foto da opção"
+        onCancel={handleCancelFocus}
+        onConfirm={(focus) => void confirmFocusWithPosition(focus)}
+      />
+    ) : null;
+
   return (
     <>
       <div className="votti-option-photo">
-        <label htmlFor={inputId} className="votti-option-photo__btn" title={label}>
-          <input
-            id={inputId}
-            ref={inputRef}
-            type="file"
-            accept={ACCEPT}
-            className="sr-only"
-            disabled={uploading}
-            onChange={(e) => void handleFile(e.target.files?.[0])}
-          />
+        <input
+          id={inputId}
+          ref={inputRef}
+          type="file"
+          accept={ACCEPT}
+          className="sr-only"
+          disabled={uploading}
+          tabIndex={-1}
+          aria-hidden
+          onChange={(e) => void handleFile(e.target.files?.[0])}
+          onClick={stopPointerEvent}
+        />
+        <button
+          type="button"
+          className="votti-option-photo__btn"
+          title={label}
+          aria-label={imageUrl ? "Trocar foto da opção" : "Adicionar foto da opção"}
+          disabled={uploading}
+          onClick={openPicker}
+        >
           {uploading ? (
             <Loader2 className="size-4 animate-spin" />
           ) : imageUrl ? (
@@ -102,15 +189,17 @@ export function OptionImagePicker({ value, onChange, ownerId, label = "Foto" }: 
           ) : (
             <ImagePlus className="size-4 opacity-60" />
           )}
-        </label>
+        </button>
         {imageUrl && !uploading ? (
           <button
             type="button"
             className="votti-option-photo__clear"
             aria-label="Remover foto"
-            onClick={() => {
+            onClick={(event) => {
+              stopPointerEvent(event);
               onChange("");
               setError("");
+              if (inputRef.current) inputRef.current.value = "";
             }}
           >
             <X className="size-3" />
@@ -119,18 +208,7 @@ export function OptionImagePicker({ value, onChange, ownerId, label = "Foto" }: 
         {error ? <p className="votti-option-photo__error">{error}</p> : null}
       </div>
 
-      {pendingFile && pendingPreview ? (
-        <ImageFocusEditor
-          previewUrl={pendingPreview}
-          variant="circle"
-          title="Ajustar foto da opção"
-          onCancel={() => {
-            clearPending();
-            if (inputRef.current) inputRef.current.value = "";
-          }}
-          onConfirm={(focus) => void confirmFocusWithPosition(focus)}
-        />
-      ) : null}
+      {focusEditor}
     </>
   );
 }

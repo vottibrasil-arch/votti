@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Check,
@@ -45,6 +45,18 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
   const [loadingEdit, setLoadingEdit] = useState(isEditing);
   const [loadError, setLoadError] = useState("");
   const [closeBusy, setCloseBusy] = useState(false);
+  const [busyOptionPhotos, setBusyOptionPhotos] = useState<Set<string>>(() => new Set());
+
+  const setOptionPhotoBusy = useCallback((optionId: string, busy: boolean) => {
+    setBusyOptionPhotos((prev) => {
+      const next = new Set(prev);
+      if (busy) next.add(optionId);
+      else next.delete(optionId);
+      return next;
+    });
+  }, []);
+
+  const optionPhotoBusy = busyOptionPhotos.size > 0;
 
   useEffect(() => {
     if (!isEditing || !editPollId || !user) return;
@@ -277,6 +289,7 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
                       patch({ questions });
                     }}
                     ownerId={user?.id}
+                    onBusyChange={(busy) => setOptionPhotoBusy(o.id, busy)}
                   />
                   <label className="votti-field votti-field--grow">
                     <span className="votti-field__label">Opção {oi + 1}</span>
@@ -568,9 +581,16 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
         </div>
       )}
 
-      <div className="votti-wizard__nav">
+      <div className={`votti-wizard__nav ${optionPhotoBusy ? "votti-wizard__nav--blocked" : ""}`}>
         {step > 0 ? (
-          <button type="button" className="votti-outline-btn" onClick={() => setStep((s) => s - 1)}>
+          <button
+            type="button"
+            className="votti-outline-btn"
+            disabled={optionPhotoBusy}
+            onClick={() => {
+              if (!optionPhotoBusy) setStep((s) => s - 1);
+            }}
+          >
             Voltar
           </button>
         ) : (
@@ -579,8 +599,15 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
           </Link>
         )}
         {step < STEPS.length - 1 ? (
-          <button type="button" className="votti-mega-btn votti-mega-btn--sm" onClick={() => setStep((s) => s + 1)}>
-            Continuar
+          <button
+            type="button"
+            className="votti-mega-btn votti-mega-btn--sm"
+            disabled={optionPhotoBusy}
+            onClick={() => {
+              if (!optionPhotoBusy) setStep((s) => s + 1);
+            }}
+          >
+            {optionPhotoBusy ? "Aguarde a foto…" : "Continuar"}
           </button>
         ) : null}
       </div>

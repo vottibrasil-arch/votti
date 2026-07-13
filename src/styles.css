@@ -1603,13 +1603,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 999px;
   border: 2px dashed oklch(0.38 0.06 260 / 55%);
   background: oklch(0.17 0.04 260 / 80%);
   cursor: pointer;
   overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .votti-option-photo__img {
@@ -1646,7 +1648,7 @@
 .votti-focus-editor {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: 220;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4935,6 +4937,12 @@ button.votti-legal-footer__link:hover {
 .votti-wizard__nav .votti-outline-btn,
 .votti-wizard__nav .votti-mega-btn {
   flex: 1;
+}
+
+.votti-wizard__nav--blocked .votti-mega-btn:disabled,
+.votti-wizard__nav--blocked .votti-outline-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .votti-question-card {

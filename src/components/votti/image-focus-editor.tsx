@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { ImageFocus } from "@/lib/votti/crop-image";
 
 type ImageFocusEditorProps = {
@@ -105,10 +106,27 @@ export function ImageFocusEditor({
     }
   }
 
-  return (
-    <div className="votti-focus-editor" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="votti-focus-editor__backdrop" onClick={onCancel} aria-hidden />
-      <div className="votti-focus-editor__panel animate-rise">
+  return createPortal(
+    <div
+      className="votti-focus-editor"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      onClick={(event) => event.stopPropagation()}
+    >
+      <div
+        className="votti-focus-editor__backdrop"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onCancel();
+        }}
+        aria-hidden
+      />
+      <div
+        className="votti-focus-editor__panel animate-rise"
+        onClick={(event) => event.stopPropagation()}
+      >
         <h3 className="votti-focus-editor__title">{title}</h3>
         <p className="votti-focus-editor__hint">
           Arraste com o dedo ou use os controles para escolher o que aparece.
@@ -155,18 +173,29 @@ export function ImageFocusEditor({
         </div>
 
         <div className="votti-focus-editor__actions">
-          <button type="button" className="votti-focus-editor__btn votti-focus-editor__btn--ghost" onClick={onCancel}>
+          <button
+            type="button"
+            className="votti-focus-editor__btn votti-focus-editor__btn--ghost"
+            onClick={(event) => {
+              event.stopPropagation();
+              onCancel();
+            }}
+          >
             Cancelar
           </button>
           <button
             type="button"
             className="votti-focus-editor__btn votti-focus-editor__btn--primary"
-            onClick={() => onConfirm(focus)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onConfirm(focus);
+            }}
           >
             Usar foto
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
