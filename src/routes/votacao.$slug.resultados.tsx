@@ -143,6 +143,7 @@ function ResultadosPage() {
           {displayPoll.questions.map((q) => (
             <section key={q.id}>
               <PollRankingPreview
+                description={displayPoll.description}
                 question={q}
                 primaryColor={displayPoll.primaryColor}
                 featured

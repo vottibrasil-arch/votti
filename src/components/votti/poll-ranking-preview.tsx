@@ -4,6 +4,7 @@ import type { PollQuestion } from "@/lib/votti/poll-types";
 
 type PollRankingPreviewProps = {
   title?: string;
+  description?: string;
   question: PollQuestion;
   primaryColor?: string;
   compact?: boolean;
@@ -18,6 +19,7 @@ type PollRankingPreviewProps = {
 
 export function PollRankingPreview({
   title,
+  description,
   question,
   primaryColor = "#4F8FD9",
   compact = false,
@@ -46,13 +48,15 @@ export function PollRankingPreview({
     >
       {!featured ? (
         <div className="poll-ranking-preview__head">
-          {live ? <PollLiveBadge /> : null}
+          <div className="poll-ranking-preview__head-row">
+            {live ? <PollLiveBadge /> : <span aria-hidden />}
+            <span className="poll-ranking-preview__votes tabular-nums">
+              {hasVotes ? `${totalVotes} votos` : "0 votos"}
+            </span>
+          </div>
           {!hideTitle ? (
             <h3 className="poll-ranking-preview__title">{title || "Sua votação"}</h3>
           ) : null}
-          <span className="poll-ranking-preview__votes tabular-nums">
-            {hasVotes ? `${totalVotes} votos` : "0 votos"}
-          </span>
         </div>
       ) : live && !hideFeaturedLive ? (
         <div className="poll-ranking-preview__featured-live">
@@ -65,6 +69,10 @@ export function PollRankingPreview({
         <span className="poll-ranking-preview__featured-count poll-ranking-preview__featured-count--solo tabular-nums">
           {hasVotes ? `${totalVotes} votos` : "0 votos"}
         </span>
+      ) : null}
+
+      {description?.trim() ? (
+        <p className="poll-ranking-preview__description">{description.trim()}</p>
       ) : null}
 
       <p className="poll-ranking-preview__question">{question.text || "Pergunta principal"}</p>

@@ -80,6 +80,7 @@ function SucessoPage() {
             <div className="mt-6 text-left">
               <PollRankingPreview
                 title={poll.title}
+                description={poll.description}
                 question={poll.questions[0]}
                 primaryColor={poll.primaryColor}
                 live

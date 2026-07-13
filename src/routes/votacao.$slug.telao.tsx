@@ -74,6 +74,7 @@ function TelaoPage() {
           <section key={question.id} className="votti-telao__block">
             <PollRankingPreview
               title={poll.title}
+              description={poll.description}
               question={question}
               primaryColor={poll.primaryColor}
               live

@@ -3780,24 +3780,40 @@ button.votti-legal-footer__link:hover {
 
 .poll-ranking-preview__head {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.375rem;
   margin-bottom: 0.625rem;
 }
 
+.poll-ranking-preview__head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .poll-ranking-preview__title {
-  flex: 1;
   margin: 0;
   font-family: var(--font-display);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 700;
+  line-height: 1.25;
   color: oklch(0.92 0.01 260);
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .poll-ranking-preview__votes {
   font-size: 0.6875rem;
   font-weight: 600;
   color: oklch(0.62 0.18 145);
+}
+
+.poll-ranking-preview__description {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: oklch(0.78 0.02 260);
 }
 
 .poll-ranking-preview__question {
@@ -4069,6 +4085,13 @@ button.votti-legal-footer__link:hover {
   margin-left: auto;
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+.poll-ranking-preview--featured .poll-ranking-preview__description {
+  margin: 0 0 0.75rem;
+  font-size: clamp(0.9375rem, 3.2vw, 1.0625rem);
+  line-height: 1.35;
+  color: oklch(0.82 0.02 260);
 }
 
 .poll-ranking-preview--featured .poll-ranking-preview__question {

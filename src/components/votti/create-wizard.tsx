@@ -386,6 +386,7 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
             {previewQuestion ? (
               <PollRankingPreview
                 title={draft.title || "Prévia ao vivo"}
+                description={draft.description}
                 question={previewQuestion}
                 primaryColor={draft.primaryColor}
               />
@@ -587,6 +588,7 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
           {previewQuestion ? (
             <PollRankingPreview
               title={draft.title || "Ranking ao vivo"}
+              description={draft.description}
               question={previewQuestion}
               primaryColor={draft.primaryColor}
               compact
