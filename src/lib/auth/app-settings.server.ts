@@ -149,3 +149,11 @@ export async function saveSignupSettings(settings: SignupSettings): Promise<Sign
   });
   return settings;
 }
+
+export const assertSignupAllowedForNewUser = createServerFn({ method: "POST" }).handler(async () => {
+  const gate = await isSignupAllowed();
+  if (!gate.allowed) {
+    throw new Error(gate.message);
+  }
+  return { ok: true as const };
+});

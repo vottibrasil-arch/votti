@@ -10,8 +10,7 @@ import {
   resolveSignupConflictMessage,
 } from "@/lib/auth/auth-errors";
 import { getSupabaseProjectInfo, lookupAuthEmail } from "@/lib/auth/auth-signup.server";
-import { fetchPublicSignupStatus } from "@/lib/auth/app-settings.server";
-import { assertSignupAllowedForNewUser } from "@/lib/auth/super-admin.server";
+import { assertSignupAllowedForNewUser, fetchPublicSignupStatus } from "@/lib/auth/app-settings.server";
 import { navigateAfterAuth, sanitizeRedirect } from "@/lib/auth/redirect";
 import {
   getWrongSupabaseProjectMessage,

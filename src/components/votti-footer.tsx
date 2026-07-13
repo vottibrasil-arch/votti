@@ -14,6 +14,7 @@ const HIDE_FOOTER_ON = new Set([
   "/criar/sucesso",
   "/minhas",
   "/minha-conta",
+  "/sup",
   "/auth/callback",
   "/termos-de-uso",
   "/politica-de-privacidade",

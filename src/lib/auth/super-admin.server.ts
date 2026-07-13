@@ -1,16 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { getSupabaseAdmin, getSupabaseWithToken } from "@/lib/api/supabase.server";
-import { assertSupabaseAdminConfigured } from "@/lib/config.server";
+import { assertSupabaseAdminConfigured, getServerConfig } from "@/lib/config.server";
 import {
   countRegisteredUsers,
-  getSignupSettings,
   getSuperAdminSettings,
   isSuperAdminEmail,
-  isSignupAllowed,
-  saveSignupSettings,
-  type SignupSettings,
 } from "@/lib/auth/app-settings.server";
+import type { PollStatus } from "@/lib/supabase/database.types";
+
+export type AdminPollRow = {
+  id: string;
+  slug: string;
+  title: string;
+  status: PollStatus;
+  createdAt: string;
+  publicUrl: string;
+};
 
 export type AdminUserRow = {
   id: string;
@@ -19,6 +25,9 @@ export type AdminUserRow = {
   plan: string;
   createdAt: string;
   provider: string;
+  activePollCount: number;
+  totalPollCount: number;
+  isSuperAdmin: boolean;
 };
 
 async function assertSuperAdmin(accessToken: string) {
@@ -40,6 +49,11 @@ async function assertSuperAdmin(accessToken: string) {
   return data.user;
 }
 
+function pollPublicUrl(slug: string) {
+  const origin = getServerConfig().appUrl.replace(/\/$/, "");
+  return `${origin}/v/${slug}`;
+}
+
 async function listAuthUsers() {
   assertSupabaseAdminConfigured();
   const admin = getSupabaseAdmin();
@@ -55,8 +69,33 @@ async function listAuthUsers() {
   return users;
 }
 
-async function buildAdminUserRows(): Promise<AdminUserRow[]> {
-  const [authUsers, profilesResult] = await Promise.all([
+async function fetchPollCountsByOwner() {
+  try {
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin
+      .from("polls")
+      .select("owner_id, status");
+    if (error) throw error;
+
+    const totals = new Map<string, number>();
+    const active = new Map<string, number>();
+
+    for (const row of data ?? []) {
+      if (!row.owner_id) continue;
+      totals.set(row.owner_id, (totals.get(row.owner_id) ?? 0) + 1);
+      if (row.status === "active") {
+        active.set(row.owner_id, (active.get(row.owner_id) ?? 0) + 1);
+      }
+    }
+
+    return { totals, active };
+  } catch {
+    return { totals: new Map<string, number>(), active: new Map<string, number>() };
+  }
+}
+
+async function buildAdminUserRows(adminSettings: Awaited<ReturnType<typeof getSuperAdminSettings>>): Promise<AdminUserRow[]> {
+  const [authUsers, profilesResult, pollCounts] = await Promise.all([
     listAuthUsers(),
     (async () => {
       try {
@@ -66,6 +105,7 @@ async function buildAdminUserRows(): Promise<AdminUserRow[]> {
         return { data: [], error: null };
       }
     })(),
+    fetchPollCountsByOwner(),
   ]);
 
   const profiles = new Map(
@@ -79,18 +119,43 @@ async function buildAdminUserRows(): Promise<AdminUserRow[]> {
         user.app_metadata?.provider ??
         user.identities?.[0]?.provider ??
         (user.email ? "email" : "unknown");
+      const email = user.email ?? "";
 
       return {
         id: user.id,
-        email: user.email ?? "",
+        email,
         nome: profile?.nome ?? user.user_metadata?.nome ?? user.email?.split("@")[0] ?? "",
         plan: profile?.plan ?? "free",
         createdAt: profile?.created_at ?? user.created_at ?? "",
         provider: String(provider),
+        activePollCount: pollCounts.active.get(user.id) ?? 0,
+        totalPollCount: pollCounts.totals.get(user.id) ?? 0,
+        isSuperAdmin: isSuperAdminEmail(email, adminSettings),
       };
     })
     .filter((row) => row.email)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+async function listPollsForOwner(ownerId: string): Promise<AdminPollRow[]> {
+  assertSupabaseAdminConfigured();
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin
+    .from("polls")
+    .select("id, slug, title, status, created_at")
+    .eq("owner_id", ownerId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []).map((poll) => ({
+    id: poll.id,
+    slug: poll.slug,
+    title: poll.title,
+    status: poll.status,
+    createdAt: poll.created_at,
+    publicUrl: pollPublicUrl(poll.slug),
+  }));
 }
 
 export const fetchAdminDashboard = createServerFn({ method: "POST" })
@@ -100,43 +165,100 @@ export const fetchAdminDashboard = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await assertSuperAdmin(data.accessToken);
 
-    const [signup, totalUsers, users, gate] = await Promise.all([
-      getSignupSettings(),
+    const adminSettings = await getSuperAdminSettings();
+    const [totalUsers, users] = await Promise.all([
       countRegisteredUsers(),
-      buildAdminUserRows(),
-      isSignupAllowed(),
+      buildAdminUserRows(adminSettings),
     ]);
 
+    const activeLinks = users.reduce((sum, user) => sum + user.activePollCount, 0);
+
     return {
-      signup,
       totalUsers,
-      signupOpen: gate.allowed && signup.open,
+      activeLinks,
       users,
     };
   });
 
-export const setSignupOpen = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken?: string; open?: boolean }) => ({
+export const fetchAdminUserPolls = createServerFn({ method: "POST" })
+  .inputValidator((data: { accessToken?: string; userId?: string }) => ({
     accessToken: typeof data.accessToken === "string" ? data.accessToken : "",
-    open: data.open === true,
+    userId: typeof data.userId === "string" ? data.userId : "",
   }))
   .handler(async ({ data }) => {
     await assertSuperAdmin(data.accessToken);
-    const current = await getSignupSettings();
-    const next: SignupSettings = { ...current, open: data.open };
-    await saveSignupSettings(next);
-    const gate = await isSignupAllowed();
-    return {
-      signup: next,
-      signupOpen: gate.allowed,
-      message: gate.allowed ? "" : gate.message,
-    };
+    if (!data.userId) throw new Error("Usuário inválido.");
+
+    const polls = await listPollsForOwner(data.userId);
+    return { polls };
   });
 
-export const assertSignupAllowedForNewUser = createServerFn({ method: "POST" }).handler(async () => {
-  const gate = await isSignupAllowed();
-  if (!gate.allowed) {
-    throw new Error(gate.message);
-  }
-  return { ok: true as const };
-});
+export const adminClosePoll = createServerFn({ method: "POST" })
+  .inputValidator((data: { accessToken?: string; pollId?: string }) => ({
+    accessToken: typeof data.accessToken === "string" ? data.accessToken : "",
+    pollId: typeof data.pollId === "string" ? data.pollId : "",
+  }))
+  .handler(async ({ data }) => {
+    await assertSuperAdmin(data.accessToken);
+    if (!data.pollId) throw new Error("Votação inválida.");
+
+    assertSupabaseAdminConfigured();
+    const admin = getSupabaseAdmin();
+
+    const { data: poll, error: fetchError } = await admin
+      .from("polls")
+      .select("id, status, slug, title")
+      .eq("id", data.pollId)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+    if (!poll) throw new Error("Votação não encontrada.");
+    if (poll.status === "closed") {
+      return { ok: true as const, alreadyClosed: true };
+    }
+
+    const { error: updateError } = await admin
+      .from("polls")
+      .update({ status: "closed" })
+      .eq("id", data.pollId);
+
+    if (updateError) throw updateError;
+
+    return { ok: true as const, alreadyClosed: false };
+  });
+
+export const adminDeleteUser = createServerFn({ method: "POST" })
+  .inputValidator((data: { accessToken?: string; userId?: string }) => ({
+    accessToken: typeof data.accessToken === "string" ? data.accessToken : "",
+    userId: typeof data.userId === "string" ? data.userId : "",
+  }))
+  .handler(async ({ data }) => {
+    const adminUser = await assertSuperAdmin(data.accessToken);
+    if (!data.userId) throw new Error("Usuário inválido.");
+    if (data.userId === adminUser.id) {
+      throw new Error("Você não pode excluir a própria conta por aqui.");
+    }
+
+    assertSupabaseAdminConfigured();
+    const admin = getSupabaseAdmin();
+
+    const { data: target, error: targetError } = await admin.auth.admin.getUserById(data.userId);
+    if (targetError) throw targetError;
+    if (!target.user?.email) throw new Error("Usuário não encontrado.");
+
+    const adminSettings = await getSuperAdminSettings();
+    if (isSuperAdminEmail(target.user.email, adminSettings)) {
+      throw new Error("Não é possível excluir outro super admin.");
+    }
+
+    const { error: pollsError } = await admin.from("polls").delete().eq("owner_id", data.userId);
+    if (pollsError) throw pollsError;
+
+    const { error: profileError } = await admin.from("profiles").delete().eq("id", data.userId);
+    if (profileError) throw profileError;
+
+    const { error: deleteError } = await admin.auth.admin.deleteUser(data.userId);
+    if (deleteError) throw deleteError;
+
+    return { ok: true as const };
+  });
