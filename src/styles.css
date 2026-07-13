@@ -6200,12 +6200,3 @@ button.votti-image-box:disabled {
   font-size: 0.75rem;
   color: oklch(0.68 0.03 260);
 }
-
-/* Espaço para o rodapé fixo com anúncio (páginas /v/ e /votacao/) */
-body.votti-has-footer-ad {
-  padding-bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px));
-}
-
-body.votti-has-footer-ad .votti-public-poll__inner {
-  padding-bottom: 0.5rem;
-}

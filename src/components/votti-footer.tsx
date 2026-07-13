@@ -1,108 +1,22 @@
 import { useEffect } from "react";
 import { useRouterState } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
-import { Plus, Share2 } from "lucide-react";
-import { FooterAdSlot } from "@/components/footer/footer-ad-slot";
-import { getFooterAdConfig } from "@/lib/footer-ad";
+import { ensureMonetagScriptLoaded } from "@/lib/monetag";
 
-/** Páginas internas do app — sem rodapé com anúncio. */
-const HIDE_FOOTER_ON = new Set([
-  "/",
-  "/como-funciona",
-  "/login",
-  "/cadastro",
-  "/criar",
-  "/criar/sucesso",
-  "/minhas",
-  "/minha-conta",
-  "/sup",
-  "/auth/callback",
-  "/termos-de-uso",
-  "/politica-de-privacidade",
-  "/contato",
-]);
-
-function shouldShowFooter(pathname: string) {
-  if (HIDE_FOOTER_ON.has(pathname)) return false;
-  if (pathname.startsWith("/auth/")) return false;
+/** Páginas com anúncio Monetag (script invisível — sem barra fixa). */
+function shouldLoadVoteAds(pathname: string) {
   if (pathname.endsWith("/telao")) return false;
   return pathname.startsWith("/v/") || pathname.startsWith("/votacao/");
 }
 
+/** Carrega Monetag só nas páginas públicas de votação — sem UI fixa no rodapé. */
 export function VottiFooter() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const adConfig = getFooterAdConfig();
-  const visible = shouldShowFooter(pathname);
+  const active = shouldLoadVoteAds(pathname);
 
   useEffect(() => {
-    if (typeof document === "undefined") return;
-    document.body.classList.toggle("votti-has-footer-ad", visible);
-    return () => {
-      document.body.classList.remove("votti-has-footer-ad");
-    };
-  }, [visible]);
+    if (!active) return;
+    ensureMonetagScriptLoaded();
+  }, [active]);
 
-  if (!visible) return null;
-
-  async function handleShare() {
-    const url = window.location.href;
-    const title = "VOTTII — Sua votação em tempo real";
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title, url });
-        return;
-      } catch {
-        /* cancelado */
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      /* indisponível */
-    }
-  }
-
-  return (
-    <footer
-      className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)] pointer-events-none"
-      aria-label="Rodapé"
-    >
-      <div
-        className="pointer-events-auto mx-auto max-w-md px-4 pb-3 pt-2 space-y-2"
-        style={{
-          background:
-            "linear-gradient(180deg, transparent 0%, color-mix(in oklab, var(--background) 80%, transparent) 20%, var(--background) 100%)",
-        }}
-      >
-        <div className="flex items-center justify-center gap-4">
-          <button
-            type="button"
-            onClick={() => void handleShare()}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition"
-          >
-            <Share2 className="size-3.5" />
-            Compartilhar
-          </button>
-
-          <Link
-            to="/criar"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition"
-          >
-            <Plus className="size-3.5" />
-            Crie sua votação gratuitamente
-          </Link>
-        </div>
-
-        <div className="h-[92px] md:h-[80px] overflow-hidden rounded-xl border border-border/40 bg-surface/50">
-          <FooterAdSlot config={adConfig} />
-        </div>
-
-        <p className="text-center text-[10px] text-muted-foreground/70">
-          © {new Date().getFullYear()} VOTTII
-        </p>
-      </div>
-    </footer>
-  );
+  return null;
 }
