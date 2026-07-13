@@ -1,4 +1,4 @@
-import { VOTTII_DISPLAY_NAME, VOTTI_LOGO_PATH } from "@/lib/votti/brand";
+import { VOTTII_DISPLAY_NAME, VOTTI_OG_IMAGE_PATH } from "@/lib/votti/brand";
 import { getServerPublicOrigin } from "@/lib/votti/app-url";
 
 export type PollShareKind = "vote" | "results";
@@ -11,7 +11,7 @@ export type PollShareMeta = {
   coverUrl: string;
 };
 
-export const DEFAULT_OG_LOGO_PATH = VOTTI_LOGO_PATH;
+export const DEFAULT_OG_LOGO_PATH = VOTTI_OG_IMAGE_PATH;
 
 export function resolveShareImageUrl(coverUrl: string, origin = getServerPublicOrigin()): string {
   const cover = coverUrl.trim();

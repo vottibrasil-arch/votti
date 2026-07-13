@@ -9,5 +9,8 @@ export const VOTTII_DISPLAY_NAME = "VOTTII";
 /** Logo principal do site (public/logo-full.png). */
 export const VOTTI_LOGO_PATH = "/logo-full.png";
 
+/** Imagem padrão para WhatsApp/OG quando a votação não tem capa (public/logo-og.png). */
+export const VOTTI_OG_IMAGE_PATH = "/logo-og.png";
+
 /** Logo anterior preservada em public/logo-full-legacy.png. */
 export const VOTTI_LOGO_LEGACY_PATH = "/logo-full-legacy.png";
