@@ -1,16 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
   ExternalLink,
   KeyRound,
   Link2,
   Loader2,
+  Search,
   Shield,
   Trash2,
   UserCheck,
   Users,
   Vote,
+  X,
   XCircle,
 } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
@@ -52,6 +54,16 @@ function pollStatusLabel(status: AdminPollRow["status"]) {
   return "Rascunho";
 }
 
+function normalizeSearch(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function matchesUserSearch(row: AdminUserRow, query: string) {
+  if (!query) return true;
+  const haystack = `${row.nome} ${row.email}`.toLowerCase();
+  return haystack.includes(query);
+}
+
 async function getAccessToken() {
   const { data } = await getSupabaseBrowser().auth.getSession();
   return data.session?.access_token ?? "";
@@ -82,6 +94,21 @@ function SupPage() {
   const [deleteTarget, setDeleteTarget] = useState<AdminUserRow | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const normalizedSearch = normalizeSearch(searchQuery);
+  const filteredUsers = useMemo(
+    () => users.filter((row) => matchesUserSearch(row, normalizedSearch)),
+    [users, normalizedSearch],
+  );
+
+  useEffect(() => {
+    if (!expandedUserId) return;
+    if (!filteredUsers.some((row) => row.id === expandedUserId)) {
+      setExpandedUserId(null);
+      setUserPolls([]);
+    }
+  }, [expandedUserId, filteredUsers]);
 
   const loadDashboard = useCallback(async () => {
     setError("");
@@ -285,14 +312,46 @@ function SupPage() {
           <div className="votti-sup__panel">
             <div className="votti-sup__panel-head">
               <h2>Usuários cadastrados</h2>
-              <span className="votti-sup__count tabular-nums">{users.length}</span>
+              <span className="votti-sup__count tabular-nums">
+                {normalizedSearch ? `${filteredUsers.length} / ${users.length}` : users.length}
+              </span>
             </div>
             <p className="votti-sup__hint">
               Toque em um usuário para ver links, trocar senha quando pedirem, cancelar votações ou excluir cadastro.
             </p>
 
+            <label className="votti-sup__search">
+              <Search className="size-4 shrink-0" aria-hidden />
+              <input
+                type="search"
+                className="votti-sup__search-input"
+                placeholder="Buscar por nome ou e-mail…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  className="votti-sup__search-clear"
+                  aria-label="Limpar busca"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <X className="size-4" />
+                </button>
+              ) : null}
+            </label>
+
             <div className="votti-sup__user-list">
-              {users.map((row) => {
+              {filteredUsers.length === 0 ? (
+                <p className="votti-sup__hint">
+                  {normalizedSearch
+                    ? `Nenhum usuário encontrado para “${searchQuery.trim()}”.`
+                    : "Nenhum usuário cadastrado."}
+                </p>
+              ) : null}
+              {filteredUsers.map((row) => {
                 const expanded = expandedUserId === row.id;
                 const activePolls = userPolls.filter((poll) => poll.status === "active");
 
