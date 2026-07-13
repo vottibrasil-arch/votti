@@ -45,21 +45,21 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
   const [loadingEdit, setLoadingEdit] = useState(isEditing);
   const [loadError, setLoadError] = useState("");
   const [closeBusy, setCloseBusy] = useState(false);
-  const [busyOptionPhotos, setBusyOptionPhotos] = useState<Set<string>>(() => new Set());
+  const [busyImagePickers, setBusyImagePickers] = useState<Set<string>>(() => new Set());
 
-  const setOptionPhotoBusy = useCallback((optionId: string, busy: boolean) => {
-    setBusyOptionPhotos((prev) => {
-      const alreadyBusy = prev.has(optionId);
+  const setImagePickerBusy = useCallback((pickerId: string, busy: boolean) => {
+    setBusyImagePickers((prev) => {
+      const alreadyBusy = prev.has(pickerId);
       if (busy === alreadyBusy) return prev;
 
       const next = new Set(prev);
-      if (busy) next.add(optionId);
-      else next.delete(optionId);
+      if (busy) next.add(pickerId);
+      else next.delete(pickerId);
       return next;
     });
   }, []);
 
-  const optionPhotoBusy = busyOptionPhotos.size > 0;
+  const imagePickerBusy = busyImagePickers.size > 0;
 
   useEffect(() => {
     if (!isEditing || !editPollId || !user) return;
@@ -292,7 +292,7 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
                       patch({ questions });
                     }}
                     ownerId={user?.id}
-                    onBusyChange={(busy) => setOptionPhotoBusy(o.id, busy)}
+                    onBusyChange={(busy) => setImagePickerBusy(`option-${o.id}`, busy)}
                   />
                   <label className="votti-field votti-field--grow">
                     <span className="votti-field__label">Opção {oi + 1}</span>
@@ -434,6 +434,7 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
             value={draft.coverUrl}
             onChange={(coverUrl) => patch({ coverUrl, logoUrl: "" })}
             ownerId={user?.id}
+            onBusyChange={(busy) => setImagePickerBusy("cover", busy)}
           />
         </div>
       )}
@@ -584,14 +585,14 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
         </div>
       )}
 
-      <div className={`votti-wizard__nav ${optionPhotoBusy ? "votti-wizard__nav--blocked" : ""}`}>
+      <div className={`votti-wizard__nav ${imagePickerBusy ? "votti-wizard__nav--blocked" : ""}`}>
         {step > 0 ? (
           <button
             type="button"
             className="votti-outline-btn"
-            disabled={optionPhotoBusy}
+            disabled={imagePickerBusy}
             onClick={() => {
-              if (!optionPhotoBusy) setStep((s) => s - 1);
+              if (!imagePickerBusy) setStep((s) => s - 1);
             }}
           >
             Voltar
@@ -605,12 +606,12 @@ export function CreateWizard({ onPublished, onSaved, editPollId }: WizardProps) 
           <button
             type="button"
             className="votti-mega-btn votti-mega-btn--sm"
-            disabled={optionPhotoBusy}
+            disabled={imagePickerBusy}
             onClick={() => {
-              if (!optionPhotoBusy) setStep((s) => s + 1);
+              if (!imagePickerBusy) setStep((s) => s + 1);
             }}
           >
-            {optionPhotoBusy ? "Aguarde a foto…" : "Continuar"}
+            {imagePickerBusy ? "Aguarde a foto…" : "Continuar"}
           </button>
         ) : null}
       </div>
