@@ -17,7 +17,6 @@ import { getServerPublicOrigin } from "../lib/votti/app-url";
 import { VOTTI_LOGO_PATH } from "../lib/votti/brand";
 import { DEFAULT_OG_LOGO_PATH } from "../lib/votti/poll-share-meta";
 import { AuthProvider } from "../lib/auth/use-auth";
-import { VottiFooter } from "../components/votti-footer";
 import { LegalModalsProvider } from "../lib/votti/use-legal-modals";
 import { LegalModalsRoot } from "../components/votti/legal/legal-modals-root";
 import { PublicLegalFooter } from "../components/votti/legal/public-legal-footer";
@@ -161,7 +160,6 @@ function RootComponent() {
       <AuthProvider>
         <LegalModalsProvider>
           <Outlet />
-          <VottiFooter />
           <LegalModalsRoot />
         </LegalModalsProvider>
       </AuthProvider>
