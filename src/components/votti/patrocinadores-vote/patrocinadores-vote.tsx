@@ -1,25 +1,31 @@
 import { Megaphone, X } from "lucide-react";
-import { useId } from "react";
+import { useId, useRef } from "react";
+import { getMonetagFooterZoneId } from "@/lib/monetag";
+import { useMonetagPushGuard } from "./use-monetag-push-guard";
+import { usePatrocinadoresMonetag } from "./use-patrocinadores-monetag";
 import {
   PATROCINADORES_CLOSE_DELAY_SEC,
   usePatrocinadoresCloseTimer,
   usePatrocinadoresVisibility,
 } from "./use-patrocinadores-session";
 
-/** Página só de propaganda — Monetag roda apenas dentro deste iframe. */
+/** Página estática para teste manual. */
 export const PATROCINADORES_FRAME_SRC = "/patrocinadores/monetag.html";
 
 /** @deprecated Rota SPA removida. */
 export const PROPAGANDA_FRAME_ROUTE = "/propaganda/frame";
 
 /**
- * Central de Patrocinadores — propaganda no rodapé das páginas de votação.
- * Iframe isolado: não mexe na capa, ranking nem no layout da votação.
+ * Central de Patrocinadores — banner Monetag preso no rodapé da votação.
  */
 export function PatrocinadoresVote() {
   const titleId = useId();
+  const slotRef = useRef<HTMLDivElement>(null);
   const { visible, dismiss } = usePatrocinadoresVisibility();
   const { secondsLeft, canClose } = usePatrocinadoresCloseTimer(visible);
+
+  usePatrocinadoresMonetag(visible, slotRef);
+  useMonetagPushGuard(visible);
 
   if (!visible) return null;
 
@@ -41,16 +47,12 @@ export function PatrocinadoresVote() {
           </p>
         </header>
 
-        <div className="votti-patrocinadores-vote__slot" aria-label="Banner de publicidade">
-          <iframe
-            title="Patrocinadores do VOTTI — banner de publicidade"
-            src={PATROCINADORES_FRAME_SRC}
-            className="votti-patrocinadores-vote__frame"
-            loading="eager"
-            referrerPolicy="no-referrer-when-downgrade"
-            sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
-          />
-        </div>
+        <div
+          ref={slotRef}
+          className="votti-patrocinadores-vote__slot"
+          data-monetag-zone={getMonetagFooterZoneId()}
+          aria-label="Banner de publicidade"
+        />
 
         <footer className="votti-patrocinadores-vote__actions">
           {canClose ? (

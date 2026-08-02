@@ -8,3 +8,5 @@ export {
   usePatrocinadoresCloseTimer,
   usePatrocinadoresVisibility,
 } from "./use-patrocinadores-session";
+export { useMonetagPushGuard } from "./use-monetag-push-guard";
+export { usePatrocinadoresMonetag } from "./use-patrocinadores-monetag";

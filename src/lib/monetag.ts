@@ -67,8 +67,8 @@ export type MonetagMountOptions = {
 };
 
 /**
- * Injeta o script Monetag (data-zone + tag.min.js).
- * Propaganda nas votações: usar iframe `/patrocinadores/monetag.html` (não chamar aqui).
+ * Injeta o script Monetag (tag oficial do painel).
+ * Votações: `usePatrocinadoresMonetag` carrega a tag e prende o criativo no slot.
  */
 export function ensureMonetagScriptLoaded(
   scriptUrl = getMonetagScriptUrl(),
