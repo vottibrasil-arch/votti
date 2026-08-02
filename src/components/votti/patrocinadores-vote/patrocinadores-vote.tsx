@@ -1,41 +1,28 @@
 import { Megaphone, X } from "lucide-react";
-import { useEffect, useId, useRef } from "react";
-import {
-  getMonetagFooterZoneId,
-  getMonetagScriptUrl,
-  ensureMonetagScriptLoaded,
-} from "@/lib/monetag";
+import { useId } from "react";
 import {
   PATROCINADORES_CLOSE_DELAY_SEC,
   usePatrocinadoresCloseTimer,
   usePatrocinadoresVisibility,
 } from "./use-patrocinadores-session";
+import { useMonetagLeakGuard } from "./use-monetag-leak-guard";
 
-/** HTML estático — útil para teste manual; produção usa script no slot. */
+/** Página estática isolada — Monetag só roda dentro deste iframe. */
 export const PATROCINADORES_FRAME_SRC = "/patrocinadores/monetag.html";
 
 /** @deprecated Rota SPA removida. */
 export const PROPAGANDA_FRAME_ROUTE = "/propaganda/frame";
 
-const PATROCINADORES_MOUNT_ID = "patrocinadores-vote";
-
 /**
  * Central de Patrocinadores — monetização no rodapé das páginas públicas de votação.
- * Inline no fluxo da página; nunca sobrepõe capa, ranking ou botões.
+ * Propaganda em iframe sandbox: não injeta script na página de votação (sem push flutuante).
  */
 export function PatrocinadoresVote() {
   const titleId = useId();
-  const slotRef = useRef<HTMLDivElement>(null);
   const { visible, dismiss } = usePatrocinadoresVisibility();
   const { secondsLeft, canClose } = usePatrocinadoresCloseTimer(visible);
 
-  useEffect(() => {
-    if (!visible || !slotRef.current) return;
-    ensureMonetagScriptLoaded(getMonetagScriptUrl(), getMonetagFooterZoneId(), {
-      parent: slotRef.current,
-      mountId: PATROCINADORES_MOUNT_ID,
-    });
-  }, [visible]);
+  useMonetagLeakGuard(visible);
 
   if (!visible) return null;
 
@@ -57,12 +44,16 @@ export function PatrocinadoresVote() {
           </p>
         </header>
 
-        <div
-          ref={slotRef}
-          className="votti-patrocinadores-vote__slot"
-          data-monetag-zone={getMonetagFooterZoneId()}
-          aria-label="Área de publicidade"
-        />
+        <div className="votti-patrocinadores-vote__slot" aria-label="Área de publicidade">
+          <iframe
+            title="Patrocinadores do VOTTI — banner patrocinado"
+            src={PATROCINADORES_FRAME_SRC}
+            className="votti-patrocinadores-vote__frame"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+          />
+        </div>
 
         <footer className="votti-patrocinadores-vote__actions">
           {canClose ? (
