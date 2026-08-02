@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PollPublicShell } from "@/components/votti/poll-public-shell";
-import { usePatrocinadoresShellOptional } from "@/components/votti/patrocinadores-vote";
 import { PublicLegalFooter } from "@/components/votti/legal/public-legal-footer";
 import { PollRankingPreview } from "@/components/votti/poll-ranking-preview";
 import { PollSharePanel } from "@/components/votti/poll-share-panel";
@@ -45,29 +44,6 @@ export const Route = createFileRoute("/votacao/$slug/resultados")({
   component: ResultadosPage,
 });
 
-function ResultadosScrollHelper({
-  showSuccessBanner,
-  enabled,
-}: {
-  showSuccessBanner: boolean;
-  enabled: boolean;
-}) {
-  const patrocinadores = usePatrocinadoresShellOptional();
-
-  useEffect(() => {
-    if (!showSuccessBanner || !enabled) return;
-    if (patrocinadores?.visible) return;
-
-    const scrollTimer = window.setTimeout(() => {
-      document.getElementById("ranking")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 220);
-
-    return () => window.clearTimeout(scrollTimer);
-  }, [showSuccessBanner, enabled, patrocinadores?.visible]);
-
-  return null;
-}
-
 function ResultadosPage() {
   const { slug } = Route.useParams();
   const { confirmado } = Route.useSearch();
@@ -91,6 +67,16 @@ function ResultadosPage() {
     const hideTimer = window.setTimeout(() => setShowSuccessBanner(false), 5000);
     return () => window.clearTimeout(hideTimer);
   }, [cameFromConfirm, navigate, slug]);
+
+  useEffect(() => {
+    if (!showSuccessBanner || !displayPoll) return;
+
+    const scrollTimer = window.setTimeout(() => {
+      document.getElementById("ranking")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 220);
+
+    return () => window.clearTimeout(scrollTimer);
+  }, [showSuccessBanner, displayPoll]);
 
   if (status === "connecting" && !displayPoll) {
     return (
@@ -132,11 +118,10 @@ function ResultadosPage() {
   const coverUrl = getPollCoverUrl(displayPoll);
 
   return (
-    <PollPublicShell
-      poll={displayPoll}
-      coverStyle="minimal"
-      pageClassName="votti-results-page px-4 pb-6"
-      hero={
+    <PollPublicShell poll={displayPoll} coverStyle="minimal">
+      <div className="votti-results-page flex-1 px-4 pb-6 max-w-lg mx-auto w-full">
+        {showSuccessBanner ? <VoteSuccessBanner className="mt-3 mb-1" /> : null}
+
         <div className="votti-results-hero animate-rise">
           {coverUrl ? (
             <CoverImage src={coverUrl} className="votti-results-hero__cover" />
@@ -153,37 +138,31 @@ function ResultadosPage() {
             <p className="votti-results-hero__stats tabular-nums">{formatPollStats(displayPoll)}</p>
           </div>
         </div>
-      }
-      body={
-        <>
-          <ResultadosScrollHelper showSuccessBanner={showSuccessBanner} enabled />
-          {showSuccessBanner ? <VoteSuccessBanner className="mt-3 mb-1" /> : null}
 
-          <div id="ranking" className="votti-results-official animate-rise scroll-mt-4">
-            {displayPoll.questions.map((q) => (
-              <section key={q.id}>
-                <PollRankingPreview
-                  description={displayPoll.description}
-                  question={q}
-                  primaryColor={displayPoll.primaryColor}
-                  featured
-                  hideTitle
-                  hideFeaturedLive
-                  live={liveOn}
-                  sortByVotes
-                />
-              </section>
-            ))}
-          </div>
+        <div id="ranking" className="votti-results-official animate-rise scroll-mt-4">
+          {displayPoll.questions.map((q) => (
+            <section key={q.id}>
+              <PollRankingPreview
+                description={displayPoll.description}
+                question={q}
+                primaryColor={displayPoll.primaryColor}
+                featured
+                hideTitle
+                hideFeaturedLive
+                live={liveOn}
+                sortByVotes
+              />
+            </section>
+          ))}
+        </div>
 
-          <PollSharePanel
-            slug={slug}
-            title={displayPoll.title}
-            description={displayPoll.description}
-            variant="footer"
-          />
-        </>
-      }
-    />
+        <PollSharePanel
+          slug={slug}
+          title={displayPoll.title}
+          description={displayPoll.description}
+          variant="footer"
+        />
+      </div>
+    </PollPublicShell>
   );
 }

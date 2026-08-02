@@ -34,7 +34,6 @@ export function LandingFooter({ guest = false }: { guest?: boolean }) {
           </LandingAuthLink>
         ) : null}
       </div>
-
       <PublicLegalFooter />
     </footer>
   );

@@ -11,12 +11,12 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { ADSENSE_CLIENT, ADSENSE_SCRIPT_SRC } from "../lib/adsense";
-import { MONETAG_VERIFICATION_CONTENT } from "../lib/monetag";
 import { reportAppError } from "../lib/votti-error-reporting";
 import { getServerPublicOrigin } from "../lib/votti/app-url";
 import { VOTTI_LOGO_PATH } from "../lib/votti/brand";
 import { DEFAULT_OG_LOGO_PATH } from "../lib/votti/poll-share-meta";
 import { AuthProvider } from "../lib/auth/use-auth";
+import { VottiFooter } from "../components/votti-footer";
 import { LegalModalsProvider } from "../lib/votti/use-legal-modals";
 import { LegalModalsRoot } from "../components/votti/legal/legal-modals-root";
 import { PublicLegalFooter } from "../components/votti/legal/public-legal-footer";
@@ -90,7 +90,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#1a2d5a" },
       { name: "google-adsense-account", content: ADSENSE_CLIENT },
-      { name: "monetag", content: MONETAG_VERIFICATION_CONTENT },
       {
         name: "google-site-verification",
         content: "UVl-pT0CIRj7LcIYPCzW6Lc9J2Ot58ln21tPr1e5Ilw",
@@ -160,6 +159,7 @@ function RootComponent() {
       <AuthProvider>
         <LegalModalsProvider>
           <Outlet />
+          <VottiFooter />
           <LegalModalsRoot />
         </LegalModalsProvider>
       </AuthProvider>

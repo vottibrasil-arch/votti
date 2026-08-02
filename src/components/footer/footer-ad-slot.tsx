@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { ADSENSE_CLIENT } from "@/lib/adsense";
 import type { FooterAdConfig } from "@/lib/footer-ad";
 import { useFooterAdLoaded } from "@/lib/footer-ad/use-footer-ad-loaded";
-import { ensureMonetagScriptLoaded } from "@/lib/monetag";
 import { FooterAdFallback } from "./footer-ad-fallback";
 
 type Props = {
@@ -32,11 +31,6 @@ export function FooterAdSlot({ config, advertiseHref }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!mounted || config.provider !== "monetag") return;
-    ensureMonetagScriptLoaded(config.monetagScriptUrl, config.monetagZoneId);
-  }, [mounted, config.provider, config.monetagScriptUrl, config.monetagZoneId]);
-
-  useEffect(() => {
     if (!mounted || !isAdSense || !hasSlot) return;
 
     requestAdSenseFill();
@@ -58,10 +52,9 @@ export function FooterAdSlot({ config, advertiseHref }: Props) {
   }, [mounted, isAdSense, hasSlot, config.adsenseSlot]);
 
   const showFallback =
-    config.provider !== "monetag" &&
     config.provider !== "adsense" &&
     (config.provider === "none" ||
-      ((config.provider === "image") && !adLoaded));
+      ((config.provider === "monetag" || config.provider === "image") && !adLoaded));
 
   return (
     <div className="relative flex h-full w-full items-center overflow-hidden" suppressHydrationWarning>
@@ -90,13 +83,14 @@ export function FooterAdSlot({ config, advertiseHref }: Props) {
         </div>
       ) : null}
 
-      {config.provider === "monetag" ? (
-        <div
-          ref={containerRef}
-          data-monetag-footer
-          className="flex h-full w-full items-center justify-center px-1.5"
-          aria-label="Anúncio"
-        />
+      {config.provider === "monetag" && config.monetagZoneId ? (
+        <div ref={containerRef} className="flex h-full w-full items-center justify-center px-1.5">
+          <div
+            id={`monetag-zone-${config.monetagZoneId}`}
+            data-monetag-zone={config.monetagZoneId}
+            className="h-full min-h-[92px] w-full md:min-h-[80px]"
+          />
+        </div>
       ) : null}
 
       {config.provider === "html" && config.html ? (
