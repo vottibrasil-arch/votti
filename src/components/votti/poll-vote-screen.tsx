@@ -173,8 +173,10 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
   const allAnswered = activeQuestions.every((q) => Boolean(selections[q.id]));
 
   return (
-    <PollPublicShell poll={poll}>
-      <div className="votti-vote-page flex-1 px-5 pb-10 max-w-lg mx-auto w-full">
+    <PollPublicShell
+      poll={poll}
+      pageClassName="votti-vote-page px-5 pb-10"
+      hero={
         <PollCoverHero poll={poll}>
           <div className="votti-vote-hero__trust">
             <SecurityBadge compact />
@@ -183,8 +185,9 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
           <h1 className="votti-vote-hero__title">{poll.title}</h1>
           {poll.description ? <p className="votti-vote-hero__desc">{poll.description}</p> : null}
         </PollCoverHero>
-
-        {closed ? (
+      }
+      body={
+        closed ? (
           <div className="votti-vote-closed animate-rise">
             <p>Esta votação foi encerrada.</p>
             <Link to="/votacao/$slug/resultados" params={{ slug }} className="votti-mega-btn votti-mega-btn--sm mt-4">
@@ -264,8 +267,8 @@ export function PollVoteScreen({ slug }: PollVoteScreenProps) {
               ) : null}
             </div>
           </>
-        )}
-      </div>
-    </PollPublicShell>
+        )
+      }
+    />
   );
 }

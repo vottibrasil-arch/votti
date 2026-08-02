@@ -1,12 +1,11 @@
+export { PatrocinadoresGate, PATROCINADORES_CLOSE_DELAY_SEC } from "./patrocinadores-gate";
+export { PatrocinadoresVote, PATROCINADORES_FRAME_SRC, PROPAGANDA_FRAME_ROUTE } from "./patrocinadores-vote";
 export {
-  PatrocinadoresVote,
-  PATROCINADORES_FRAME_SRC,
-  PROPAGANDA_FRAME_ROUTE,
-} from "./patrocinadores-vote";
+  PatrocinadoresShellProvider,
+  usePatrocinadoresShell,
+  usePatrocinadoresShellOptional,
+} from "./patrocinadores-shell-context";
 export {
-  PATROCINADORES_CLOSE_DELAY_SEC,
   usePatrocinadoresCloseTimer,
   usePatrocinadoresVisibility,
 } from "./use-patrocinadores-session";
-export { useMonetagPushGuard } from "./use-monetag-push-guard";
-export { usePatrocinadoresMonetag } from "./use-patrocinadores-monetag";

@@ -68,7 +68,7 @@ export type MonetagMountOptions = {
 
 /**
  * Injeta o script Monetag (tag oficial do painel).
- * Votações: `usePatrocinadoresMonetag` carrega a tag e prende o criativo no slot.
+ * Usar somente na rota `/patrocinadores` — nunca na página da votação.
  */
 export function ensureMonetagScriptLoaded(
   scriptUrl = getMonetagScriptUrl(),

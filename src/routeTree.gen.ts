@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermosDeUsoRouteImport } from './routes/termos-de-uso'
 import { Route as SupRouteImport } from './routes/sup'
 import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
+import { Route as PatrocinadoresRouteImport } from './routes/patrocinadores'
 import { Route as MinhasRouteImport } from './routes/minhas'
 import { Route as MinhaContaRouteImport } from './routes/minha-conta'
 import { Route as LoginRouteImport } from './routes/login'
@@ -41,6 +42,11 @@ const SupRoute = SupRouteImport.update({
 const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
   id: '/politica-de-privacidade',
   path: '/politica-de-privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatrocinadoresRoute = PatrocinadoresRouteImport.update({
+  id: '/patrocinadores',
+  path: '/patrocinadores',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MinhasRoute = MinhasRouteImport.update({
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/minha-conta': typeof MinhaContaRoute
   '/minhas': typeof MinhasRoute
+  '/patrocinadores': typeof PatrocinadoresRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/sup': typeof SupRoute
   '/termos-de-uso': typeof TermosDeUsoRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/minha-conta': typeof MinhaContaRoute
   '/minhas': typeof MinhasRoute
+  '/patrocinadores': typeof PatrocinadoresRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/sup': typeof SupRoute
   '/termos-de-uso': typeof TermosDeUsoRoute
@@ -168,6 +176,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/minha-conta': typeof MinhaContaRoute
   '/minhas': typeof MinhasRoute
+  '/patrocinadores': typeof PatrocinadoresRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/sup': typeof SupRoute
   '/termos-de-uso': typeof TermosDeUsoRoute
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/minha-conta'
     | '/minhas'
+    | '/patrocinadores'
     | '/politica-de-privacidade'
     | '/sup'
     | '/termos-de-uso'
@@ -210,6 +220,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/minha-conta'
     | '/minhas'
+    | '/patrocinadores'
     | '/politica-de-privacidade'
     | '/sup'
     | '/termos-de-uso'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/minha-conta'
     | '/minhas'
+    | '/patrocinadores'
     | '/politica-de-privacidade'
     | '/sup'
     | '/termos-de-uso'
@@ -250,6 +262,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MinhaContaRoute: typeof MinhaContaRoute
   MinhasRoute: typeof MinhasRoute
+  PatrocinadoresRoute: typeof PatrocinadoresRoute
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
   SupRoute: typeof SupRoute
   TermosDeUsoRoute: typeof TermosDeUsoRoute
@@ -279,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/politica-de-privacidade'
       fullPath: '/politica-de-privacidade'
       preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/patrocinadores': {
+      id: '/patrocinadores'
+      path: '/patrocinadores'
+      fullPath: '/patrocinadores'
+      preLoaderRoute: typeof PatrocinadoresRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/minhas': {
@@ -424,6 +444,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MinhaContaRoute: MinhaContaRoute,
   MinhasRoute: MinhasRoute,
+  PatrocinadoresRoute: PatrocinadoresRoute,
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
   SupRoute: SupRoute,
   TermosDeUsoRoute: TermosDeUsoRoute,
