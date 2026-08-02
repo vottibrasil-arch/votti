@@ -8,12 +8,18 @@ export const MONETAG_META_TAG =
 export const MONETAG_FOOTER_ZONE_ID = "11483021";
 export const MONETAG_FOOTER_SCRIPT_SRC = "https://nap5k.com/tag.min.js";
 
-/** Snippet oficial do painel Monetag (Get tag). */
+function isPatrocinadoresDocument() {
+  if (typeof window === "undefined") return true;
+  return window.location.pathname === "/patrocinadores";
+}
+
+/** Snippet oficial do painel Monetag (Get tag). Somente em `/patrocinadores`. */
 export function appendMonetagZoneScript(
   zoneId = getMonetagFooterZoneId(),
   scriptUrl = getMonetagScriptUrl(),
 ) {
   if (typeof document === "undefined") return false;
+  if (!isPatrocinadoresDocument()) return false;
 
   const selector = `script[data-zone="${zoneId}"][src="${scriptUrl}"]`;
   if (document.querySelector(selector)) return true;
@@ -76,6 +82,7 @@ export function ensureMonetagScriptLoaded(
   options?: MonetagMountOptions,
 ) {
   if (typeof document === "undefined") return false;
+  if (!options?.parent && !isPatrocinadoresDocument()) return false;
 
   if (!options?.parent && !options?.mountId) {
     return appendMonetagZoneScript(zoneId, scriptUrl);
