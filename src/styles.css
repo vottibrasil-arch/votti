@@ -6272,20 +6272,25 @@ button.votti-image-box:disabled {
 }
 
 .votti-patrocinadores-vote__slot {
-  height: clamp(8.75rem, 28vw, 10rem);
-  overflow: auto;
+  position: relative;
+  display: flex;
+  min-height: clamp(8.75rem, 28vw, 10rem);
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   overscroll-behavior: contain;
+  contain: layout style paint;
   border-radius: 0.75rem;
   border: 1px solid oklch(0.35 0.06 260 / 40%);
   background: oklch(0.12 0.04 260);
 }
 
-.votti-patrocinadores-vote__frame {
+.votti-patrocinadores-vote__slot iframe,
+.votti-patrocinadores-vote__slot img {
   display: block;
-  width: 100%;
-  height: clamp(8.75rem, 28vw, 10rem);
-  border: 0;
-  background: oklch(0.12 0.04 260);
+  max-width: 100%;
+  max-height: clamp(8.75rem, 28vw, 10rem);
+  margin: 0 auto;
 }
 
 .votti-patrocinadores-vote__actions {

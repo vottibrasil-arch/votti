@@ -39,24 +39,36 @@ export function injectMonetagVerification(html: string) {
   return html.replace("</head>", `${MONETAG_META_TAG}</head>`);
 }
 
+export type MonetagMountOptions = {
+  /** Onde anexar o script (ex.: slot da Central de Patrocinadores). */
+  parent?: HTMLElement;
+  /** Evita colisão quando a mesma zona é usada em mais de um lugar. */
+  mountId?: string;
+};
+
 /**
  * Injeta o script Monetag (data-zone + tag.min.js).
- * Preferir o iframe estático `/patrocinadores/monetag.html` — evita vazamento para a página pai.
+ * Zona banner: preferir `parent` no slot visível — iframe sandbox costuma bloquear fill.
  */
 export function ensureMonetagScriptLoaded(
   scriptUrl = getMonetagScriptUrl(),
   zoneId = getMonetagFooterZoneId(),
+  options?: MonetagMountOptions,
 ) {
   if (typeof document === "undefined") return false;
 
-  const selector = `script[data-zone="${zoneId}"][src="${scriptUrl}"]`;
+  const mountId = options?.mountId?.trim() || "default";
+  const selector = `script[data-zone="${zoneId}"][data-monetag-mount="${mountId}"]`;
   if (document.querySelector(selector)) return true;
 
-  const parent = [document.documentElement, document.body].filter(Boolean).pop();
+  const parent =
+    options?.parent ??
+    ([document.documentElement, document.body].filter(Boolean).pop() as HTMLElement | undefined);
   if (!parent) return false;
 
   const script = document.createElement("script");
   script.dataset.zone = zoneId;
+  script.dataset.monetagMount = mountId;
   script.src = scriptUrl;
   parent.appendChild(script);
   return true;

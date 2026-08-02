@@ -1,16 +1,23 @@
 import { Megaphone, X } from "lucide-react";
-import { useId } from "react";
+import { useEffect, useId, useRef } from "react";
+import {
+  getMonetagFooterZoneId,
+  getMonetagScriptUrl,
+  ensureMonetagScriptLoaded,
+} from "@/lib/monetag";
 import {
   PATROCINADORES_CLOSE_DELAY_SEC,
   usePatrocinadoresCloseTimer,
   usePatrocinadoresVisibility,
 } from "./use-patrocinadores-session";
 
-/** HTML estático isolado — Monetag só dentro do iframe sandbox (sem acesso ao documento pai). */
+/** HTML estático — útil para teste manual; produção usa script no slot. */
 export const PATROCINADORES_FRAME_SRC = "/patrocinadores/monetag.html";
 
-/** @deprecated Use PATROCINADORES_FRAME_SRC — rota SPA removida para evitar vazamento de anúncios. */
+/** @deprecated Rota SPA removida. */
 export const PROPAGANDA_FRAME_ROUTE = "/propaganda/frame";
+
+const PATROCINADORES_MOUNT_ID = "patrocinadores-vote";
 
 /**
  * Central de Patrocinadores — monetização no rodapé das páginas públicas de votação.
@@ -18,8 +25,17 @@ export const PROPAGANDA_FRAME_ROUTE = "/propaganda/frame";
  */
 export function PatrocinadoresVote() {
   const titleId = useId();
+  const slotRef = useRef<HTMLDivElement>(null);
   const { visible, dismiss } = usePatrocinadoresVisibility();
   const { secondsLeft, canClose } = usePatrocinadoresCloseTimer(visible);
+
+  useEffect(() => {
+    if (!visible || !slotRef.current) return;
+    ensureMonetagScriptLoaded(getMonetagScriptUrl(), getMonetagFooterZoneId(), {
+      parent: slotRef.current,
+      mountId: PATROCINADORES_MOUNT_ID,
+    });
+  }, [visible]);
 
   if (!visible) return null;
 
@@ -41,16 +57,12 @@ export function PatrocinadoresVote() {
           </p>
         </header>
 
-        <div className="votti-patrocinadores-vote__slot" aria-label="Área de publicidade">
-          <iframe
-            title="Patrocinadores do VOTTI — conteúdo patrocinado"
-            src={PATROCINADORES_FRAME_SRC}
-            className="votti-patrocinadores-vote__frame"
-            loading="eager"
-            referrerPolicy="no-referrer-when-downgrade"
-            sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
-          />
-        </div>
+        <div
+          ref={slotRef}
+          className="votti-patrocinadores-vote__slot"
+          data-monetag-zone={getMonetagFooterZoneId()}
+          aria-label="Área de publicidade"
+        />
 
         <footer className="votti-patrocinadores-vote__actions">
           {canClose ? (
