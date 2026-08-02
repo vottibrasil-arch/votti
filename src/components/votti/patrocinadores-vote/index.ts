@@ -1,2 +1,6 @@
-export { PatrocinadoresVote, PATROCINADORES_FRAME_SRC, PATROCINADORES_CLOSE_DELAY_SEC } from "./patrocinadores-vote";
-export { usePatrocinadoresCloseTimer, usePatrocinadoresVisibility } from "./use-patrocinadores-session";
+export { PatrocinadoresVote, PATROCINADORES_FRAME_SRC, PROPAGANDA_FRAME_ROUTE } from "./patrocinadores-vote";
+export {
+  PATROCINADORES_CLOSE_DELAY_SEC,
+  usePatrocinadoresCloseTimer,
+  usePatrocinadoresVisibility,
+} from "./use-patrocinadores-session";

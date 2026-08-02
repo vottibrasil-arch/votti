@@ -40,8 +40,8 @@ export function injectMonetagVerification(html: string) {
 }
 
 /**
- * Injeta o script Monetag como no painel (data-zone + tag.min.js no body).
- * Usar só em /propaganda/frame (iframe isolado nas páginas de votação).
+ * Injeta o script Monetag (data-zone + tag.min.js).
+ * Preferir o iframe estático `/patrocinadores/monetag.html` — evita vazamento para a página pai.
  */
 export function ensureMonetagScriptLoaded(
   scriptUrl = getMonetagScriptUrl(),

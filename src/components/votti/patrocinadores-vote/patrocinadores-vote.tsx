@@ -6,8 +6,11 @@ import {
   usePatrocinadoresVisibility,
 } from "./use-patrocinadores-session";
 
-/** Iframe isolado — Monetag roda só dentro desta rota. */
-export const PATROCINADORES_FRAME_SRC = "/propaganda/frame";
+/** HTML estático isolado — Monetag só dentro do iframe sandbox (sem acesso ao documento pai). */
+export const PATROCINADORES_FRAME_SRC = "/patrocinadores/monetag.html";
+
+/** @deprecated Use PATROCINADORES_FRAME_SRC — rota SPA removida para evitar vazamento de anúncios. */
+export const PROPAGANDA_FRAME_ROUTE = "/propaganda/frame";
 
 /**
  * Central de Patrocinadores — monetização no rodapé das páginas públicas de votação.
@@ -40,12 +43,12 @@ export function PatrocinadoresVote() {
 
         <div className="votti-patrocinadores-vote__slot" aria-label="Área de publicidade">
           <iframe
-            key={PATROCINADORES_FRAME_SRC}
             title="Patrocinadores do VOTTI — conteúdo patrocinado"
             src={PATROCINADORES_FRAME_SRC}
             className="votti-patrocinadores-vote__frame"
-            loading="lazy"
+            loading="eager"
             referrerPolicy="no-referrer-when-downgrade"
+            sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
           />
         </div>
 
