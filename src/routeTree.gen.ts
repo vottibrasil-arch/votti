@@ -22,6 +22,7 @@ import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VotacaoSlugRouteImport } from './routes/votacao.$slug'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
+import { Route as PropagandaFrameRouteImport } from './routes/propaganda.frame'
 import { Route as CriarSucessoRouteImport } from './routes/criar.sucesso'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as VotacaoSlugIndexRouteImport } from './routes/votacao.$slug.index'
@@ -93,6 +94,11 @@ const VSlugRoute = VSlugRouteImport.update({
   path: '/v/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PropagandaFrameRoute = PropagandaFrameRouteImport.update({
+  id: '/propaganda/frame',
+  path: '/propaganda/frame',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CriarSucessoRoute = CriarSucessoRouteImport.update({
   id: '/sucesso',
   path: '/sucesso',
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
+  '/propaganda/frame': typeof PropagandaFrameRoute
   '/v/$slug': typeof VSlugRoute
   '/votacao/$slug': typeof VotacaoSlugRouteWithChildren
   '/votacao/$slug/resultados': typeof VotacaoSlugResultadosRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
+  '/propaganda/frame': typeof PropagandaFrameRoute
   '/v/$slug': typeof VSlugRoute
   '/votacao/$slug/resultados': typeof VotacaoSlugResultadosRoute
   '/votacao/$slug/telao': typeof VotacaoSlugTelaoRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/termos-de-uso': typeof TermosDeUsoRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/criar/sucesso': typeof CriarSucessoRoute
+  '/propaganda/frame': typeof PropagandaFrameRoute
   '/v/$slug': typeof VSlugRoute
   '/votacao/$slug': typeof VotacaoSlugRouteWithChildren
   '/votacao/$slug/resultados': typeof VotacaoSlugResultadosRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/termos-de-uso'
     | '/auth/callback'
     | '/criar/sucesso'
+    | '/propaganda/frame'
     | '/v/$slug'
     | '/votacao/$slug'
     | '/votacao/$slug/resultados'
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/termos-de-uso'
     | '/auth/callback'
     | '/criar/sucesso'
+    | '/propaganda/frame'
     | '/v/$slug'
     | '/votacao/$slug/resultados'
     | '/votacao/$slug/telao'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/termos-de-uso'
     | '/auth/callback'
     | '/criar/sucesso'
+    | '/propaganda/frame'
     | '/v/$slug'
     | '/votacao/$slug'
     | '/votacao/$slug/resultados'
@@ -254,6 +266,7 @@ export interface RootRouteChildren {
   SupRoute: typeof SupRoute
   TermosDeUsoRoute: typeof TermosDeUsoRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  PropagandaFrameRoute: typeof PropagandaFrameRoute
   VSlugRoute: typeof VSlugRoute
   VotacaoSlugRoute: typeof VotacaoSlugRouteWithChildren
 }
@@ -351,6 +364,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/propaganda/frame': {
+      id: '/propaganda/frame'
+      path: '/propaganda/frame'
+      fullPath: '/propaganda/frame'
+      preLoaderRoute: typeof PropagandaFrameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/criar/sucesso': {
       id: '/criar/sucesso'
       path: '/sucesso'
@@ -428,6 +448,7 @@ const rootRouteChildren: RootRouteChildren = {
   SupRoute: SupRoute,
   TermosDeUsoRoute: TermosDeUsoRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  PropagandaFrameRoute: PropagandaFrameRoute,
   VSlugRoute: VSlugRoute,
   VotacaoSlugRoute: VotacaoSlugRouteWithChildren,
 }
