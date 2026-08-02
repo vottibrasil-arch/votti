@@ -8,5 +8,3 @@ export {
   usePatrocinadoresCloseTimer,
   usePatrocinadoresVisibility,
 } from "./use-patrocinadores-session";
-export { useMonetagLeakGuard } from "./use-monetag-leak-guard";
-export { usePatrocinadoresBanner } from "./use-patrocinadores-banner";

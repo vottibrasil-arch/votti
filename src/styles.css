@@ -6226,7 +6226,7 @@ button.votti-image-box:disabled {
 .votti-patrocinadores-vote {
   margin: 1rem auto 0;
   width: 100%;
-  max-width: 45rem;
+  max-width: 32rem;
   padding: 0 1rem;
 }
 
@@ -6272,45 +6272,20 @@ button.votti-image-box:disabled {
 }
 
 .votti-patrocinadores-vote__slot {
-  position: relative;
-  display: flex;
-  width: 100%;
-  min-height: 5.625rem;
-  align-items: center;
-  justify-content: center;
+  height: clamp(8.75rem, 28vw, 10rem);
   overflow: hidden;
   overscroll-behavior: contain;
   border-radius: 0.75rem;
   border: 1px solid oklch(0.35 0.06 260 / 40%);
-  background: oklch(0.1 0.04 260);
-  text-align: center;
+  background: oklch(0.12 0.04 260);
 }
 
-.votti-patrocinadores-vote__slot:empty::before {
-  content: "Publicidade";
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: oklch(0.42 0.03 260);
-}
-
-.votti-patrocinadores-vote__slot > iframe,
-.votti-patrocinadores-vote__slot iframe,
-.votti-patrocinadores-vote__slot img {
+.votti-patrocinadores-vote__frame {
   display: block;
-  width: 100% !important;
-  max-width: 45rem;
-  height: auto !important;
-  min-height: 3.125rem;
-  max-height: 15.625rem;
-  margin: 0 auto;
+  width: 100%;
+  height: clamp(8.75rem, 28vw, 10rem);
   border: 0;
-  object-fit: contain;
-}
-
-.votti-patrocinadores-vote__slot > * {
-  max-width: 100%;
+  background: oklch(0.12 0.04 260);
 }
 
 .votti-patrocinadores-vote__actions {

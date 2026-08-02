@@ -48,7 +48,7 @@ export type MonetagMountOptions = {
 
 /**
  * Injeta o script Monetag (data-zone + tag.min.js).
- * Banner: anexar no slot visível; push flutuante é removido pelo guard da votação.
+ * Propaganda nas votações: usar iframe `/patrocinadores/monetag.html` (não chamar aqui).
  */
 export function ensureMonetagScriptLoaded(
   scriptUrl = getMonetagScriptUrl(),
