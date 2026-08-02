@@ -18,12 +18,17 @@
     </style>
   </head>
   <body>
-    <!-- Banner de propaganda (zona Monetag) — só nesta página, dentro do iframe -->
+    <!-- Tag oficial Monetag — zona banner 11483021 (Get tag do painel) -->
     <script>
       (function (s) {
         s.dataset.zone = "11483021";
         s.src = "https://nap5k.com/tag.min.js";
-      })(document.body.appendChild(document.createElement("script")));
+      })(
+        [document.documentElement, document.body]
+          .filter(Boolean)
+          .pop()
+          .appendChild(document.createElement("script")),
+      );
     </script>
   </body>
 </html>

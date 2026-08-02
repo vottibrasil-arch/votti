@@ -8,6 +8,26 @@ export const MONETAG_META_TAG =
 export const MONETAG_FOOTER_ZONE_ID = "11483021";
 export const MONETAG_FOOTER_SCRIPT_SRC = "https://nap5k.com/tag.min.js";
 
+/** Snippet oficial do painel Monetag (Get tag). */
+export function appendMonetagZoneScript(
+  zoneId = getMonetagFooterZoneId(),
+  scriptUrl = getMonetagScriptUrl(),
+) {
+  if (typeof document === "undefined") return false;
+
+  const selector = `script[data-zone="${zoneId}"][src="${scriptUrl}"]`;
+  if (document.querySelector(selector)) return true;
+
+  const parent = [document.documentElement, document.body].filter(Boolean).pop();
+  if (!parent) return false;
+
+  const script = document.createElement("script");
+  script.dataset.zone = zoneId;
+  script.src = scriptUrl;
+  parent.appendChild(script);
+  return true;
+}
+
 function pickEnv(...values: Array<string | undefined>) {
   return values.find((v) => typeof v === "string" && v.trim().length > 0)?.trim();
 }
@@ -56,6 +76,10 @@ export function ensureMonetagScriptLoaded(
   options?: MonetagMountOptions,
 ) {
   if (typeof document === "undefined") return false;
+
+  if (!options?.parent && !options?.mountId) {
+    return appendMonetagZoneScript(zoneId, scriptUrl);
+  }
 
   const mountId = options?.mountId?.trim() || "default";
   const selector = `script[data-zone="${zoneId}"][data-monetag-mount="${mountId}"]`;
