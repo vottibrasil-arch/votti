@@ -4,8 +4,8 @@ export const MONETAG_VERIFICATION_CONTENT = "dd344fe16dccffdf175a8eed8f16b79c";
 export const MONETAG_META_TAG =
   `<meta name="monetag" content="${MONETAG_VERIFICATION_CONTENT}">`;
 
-/** Tag do rodapé — copiada do painel Monetag (Get tag). */
-export const MONETAG_FOOTER_ZONE_ID = "11281216";
+/** Zona banner Monetag — Central de Patrocinadores (Get tag). */
+export const MONETAG_FOOTER_ZONE_ID = "11483021";
 export const MONETAG_FOOTER_SCRIPT_SRC = "https://nap5k.com/tag.min.js";
 
 function pickEnv(...values: Array<string | undefined>) {

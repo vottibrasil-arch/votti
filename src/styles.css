@@ -6272,7 +6272,7 @@ button.votti-image-box:disabled {
 }
 
 .votti-patrocinadores-vote__slot {
-  height: clamp(5.625rem, 22vw, 7.5rem);
+  height: clamp(8.75rem, 28vw, 10rem);
   overflow: auto;
   overscroll-behavior: contain;
   border-radius: 0.75rem;
@@ -6283,7 +6283,7 @@ button.votti-image-box:disabled {
 .votti-patrocinadores-vote__frame {
   display: block;
   width: 100%;
-  height: clamp(5.625rem, 22vw, 7.5rem);
+  height: clamp(8.75rem, 28vw, 10rem);
   border: 0;
   background: oklch(0.12 0.04 260);
 }
